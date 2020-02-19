@@ -8,6 +8,7 @@
 #include <openssl/bio.h>
 #include <openssl/err.h>
 #include <unistd.h>
+#include <string.h>
 
 int main()
 {
@@ -75,10 +76,20 @@ int main()
 //        if (len <= 0) break;
 //        BIO_write(out, tmpbuf, len);
 //    }
-
     sleep(1);
 
-    int bytesread = 0;
+    BIO_puts(sbio, "GET / HTTP/1.0\n\n");
+    for (;;)
+    {
+        len = BIO_read(sbio, tmpbuf, 1024);
+        if (len <= 0) break;
+        tmpbuf[len] = '\0';
+        printf("%s",tmpbuf);
+    }
+
+
+    //image send demo
+/*    int bytesread = 0;
     char buffer[103900];
     FILE *fptr;
     fptr = fopen("../1.jpg", "wb");
@@ -99,9 +110,11 @@ int main()
             fwrite(buffer, sizeof(char), bytesread, fptr);
         }
     }
-    fclose(fptr);
+    fclose(fptr);*/
+
     BIO_free_all(sbio);
     BIO_free(out);
+    return 0;
 }
 
 

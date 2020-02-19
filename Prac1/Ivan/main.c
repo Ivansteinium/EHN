@@ -28,7 +28,7 @@ int main()
     BIO *cbio;
     BIO *acpt;
     BIO *outbio;
-    int bytesread;
+    unsigned long bytesread;
     int buffer_size = 103900;
     uint8_t buffer[buffer_size];
     int connection_status;
@@ -80,7 +80,7 @@ int main()
         acpt = BIO_new_accept("4433");
 
         BIO_set_accept_bios(acpt, abio);
-        outbio = BIO_new_fd(stdout, BIO_NOCLOSE);
+        //outbio = BIO_new_fd(stdout, BIO_NOCLOSE);
 
 
         //BIO wait and setup
@@ -88,7 +88,7 @@ int main()
 
         abio = BIO_pop(acpt);
 
-        BIO_free_all(acpt);
+
 
         if (BIO_do_handshake(abio) <= 0)
         {
@@ -113,8 +113,28 @@ int main()
 //        BIO_puts(abio, "--------------------------------------------------\r\n");
 //        BIO_puts(abio, "\r\n");
 
-        FILE *fptr;
-        fptr = fopen("../Media_files/1.jpg", "rb");
+/*        FILE *fptr;
+        fptr = fopen("../Media_files/files_list.html", "w");
+
+        //generate an html file showing all the items available on the server and send it to the client
+
+        int i = 0;
+        char temp[maxMediaNameSize];
+        for (i = 2; i < numMediaItems; i++)
+        {
+            //build the html link command and send it to the client
+            strcpy(temp, "<a href=\"");
+            strcat(temp, MediaItems[i]);
+            strcat(temp, "\">");
+            strcat(temp, MediaItems[i]);
+            strcat(temp, "</a>\r\n");
+            fputs(temp,fptr);
+        }
+        fputs("</html>\r\n",fptr);
+        BIO_puts(abio, "</html>");
+        fclose(fptr);*/
+
+/*        fptr = fopen("../Media_files/test.html", "r");
         if (fptr == NULL)
         {
             printf("Error opening file\n");
@@ -124,47 +144,45 @@ int main()
             {
                 bytesread = fread(buffer, sizeof(char), buffer_size, fptr);
                 if (bytesread <= 0) break;
-                BIO_write(abio, buffer, bytesread);
+                SSL_write(abio, buffer, bytesread);
+                printf("%s\n", ERR_error_string(ERR_get_error(), NULL));
                 BIO_write(outbio, buffer, bytesread);
-                /* Look for blank line signifying end of headers*/
+                printf("%s\n", ERR_error_string(ERR_get_error(), NULL));
+                // Look for blank line signifying end of headers
             }
         }
-        fclose(fptr);
+        fclose(fptr);*/
+
+        write_page(abio,"../Media_files/test.html");
+
+        sleep(1);
         BIO_flush(abio);
+        BIO_free_all(acpt);
         BIO_free_all(abio);
+        sleep(10);
     }
 
+    //example threading code
+/*    pthread_t thread1, thread2;
+    char *message1 = "Thread 1";
+    char *message2 = "Thread 2";
+    int  iret1, iret2;
 
+    // Create independent threads each of which will execute function
 
+    iret1 = pthread_create( &thread1, NULL, print_message_function, (void*) message1);
+    iret2 = pthread_create( &thread2, NULL, print_message_function, (void*) message2);
 
+    // Wait till threads are complete before main continues. Unless we  //
+    // wait we run the risk of executing an exit which will terminate   //
+    // the process and all threads before the threads have completed.   //
 
+    pthread_join( thread1, NULL);
+    pthread_join( thread2, NULL);
 
-
-
-
-
-
-
-//    pthread_t thread1, thread2;
-//    char *message1 = "Thread 1";
-//    char *message2 = "Thread 2";
-//    int  iret1, iret2;
-//
-//    /* Create independent threads each of which will execute function */
-//
-//    iret1 = pthread_create( &thread1, NULL, print_message_function, (void*) message1);
-//    iret2 = pthread_create( &thread2, NULL, print_message_function, (void*) message2);
-//
-//    /* Wait till threads are complete before main continues. Unless we  */
-//    /* wait we run the risk of executing an exit which will terminate   */
-//    /* the process and all threads before the threads have completed.   */
-//
-//    pthread_join( thread1, NULL);
-//    pthread_join( thread2, NULL);
-//
-//    printf("Thread 1 returns: %d\n",iret1);
-//    printf("Thread 2 returns: %d\n",iret2);
-//    exit(0);
+    printf("Thread 1 returns: %d\n",iret1);
+    printf("Thread 2 returns: %d\n",iret2);
+    exit(0);*/
 }
 
 void *print_message_function(void *ptr)
@@ -188,6 +206,7 @@ int connect(BIO *bio)
     while (BIO_do_accept(bio) <= 0)
     {
         printf("error accepting the socket\n");
+        printf("%s\n", ERR_error_string(ERR_get_error(), NULL));
         BIO_reset(bio);
         BIO_set_nbio_accept(bio, 0);
         sleep(1);
@@ -199,7 +218,7 @@ int connect(BIO *bio)
 int write_page(BIO *bio, const char *page)
 {
     FILE *f;
-    int bytesread;
+    unsigned int bytesread;
     unsigned char buf[512];
 
     f = fopen(page, "r");
@@ -219,6 +238,7 @@ int write_page(BIO *bio, const char *page)
         if (BIO_write(bio, buf, bytesread) <= 0)
         {
             printf("write failed\n");
+            printf("%s\n", ERR_error_string(ERR_get_error(), NULL));
             break;
         }
     }
