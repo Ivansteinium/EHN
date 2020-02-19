@@ -3,20 +3,34 @@
 #include <pthread.h>
 #include <openssl/ssl.h>
 #include <openssl/bio.h>
+#include <openssl/err.h>
+#include <unistd.h>
+#include <dirent.h>
+#include <string.h>
 
-void *print_message_function( void *ptr );
+#define maxMediaItems  100
+#define maxMediaNameSize  256
+char MediaItems[maxMediaItems][maxMediaNameSize];
+int numMediaItems = 0;
+
+void *print_message_function(void *ptr);
+
 int write_page(BIO *bio, const char *page);
+
+int readMedia();
+
 int connect(BIO *bio);
 
-int main() {
+int main()
+{
     //Variables
     BIO *abio;
     BIO *cbio;
     BIO *acpt;
     BIO *outbio;
     int bytesread;
-    int buffer_size = 1024;
-    char buffer[buffer_size];
+    int buffer_size = 103900;
+    uint8_t buffer[buffer_size];
     int connection_status;
     int write_status;
     const char *filename = "../webpage_1.txt";
@@ -35,17 +49,20 @@ int main() {
     // https://www.openssl.org/docs/man1.0.2/man3/SSL_CTX_set_default_passwd_cb.htmlls
 
     ctx = SSL_CTX_new(SSLv23_server_method());
-    if (ctx==NULL){
+    if (ctx == NULL)
+    {
         printf("failed to create SSL context\n");
         return 0;
     }
 
     SSL_CTX_use_certificate_file(ctx, certificate_file, SSL_FILETYPE_PEM);
     SSL_CTX_use_PrivateKey_file(ctx, private_file, SSL_FILETYPE_PEM);
-
-    while(1){
+    readMedia();
+    while (1)
+    {
         abio = BIO_new_ssl(ctx, 0);
-        if (abio == NULL){
+        if (abio == NULL)
+        {
             printf("failed retrieving the BIO object\n");
             return 0;
         }
@@ -73,26 +90,46 @@ int main() {
 
         BIO_free_all(acpt);
 
-        if(BIO_do_handshake(abio) <= 0){
+        if (BIO_do_handshake(abio) <= 0)
+        {
             printf("failed handshake, wash hands and try again\n");
+            printf("%s\n", ERR_error_string(ERR_get_error(), NULL));
         }
 
-        BIO_puts(abio, "HTTP/1.0 200 OK\r\nContent-type: text/plain\r\n\r\n");
-        BIO_puts(abio, "\r\nConnection Established\r\nRequest headers:\r\n");
-        BIO_puts(abio, "--------------------------------------------------\r\n");
+//        BIO_puts(abio, "HTTP/1.0 200 OK\r\nContent-type: text/plain\r\n\r\n");
+//        BIO_puts(abio, "\r\nConnection Established\r\nRequest headers:\r\n");
+//        BIO_puts(abio, "--------------------------------------------------\r\n");
+//
+//        for (;;)
+//        {
+//            bytesread = BIO_gets(abio, buffer, buffer_size);
+//            if (bytesread <= 0) break;
+//            BIO_write(abio, buffer, bytesread);
+//            BIO_write(outbio, buffer, bytesread);
+//            /* Look for blank line signifying end of headers*/
+//            if ((buffer[0] == '\r') || (buffer[0] == '\n')) break;
+//        }
+//
+//        BIO_puts(abio, "--------------------------------------------------\r\n");
+//        BIO_puts(abio, "\r\n");
 
-        for(;;) {
-            bytesread = BIO_gets(abio, buffer, buffer_size);
-            if(bytesread <= 0) break;
-            BIO_write(abio, buffer, bytesread);
-            BIO_write(outbio, buffer, bytesread);
-            /* Look for blank line signifying end of headers*/
-            if((buffer[0] == '\r') || (buffer[0] == '\n')) break;
+        FILE *fptr;
+        fptr = fopen("../Media_files/1.jpg", "rb");
+        if (fptr == NULL)
+        {
+            printf("Error opening file\n");
+        } else
+        {
+            for (;;)
+            {
+                bytesread = fread(buffer, sizeof(char), buffer_size, fptr);
+                if (bytesread <= 0) break;
+                BIO_write(abio, buffer, bytesread);
+                BIO_write(outbio, buffer, bytesread);
+                /* Look for blank line signifying end of headers*/
+            }
         }
-
-        BIO_puts(abio, "--------------------------------------------------\r\n");
-        BIO_puts(abio, "\r\n");
-
+        fclose(fptr);
         BIO_flush(abio);
         BIO_free_all(abio);
     }
@@ -130,7 +167,7 @@ int main() {
 //    exit(0);
 }
 
-void *print_message_function( void *ptr )
+void *print_message_function(void *ptr)
 {
     char *message;
     message = (char *) ptr;
@@ -138,42 +175,49 @@ void *print_message_function( void *ptr )
 }
 
 
-int connect(BIO *bio){
-    if (BIO_do_accept(bio)<=0){
+int connect(BIO *bio)
+{
+    if (BIO_do_accept(bio) <= 0)
+    {
         printf("error setting up listening socket\n");
         BIO_free(bio);
         return 0;
     }
 
-
     BIO_set_nbio_accept(bio, 0);
-    if (BIO_do_accept(bio)<=0){
+    while (BIO_do_accept(bio) <= 0)
+    {
         printf("error accepting the socket\n");
-        BIO_free(bio);
-        return 0;
+        BIO_reset(bio);
+        BIO_set_nbio_accept(bio, 0);
+        sleep(1);
     }
     return 1;
 }
 
 
-int write_page(BIO *bio, const char *page){
+int write_page(BIO *bio, const char *page)
+{
     FILE *f;
     int bytesread;
     unsigned char buf[512];
 
     f = fopen(page, "r");
-    if(!f){
+    if (!f)
+    {
         printf("could not open page\n");
         return 0;
     }
 
-    while (1){
+    while (1)
+    {
         bytesread = fread(buf, sizeof(unsigned char), 512, f);
 
         if (bytesread == 0)
             break;
 
-        if(BIO_write(bio, buf, bytesread) <= 0){
+        if (BIO_write(bio, buf, bytesread) <= 0)
+        {
             printf("write failed\n");
             break;
         }
@@ -181,6 +225,27 @@ int write_page(BIO *bio, const char *page){
 
     fclose(f);
 
+}
+
+int readMedia()
+{
+    DIR *directory;
+    struct dirent *ent;
+    directory = opendir("../Media_files");
+    if (directory != NULL)
+    {
+        /* print all the files and directories within directory */
+        while ((ent = readdir(directory)) != NULL)
+        {
+            strcpy(MediaItems[numMediaItems], ent->d_name);
+            numMediaItems++;
+        }
+        closedir(directory);
+    } else
+    {
+        /* could not open directory */
+        return EXIT_FAILURE;
+    }
 }
 
 

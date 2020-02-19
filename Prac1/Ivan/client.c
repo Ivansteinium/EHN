@@ -7,8 +7,10 @@
 #include <openssl/ssl.h>
 #include <openssl/bio.h>
 #include <openssl/err.h>
+#include <unistd.h>
 
-int main(){
+int main()
+{
     BIO *sbio, *out;
     int len;
     char tmpbuf[1024];
@@ -30,16 +32,17 @@ int main(){
  * any server whose certificate is signed by any CA.
  */
 
-    if(! SSL_CTX_load_verify_locations(ctx, "../keys/cert.crt", NULL))
+    if (!SSL_CTX_load_verify_locations(ctx, "../keys/cert.crt", NULL))
     {
-            printf("Failed to load verify location");
+        printf("Failed to load verify location");
     }
 
     sbio = BIO_new_ssl_connect(ctx);
 
     BIO_get_ssl(sbio, &ssl);
 
-    if(!ssl) {
+    if (!ssl)
+    {
         fprintf(stderr, "Can't locate SSL pointer\n");
         /* whatever ... */
     }
@@ -52,23 +55,51 @@ int main(){
     BIO_set_conn_hostname(sbio, "0.0.0.0:4433");
 
     out = BIO_new_fp(stdout, BIO_NOCLOSE);
-    if(BIO_do_connect(sbio) <= 0) {
+    if (BIO_do_connect(sbio) <= 0)
+    {
         printf("Error connecting to server:\n");
         printf("%s\n", ERR_error_string(ERR_get_error(), NULL));
     }
 
-    if(BIO_do_handshake(sbio) <= 0) {
+    if (BIO_do_handshake(sbio) <= 0)
+    {
         printf("Error establishing SSL connection\n");
     }
 
 /* Could examine ssl here to get connection info */
 
-    BIO_puts(sbio, "GET / HTTP/1.0\n\n");
-    for(;;) {
-        len = BIO_read(sbio, tmpbuf, 1024);
-        if(len <= 0) break;
-        BIO_write(out, tmpbuf, len);
+//    BIO_puts(sbio, "GET / HTTP/1.0\n\n");
+//    for (;;)
+//    {
+//        len = BIO_read(sbio, tmpbuf, 1024);
+//        if (len <= 0) break;
+//        BIO_write(out, tmpbuf, len);
+//    }
+
+    sleep(1);
+
+    int bytesread = 0;
+    char buffer[103900];
+    FILE *fptr;
+    fptr = fopen("../1.jpg", "wb");
+    if (fptr == NULL)
+    {
+        printf("Error opening file");
+        return 1;
+    } else
+    {
+        while (1)
+        {
+            bytesread = BIO_read(sbio, buffer, sizeof(buffer));
+            if (bytesread == 0)
+            {
+                printf("server closed the connection\n");
+                break;
+            }
+            fwrite(buffer, sizeof(char), bytesread, fptr);
+        }
     }
+    fclose(fptr);
     BIO_free_all(sbio);
     BIO_free(out);
 }
