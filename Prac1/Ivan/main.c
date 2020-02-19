@@ -19,9 +19,9 @@ int main() {
     char buffer[buffer_size];
     int connection_status;
     int write_status;
-    const char *filename = "/home/ivan/CLionProjects/EHN_Prac1/webpage_1.txt";
-    const char *certificate_file = "/home/ivan/EHN/webServCert.crt";
-    const char *private_file = "/home/ivan/EHN/webServ.key";
+    const char *filename = "../webpage_1.txt";
+    const char *certificate_file = "../keys/webServCert.crt";
+    const char *private_file = "../keys/webServ.key";
     SSL_CTX *ctx;
     SSL *ssl;
 
@@ -30,6 +30,9 @@ int main() {
     OpenSSL_add_all_algorithms();
     SSL_load_error_strings();
     SSL_library_init();
+
+    //supply password to decrypt key
+    // https://www.openssl.org/docs/man1.0.2/man3/SSL_CTX_set_default_passwd_cb.htmlls
 
     ctx = SSL_CTX_new(SSLv23_server_method());
     if (ctx==NULL){

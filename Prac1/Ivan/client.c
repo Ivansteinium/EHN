@@ -6,6 +6,7 @@
 #include <stdlib.h>
 #include <openssl/ssl.h>
 #include <openssl/bio.h>
+#include <openssl/err.h>
 
 int main(){
     BIO *sbio, *out;
@@ -29,6 +30,11 @@ int main(){
  * any server whose certificate is signed by any CA.
  */
 
+    if(! SSL_CTX_load_verify_locations(ctx, "../keys/cert.crt", NULL))
+    {
+            printf("Failed to load verify location");
+    }
+
     sbio = BIO_new_ssl_connect(ctx);
 
     BIO_get_ssl(sbio, &ssl);
@@ -47,7 +53,8 @@ int main(){
 
     out = BIO_new_fp(stdout, BIO_NOCLOSE);
     if(BIO_do_connect(sbio) <= 0) {
-        printf("Error connecting to server\n");
+        printf("Error connecting to server:\n");
+        printf("%s\n", ERR_error_string(ERR_get_error(), NULL));
     }
 
     if(BIO_do_handshake(sbio) <= 0) {
