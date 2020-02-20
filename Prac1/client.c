@@ -23,60 +23,57 @@ int main()
     SSL_load_error_strings();
     SSL_library_init();
 
-/* We would seed the PRNG here if the platform didn't
- * do it automatically
- */
+    /* We would seed the PRNG here if the platform didn't
+     * do it automatically
+     */
 
     ctx = SSL_CTX_new(SSLv23_client_method());
 
-/* We'd normally set some stuff like the verify paths and
- * mode here because as things stand this will connect to
- * any server whose certificate is signed by any CA.
- */
+    /* We'd normally set some stuff like the verify paths and
+     * mode here because as things stand this will connect to
+     * any server whose certificate is signed by any CA.
+     */
 
-    if(!SSL_CTX_load_verify_locations(ctx, "../keys/cert.crt", NULL)) {
+    if (!SSL_CTX_load_verify_locations(ctx, "../keys/cert.crt", NULL))
         printf("Failed to load verify location");
-    }
 
     sbio = BIO_new_ssl_connect(ctx);
 
     BIO_get_ssl(sbio, &ssl);
 
-    if(!ssl) {
+    if (!ssl)
         fprintf(stderr, "Can't locate SSL pointer\n");
         /* whatever ... */
-    }
 
-/* Don't want any retries */
+    /* Don't want any retries */
     SSL_set_mode(ssl, SSL_MODE_AUTO_RETRY);
 
-/* We might want to do other things with ssl here */
+    /* We might want to do other things with ssl here */
 
     BIO_set_conn_hostname(sbio, "0.0.0.0:5000");
 
     out = BIO_new_fp(stdout, BIO_NOCLOSE);
-    if(BIO_do_connect(sbio) <= 0) {
+    if (BIO_do_connect(sbio) <= 0) {
         printf("Error connecting to server:\n");
         printf("%s\n", ERR_error_string(ERR_get_error(), NULL));
     }
 
-    if(BIO_do_handshake(sbio) <= 0) {
+    if (BIO_do_handshake(sbio) <= 0)
         printf("Error establishing SSL connection\n");
-    }
 
 /* Could examine ssl here to get connection info */
 
-//    BIO_puts(sbio, "GET / HTTP/1.0\n\n");
-//    for (;;)
-//    {
-//        len = BIO_read(sbio, tmpbuf, 1024);
-//        if (len <= 0) break;
-//        BIO_write(out, tmpbuf, len);
-//    }
+/*    BIO_puts(sbio, "GET / HTTP/1.0\n\n");
+    for (;;)
+    {
+        len = BIO_read(sbio, tmpbuf, 1024);
+        if (len <= 0) break;
+        BIO_write(out, tmpbuf, len);
+    }*/
     sleep(1);
 
     BIO_puts(sbio, "GET / HTTP/1.0\n\n");
-    while(1) {
+    while (1) {
         len = BIO_read(sbio, tmpbuf, 1024);
         if(len <= 0) break;
         tmpbuf[len] = '\0';
