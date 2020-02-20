@@ -54,7 +54,7 @@ int main()
 
     //Dynamic Threads
     pthread_t *temp, *client_threads;
-    int max_clients = 2, num_clients = 0;
+    int max_clients = 4, num_clients = 0;
     client_threads = (pthread_t *)malloc(max_clients * sizeof(pthread_t ));
 
 
@@ -76,40 +76,51 @@ int main()
     SSL_CTX_use_certificate_file(ctx, certificate_file, SSL_FILETYPE_PEM);
     SSL_CTX_use_PrivateKey_file(ctx, private_file, SSL_FILETYPE_PEM);
     readMedia();
+
+    abio = BIO_new_ssl(ctx, 0);
+    if (abio == NULL)
+    {
+        printf("failed retrieving the BIO object\n");
+    }
+
+    //Disable retires
+    BIO_get_ssl(abio, &ssl);
+    SSL_set_mode(ssl, SSL_MODE_AUTO_RETRY);
+
+    //Buffer
+    cbio = BIO_new(BIO_f_buffer());
+
+    //Chain
+    abio = BIO_push(cbio, abio);
+
+    acpt = BIO_new_accept(ITOA(port_num++));
+
+    BIO_set_accept_bios(acpt, abio);
+    //outbio = BIO_new_fd(stdout, BIO_NOCLOSE);
+
+
+    //BIO wait and setup
+    connection_status = connect(acpt);
+    if (connection_status == 0){
+        return 0;
+    }
+
     while (1)
     {
-        abio = BIO_new_ssl(ctx, 0);
-        if (abio == NULL)
+        BIO_set_nbio_accept(acpt, 0);
+        while (BIO_do_accept(acpt) <= 0)
         {
-            printf("failed retrieving the BIO object\n");
-        }
-
-        //Disable retires
-        BIO_get_ssl(abio, &ssl);
-        SSL_set_mode(ssl, SSL_MODE_AUTO_RETRY);
-
-        //Buffer
-        cbio = BIO_new(BIO_f_buffer());
-
-        //Chain
-        abio = BIO_push(cbio, abio);
-
-        acpt = BIO_new_accept(ITOA(port_num++));
-
-        BIO_set_accept_bios(acpt, abio);
-        //outbio = BIO_new_fd(stdout, BIO_NOCLOSE);
-
-
-        //BIO wait and setup
-        connection_status = connect(acpt);
-        if (connection_status == 0){
-            return 0;
+            printf("error accepting the socket\n");
+            printf("%s\n", ERR_error_string(ERR_get_error(), NULL));
+            BIO_reset(acpt);
+//        BIO_set_nbio_accept(bio, 0);
+//            sleep(1);
         }
 
         abio = BIO_pop(acpt);
         num_clients++;
 
-        //Double threads is max clients os reached
+        //Double threads if max clients os reached
         if(num_clients == max_clients){
             client_threads = double_size(client_threads, max_clients);
             max_clients = max_clients*2;
@@ -119,8 +130,8 @@ int main()
 
 
 //        iret1 = pthread_create( &thread1, NULL, new_client_connection, (void*) abio);
-        pthread_join(client_threads[num_clients-1], NULL);
-
+//        pthread_join(client_threads[num_clients-1], NULL);
+//
 //        if (BIO_do_handshake(abio) <= 0)
 //        {
 //            printf("failed handshake, wash hands and try again\n");
@@ -186,12 +197,14 @@ int main()
 
 //        write_page(abio,"../Media_files/test.html", 1);
 
-        sleep(1);
-        BIO_flush(abio);
-        BIO_free_all(acpt);
-        BIO_free_all(abio);
-        sleep(10);
+
+//        sleep(1);
     }
+    pthread_join(client_threads[num_clients-1], NULL);
+    sleep(1);
+    BIO_flush(abio);
+    BIO_free_all(acpt);
+    BIO_free_all(abio);
 
     //example threading code
 /*    pthread_t thread1, thread2;
@@ -223,6 +236,8 @@ void *print_message_function(void *ptr)
     printf("%s \n", message);
 }
 
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wmissing-noreturn"
 void *new_client_connection(void *ptr){
     BIO *client;
     client = (BIO *) ptr;
@@ -231,9 +246,73 @@ void *new_client_connection(void *ptr){
         printf("failed handshake, wash hands and try again\n");
         printf("%s\n", ERR_error_string(ERR_get_error(), NULL));
     }
-    write_page(client,"../Media_files/test.html", 1);
+    char tempbuf[256];
+    char * startpos;
+    char * endpos;
+    char filename[256];
+
+    while(1)
+    {
+        //read request and send the page if valid
+        if(BIO_gets(client, tempbuf, 256)>0)
+        {
+            printf("Recieved: %s \r\n", tempbuf);
+            startpos = strstr(tempbuf,"GET ");
+            startpos += 4;
+            endpos = strstr(tempbuf," HTTP");
+            if(startpos == NULL || endpos == NULL)
+            {
+                printf("invalid request recieved");
+            } else
+            {
+                strncpy(filename,startpos,endpos-startpos);
+                //write the home page
+                if(strcmp(filename,"/") ==0)
+                {
+                    write_page(client, "../Media_files/test.html", 1);
+                } else
+                {
+                    //delete leading "/"
+                    startpos+=1;
+                    strncpy(filename,startpos,endpos-startpos);
+                    filename[endpos-startpos] = '\0';
+
+                    //search for file and send it if present
+                    int i = 0;
+                    unsigned char valid = 0;
+                    for (i = 0; i < numMediaItems+1; i++)
+                    {
+                        if (strcmp(filename, MediaItems[i]) == 0)
+                        {
+                            valid = 1;
+                            break;
+                        }
+                    }
+                    if (!valid)
+                    {
+                        printf("Requested item not found\r\n");
+                    } else
+                    {
+                        //send file
+                        char sendname[256];
+                        sprintf(sendname,"%s%s","../Media_files/",filename);
+                        write_page(client, sendname, 1);
+                    }
+                }
+            }
+
+
+            BIO_flush(client);
+            BIO_reset(client);
+        } else
+        {
+            break;
+        }
+
+    }
 
 }
+#pragma clang diagnostic pop
 
 
 int connect(BIO *bio)
@@ -241,6 +320,7 @@ int connect(BIO *bio)
     if (BIO_do_accept(bio) <= 0)
     {
         printf("error setting up listening socket\n");
+        printf("%s\n", ERR_error_string(ERR_get_error(), NULL));
         BIO_free(bio);
         return 0;
     }
@@ -251,7 +331,7 @@ int connect(BIO *bio)
         printf("error accepting the socket\n");
         printf("%s\n", ERR_error_string(ERR_get_error(), NULL));
         BIO_reset(bio);
-        BIO_set_nbio_accept(bio, 0);
+//        BIO_set_nbio_accept(bio, 0);
         sleep(1);
     }
     return 1;

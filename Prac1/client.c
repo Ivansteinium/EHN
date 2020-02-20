@@ -53,7 +53,7 @@ int main()
 
 /* We might want to do other things with ssl here */
 
-    BIO_set_conn_hostname(sbio, "0.0.0.0:4433");
+    BIO_set_conn_hostname(sbio, "0.0.0.0:5000");
 
     out = BIO_new_fp(stdout, BIO_NOCLOSE);
     if (BIO_do_connect(sbio) <= 0)
