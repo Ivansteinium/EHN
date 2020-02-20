@@ -15,7 +15,7 @@ int numMediaItems = 0;
 
 void *print_message_function(void *ptr);
 
-int write_page(BIO *bio, const char *page);
+int write_page(BIO *bio, const char *page, int html);
 
 int readMedia();
 
@@ -77,7 +77,7 @@ int main()
         //Chain
         abio = BIO_push(cbio, abio);
 
-        acpt = BIO_new_accept("4433");
+        acpt = BIO_new_accept("5000");
 
         BIO_set_accept_bios(acpt, abio);
         //outbio = BIO_new_fd(stdout, BIO_NOCLOSE);
@@ -153,7 +153,7 @@ int main()
         }
         fclose(fptr);*/
 
-        write_page(abio,"../Media_files/test.html");
+        write_page(abio,"../Media_files/test.html", 1);
 
         sleep(1);
         BIO_flush(abio);
@@ -215,17 +215,22 @@ int connect(BIO *bio)
 }
 
 
-int write_page(BIO *bio, const char *page)
+int write_page(BIO *bio, const char *page, int html)
 {
     FILE *f;
     unsigned int bytesread;
     unsigned char buf[512];
+    unsigned char html_reply[15] = "HTTP/1.1 200 OK";
 
     f = fopen(page, "r");
     if (!f)
     {
         printf("could not open page\n");
         return 0;
+    }
+
+    if (html){
+        BIO_write(bio, html_reply, 15);
     }
 
     while (1)
