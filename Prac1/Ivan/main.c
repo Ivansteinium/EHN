@@ -155,26 +155,7 @@ int main()
 //        BIO_puts(abio, "--------------------------------------------------\r\n");
 //        BIO_puts(abio, "\r\n");
 
-/*        FILE *fptr;
-        fptr = fopen("../Media_files/files_list.html", "w");
 
-        //generate an html file showing all the items available on the server and send it to the client
-
-        int i = 0;
-        char temp[maxMediaNameSize];
-        for (i = 2; i < numMediaItems; i++)
-        {
-            //build the html link command and send it to the client
-            strcpy(temp, "<a href=\"");
-            strcat(temp, MediaItems[i]);
-            strcat(temp, "\">");
-            strcat(temp, MediaItems[i]);
-            strcat(temp, "</a>\r\n");
-            fputs(temp,fptr);
-        }
-        fputs("</html>\r\n",fptr);
-        BIO_puts(abio, "</html>");
-        fclose(fptr);*/
 
 /*        fptr = fopen("../Media_files/test.html", "r");
         if (fptr == NULL)
@@ -343,7 +324,10 @@ int write_page(BIO *bio, const char *page, int html)
     FILE *f;
     unsigned int bytesread;
     unsigned char buf[512];
-    unsigned char html_reply[15] = "HTTP/1.1 200 OK";
+    unsigned char html_reply[100] = "HTTP/1.1 200 OK\n"
+                                   "Content-Type: text/html; charset=utf-8\n"
+                                   "Connection: close\n"
+                                   "Content-Length: 500\n\r\n";
 
     f = fopen(page, "r");
     if (!f)
@@ -353,7 +337,7 @@ int write_page(BIO *bio, const char *page, int html)
     }
 
     if (html){
-        BIO_write(bio, html_reply, 15);
+        BIO_write(bio, html_reply, 95);
     }
 
     while (1)
@@ -394,6 +378,32 @@ int readMedia()
         /* could not open directory */
         return EXIT_FAILURE;
     }
+
+    FILE *fptr;
+    fptr = fopen("../Media_files/files_list.html", "w");
+
+    //generate an html file showing all the items available on the server and send it to the client
+
+    int i = 0;
+    char temp[maxMediaNameSize];
+//    fputs("HTTP/1.1 200 OK\n"
+//          "Content-Type: text/html; charset=utf-8\n"
+//          "Connection: close\n"
+//          "Content-Length: 500\n",fptr);
+//    fputs("\r\n",fptr);
+    fputs("<html>\r\n",fptr);
+    for (i = 2; i < numMediaItems; i++)
+    {
+        //build the html link command and send it to the client
+        strcpy(temp, "<p><a href=\"");
+        strcat(temp, MediaItems[i]);
+        strcat(temp, "\">");
+        strcat(temp, MediaItems[i]);
+        strcat(temp, "</a></p>\r\n");
+        fputs(temp,fptr);
+    }
+    fputs("</html>\r\n",fptr);
+    fclose(fptr);
 }
 
 pthread_t *double_size(pthread_t *old_clients, int current_size){
