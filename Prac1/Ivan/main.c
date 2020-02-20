@@ -21,6 +21,7 @@ int numMediaItems = 0;
 void *print_message_function(void *ptr);
 void *new_client_connection(void *ptr);
 
+pthread_t *double_size(pthread_t *old_clients, int current_size);
 
 int write_page(BIO *bio, const char *page, int html);
 
@@ -51,6 +52,10 @@ int main()
     pthread_t thread1;
     int iret1;
 
+    //Dynamic Threads
+    pthread_t *temp, *client_threads;
+    int max_clients = 2, num_clients = 0;
+    client_threads = (pthread_t *)malloc(max_clients * sizeof(pthread_t ));
 
 
     //SSL initialize
@@ -102,8 +107,19 @@ int main()
         }
 
         abio = BIO_pop(acpt);
-        iret1 = pthread_create( &thread1, NULL, new_client_connection, (void*) abio);
-        pthread_join(thread1, NULL);
+        num_clients++;
+
+        //Double threads is max clients os reached
+        if(num_clients == max_clients){
+            client_threads = double_size(client_threads, max_clients);
+            max_clients = max_clients*2;
+        } else{
+            pthread_create( &client_threads[num_clients-1], NULL, new_client_connection, (void*) abio);
+        }
+
+
+//        iret1 = pthread_create( &thread1, NULL, new_client_connection, (void*) abio);
+        pthread_join(client_threads[num_clients-1], NULL);
 
 //        if (BIO_do_handshake(abio) <= 0)
 //        {
@@ -298,6 +314,16 @@ int readMedia()
         /* could not open directory */
         return EXIT_FAILURE;
     }
+}
+
+pthread_t *double_size(pthread_t *old_clients, int current_size){
+    pthread_t *temp;
+    temp = (pthread_t *)malloc((current_size*2) * sizeof(pthread_t ));
+    for (int i = 0; i < current_size; ++i) {
+        temp[i] = old_clients[i];
+    }
+    free(old_clients);
+    return temp;
 }
 
 
