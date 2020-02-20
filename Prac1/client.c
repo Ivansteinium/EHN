@@ -10,6 +10,7 @@
 #include <unistd.h>
 #include <string.h>
 
+
 int main()
 {
     BIO *sbio, *out;
@@ -33,8 +34,7 @@ int main()
  * any server whose certificate is signed by any CA.
  */
 
-    if (!SSL_CTX_load_verify_locations(ctx, "../keys/cert.crt", NULL))
-    {
+    if(!SSL_CTX_load_verify_locations(ctx, "../keys/cert.crt", NULL)) {
         printf("Failed to load verify location");
     }
 
@@ -42,8 +42,7 @@ int main()
 
     BIO_get_ssl(sbio, &ssl);
 
-    if (!ssl)
-    {
+    if(!ssl) {
         fprintf(stderr, "Can't locate SSL pointer\n");
         /* whatever ... */
     }
@@ -56,14 +55,12 @@ int main()
     BIO_set_conn_hostname(sbio, "0.0.0.0:5000");
 
     out = BIO_new_fp(stdout, BIO_NOCLOSE);
-    if (BIO_do_connect(sbio) <= 0)
-    {
+    if(BIO_do_connect(sbio) <= 0) {
         printf("Error connecting to server:\n");
         printf("%s\n", ERR_error_string(ERR_get_error(), NULL));
     }
 
-    if (BIO_do_handshake(sbio) <= 0)
-    {
+    if(BIO_do_handshake(sbio) <= 0) {
         printf("Error establishing SSL connection\n");
     }
 
@@ -79,12 +76,11 @@ int main()
     sleep(1);
 
     BIO_puts(sbio, "GET / HTTP/1.0\n\n");
-    for (;;)
-    {
+    while(1) {
         len = BIO_read(sbio, tmpbuf, 1024);
-        if (len <= 0) break;
+        if(len <= 0) break;
         tmpbuf[len] = '\0';
-        printf("%s",tmpbuf);
+        printf("%s", tmpbuf);
     }
 
 

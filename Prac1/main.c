@@ -8,26 +8,40 @@
 #include <dirent.h>
 #include <string.h>
 
-char *my_itoa(char *dest, int i) {
+
+char *my_itoa(char *dest, int i)
+{
     sprintf(dest, "%d", i);
     return dest;
 }
+
+
 #define ITOA(n) my_itoa((char [41]) { 0 }, (n) )
 #define maxMediaItems  100
 #define maxMediaNameSize  256
+
 char MediaItems[maxMediaItems][maxMediaNameSize];
+
 int numMediaItems = 0;
 
+
 void *print_message_function(void *ptr);
+
+
 void *new_client_connection(void *ptr);
+
 
 pthread_t *double_size(pthread_t *old_clients, int current_size);
 
+
 int write_page(BIO *bio, const char *page, int html);
+
 
 int readMedia();
 
+
 int connect(BIO *bio);
+
 
 int main()
 {
@@ -55,7 +69,7 @@ int main()
     //Dynamic Threads
     pthread_t *temp, *client_threads;
     int max_clients = 4, num_clients = 0;
-    client_threads = (pthread_t *)malloc(max_clients * sizeof(pthread_t ));
+    client_threads = (pthread_t *) malloc(max_clients * sizeof(pthread_t));
 
 
     //SSL initialize
@@ -67,8 +81,7 @@ int main()
     // https://www.openssl.org/docs/man1.0.2/man3/SSL_CTX_set_default_passwd_cb.htmlls
 
     ctx = SSL_CTX_new(SSLv23_server_method());
-    if (ctx == NULL)
-    {
+    if(ctx == NULL) {
         printf("failed to create SSL context\n");
         return 0;
     }
@@ -78,8 +91,7 @@ int main()
     readMedia();
 
     abio = BIO_new_ssl(ctx, 0);
-    if (abio == NULL)
-    {
+    if(abio == NULL) {
         printf("failed retrieving the BIO object\n");
     }
 
@@ -101,31 +113,30 @@ int main()
 
     //BIO wait and setup
     connection_status = connect(acpt);
-    if (connection_status == 0){
+    if(connection_status == 0) {
         return 0;
     }
 
-    while (1)
-    {
+    while(1) {
         BIO_set_nbio_accept(acpt, 0);
-        while (BIO_do_accept(acpt) <= 0)
-        {
+        while(BIO_do_accept(acpt) <= 0) {
             printf("error accepting the socket\n");
             printf("%s\n", ERR_error_string(ERR_get_error(), NULL));
             BIO_reset(acpt);
-//        BIO_set_nbio_accept(bio, 0);
-//            sleep(1);
+//          BIO_set_nbio_accept(bio, 0);
+//          sleep(1);
         }
 
         abio = BIO_pop(acpt);
         num_clients++;
 
         //Double threads if max clients os reached
-        if(num_clients == max_clients){
+        if(num_clients == max_clients) {
             client_threads = double_size(client_threads, max_clients);
-            max_clients = max_clients*2;
-        } else{
-            pthread_create( &client_threads[num_clients-1], NULL, new_client_connection, (void*) abio);
+            max_clients = max_clients * 2;
+        } else {
+            pthread_create(&client_threads[num_clients - 1], NULL, new_client_connection
+                           , (void *) abio);
         }
 
 
@@ -200,7 +211,7 @@ int main()
 
 //        sleep(1);
     }
-    pthread_join(client_threads[num_clients-1], NULL);
+    pthread_join(client_threads[num_clients - 1], NULL);
     sleep(1);
     BIO_flush(abio);
     BIO_free_all(acpt);
@@ -229,6 +240,11 @@ int main()
     exit(0);*/
 }
 
+
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wmissing-noreturn"
+
+
 void *print_message_function(void *ptr)
 {
     char *message;
@@ -236,89 +252,80 @@ void *print_message_function(void *ptr)
     printf("%s \n", message);
 }
 
+
+#pragma clang diagnostic pop
+
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Wmissing-noreturn"
-void *new_client_connection(void *ptr){
+
+
+void *new_client_connection(void *ptr)
+{
     BIO *client;
     client = (BIO *) ptr;
-    if (BIO_do_handshake(client) <= 0)
-    {
+    if(BIO_do_handshake(client) <= 0) {
         printf("failed handshake, wash hands and try again\n");
         printf("%s\n", ERR_error_string(ERR_get_error(), NULL));
     }
     char tempbuf[256];
-    char * startpos;
-    char * endpos;
+    char *startpos;
+    char *endpos;
     char filename[256];
 
-    while(1)
-    {
+    while(1) {
         //read request and send the page if valid
-        if(BIO_gets(client, tempbuf, 256)>0)
-        {
-            printf("Recieved: %s \r\n", tempbuf);
-            startpos = strstr(tempbuf,"GET ");
+        if(BIO_gets(client, tempbuf, 256) > 0) {
+            printf("Received: %s \r\n", tempbuf);
+            startpos = strstr(tempbuf, "GET ");
             startpos += 4;
-            endpos = strstr(tempbuf," HTTP");
-            if(startpos == NULL || endpos == NULL)
-            {
-                printf("invalid request recieved");
-            } else
-            {
-                strncpy(filename,startpos,endpos-startpos);
+            endpos = strstr(tempbuf, " HTTP");
+            if(startpos == NULL || endpos == NULL) {
+                printf("invalid request received");
+            } else {
+                strncpy(filename, startpos, endpos - startpos);
                 //write the home page
-                if(strcmp(filename,"/") ==0)
-                {
+                if(strcmp(filename, "/") == 0) {
                     write_page(client, "../Media_files/test.html", 1);
-                } else
-                {
+                } else {
                     //delete leading "/"
-                    startpos+=1;
-                    strncpy(filename,startpos,endpos-startpos);
-                    filename[endpos-startpos] = '\0';
+                    startpos += 1;
+                    strncpy(filename, startpos, endpos - startpos);
+                    filename[endpos - startpos] = '\0';
 
                     //search for file and send it if present
                     int i = 0;
                     unsigned char valid = 0;
-                    for (i = 0; i < numMediaItems+1; i++)
-                    {
-                        if (strcmp(filename, MediaItems[i]) == 0)
-                        {
+                    for(i = 0; i < numMediaItems + 1; i++) {
+                        if(strcmp(filename, MediaItems[i]) == 0) {
                             valid = 1;
                             break;
                         }
                     }
-                    if (!valid)
-                    {
+                    if(!valid) {
                         printf("Requested item not found\r\n");
-                    } else
-                    {
+                    } else {
                         //send file
                         char sendname[256];
-                        sprintf(sendname,"%s%s","../Media_files/",filename);
+                        sprintf(sendname, "%s%s", "../Media_files/", filename);
                         write_page(client, sendname, 1);
                     }
                 }
             }
 
-
             BIO_flush(client);
             BIO_reset(client);
         } else
-        {
             break;
-        }
-
     }
-
 }
+
+
 #pragma clang diagnostic pop
 
 
 int connect(BIO *bio)
 {
-    if (BIO_do_accept(bio) <= 0)
-    {
+    if(BIO_do_accept(bio) <= 0) {
         printf("error setting up listening socket\n");
         printf("%s\n", ERR_error_string(ERR_get_error(), NULL));
         BIO_free(bio);
@@ -326,8 +333,7 @@ int connect(BIO *bio)
     }
 
     BIO_set_nbio_accept(bio, 0);
-    while (BIO_do_accept(bio) <= 0)
-    {
+    while(BIO_do_accept(bio) <= 0) {
         printf("error accepting the socket\n");
         printf("%s\n", ERR_error_string(ERR_get_error(), NULL));
         BIO_reset(bio);
@@ -346,25 +352,22 @@ int write_page(BIO *bio, const char *page, int html)
     unsigned char html_reply[15] = "HTTP/1.1 200 OK";
 
     f = fopen(page, "r");
-    if (!f)
-    {
+    if(!f) {
         printf("could not open page\n");
-        return 0;
+        return EXIT_FAILURE;
     }
 
-    if (html){
+    if(html) {
         BIO_write(bio, html_reply, 15);
     }
 
-    while (1)
-    {
+    while(1) {
         bytesread = fread(buf, sizeof(unsigned char), 512, f);
 
-        if (bytesread == 0)
+        if(bytesread == 0)
             break;
 
-        if (BIO_write(bio, buf, bytesread) <= 0)
-        {
+        if(BIO_write(bio, buf, bytesread) <= 0) {
             printf("write failed\n");
             printf("%s\n", ERR_error_string(ERR_get_error(), NULL));
             break;
@@ -372,34 +375,36 @@ int write_page(BIO *bio, const char *page, int html)
     }
 
     fclose(f);
-
+    return EXIT_SUCCESS;
 }
+
 
 int readMedia()
 {
     DIR *directory;
     struct dirent *ent;
     directory = opendir("../Media_files");
-    if (directory != NULL)
-    {
+    if(directory != NULL) {
         /* print all the files and directories within directory */
-        while ((ent = readdir(directory)) != NULL)
-        {
+        while((ent = readdir(directory)) != NULL) {
             strcpy(MediaItems[numMediaItems], ent->d_name);
             numMediaItems++;
         }
+
         closedir(directory);
-    } else
-    {
+        return EXIT_SUCCESS;
+    } else {
         /* could not open directory */
         return EXIT_FAILURE;
     }
 }
 
-pthread_t *double_size(pthread_t *old_clients, int current_size){
+
+pthread_t *double_size(pthread_t *old_clients, int current_size)
+{
     pthread_t *temp;
-    temp = (pthread_t *)malloc((current_size*2) * sizeof(pthread_t ));
-    for (int i = 0; i < current_size; ++i) {
+    temp = (pthread_t *) malloc((current_size * 2) * sizeof(pthread_t));
+    for(int i = 0; i < current_size; ++i) {
         temp[i] = old_clients[i];
     }
     free(old_clients);
