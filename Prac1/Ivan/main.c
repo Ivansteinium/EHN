@@ -19,6 +19,8 @@ char MediaItems[maxMediaItems][maxMediaNameSize];
 int numMediaItems = 0;
 
 void *print_message_function(void *ptr);
+void *new_client_connection(void *ptr);
+
 
 int write_page(BIO *bio, const char *page, int html);
 
@@ -44,6 +46,11 @@ int main()
     const char *private_file = "../keys/webServ.key";
     SSL_CTX *ctx;
     SSL *ssl;
+
+    //Threads
+    pthread_t thread1;
+    int iret1;
+
 
 
     //SSL initialize
@@ -95,14 +102,14 @@ int main()
         }
 
         abio = BIO_pop(acpt);
+        iret1 = pthread_create( &thread1, NULL, new_client_connection, (void*) abio);
+        pthread_join(thread1, NULL);
 
-
-
-        if (BIO_do_handshake(abio) <= 0)
-        {
-            printf("failed handshake, wash hands and try again\n");
-            printf("%s\n", ERR_error_string(ERR_get_error(), NULL));
-        }
+//        if (BIO_do_handshake(abio) <= 0)
+//        {
+//            printf("failed handshake, wash hands and try again\n");
+//            printf("%s\n", ERR_error_string(ERR_get_error(), NULL));
+//        }
 
 //        BIO_puts(abio, "HTTP/1.0 200 OK\r\nContent-type: text/plain\r\n\r\n");
 //        BIO_puts(abio, "\r\nConnection Established\r\nRequest headers:\r\n");
@@ -161,7 +168,7 @@ int main()
         }
         fclose(fptr);*/
 
-        write_page(abio,"../Media_files/test.html", 1);
+//        write_page(abio,"../Media_files/test.html", 1);
 
         sleep(1);
         BIO_flush(abio);
@@ -198,6 +205,18 @@ void *print_message_function(void *ptr)
     char *message;
     message = (char *) ptr;
     printf("%s \n", message);
+}
+
+void *new_client_connection(void *ptr){
+    BIO *client;
+    client = (BIO *) ptr;
+    if (BIO_do_handshake(client) <= 0)
+    {
+        printf("failed handshake, wash hands and try again\n");
+        printf("%s\n", ERR_error_string(ERR_get_error(), NULL));
+    }
+    write_page(client,"../Media_files/test.html", 1);
+
 }
 
 
