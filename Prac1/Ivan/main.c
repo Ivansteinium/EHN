@@ -8,6 +8,11 @@
 #include <dirent.h>
 #include <string.h>
 
+char *my_itoa(char *dest, int i) {
+    sprintf(dest, "%d", i);
+    return dest;
+}
+#define ITOA(n) my_itoa((char [41]) { 0 }, (n) )
 #define maxMediaItems  100
 #define maxMediaNameSize  256
 char MediaItems[maxMediaItems][maxMediaNameSize];
@@ -28,6 +33,7 @@ int main()
     BIO *cbio;
     BIO *acpt;
     BIO *outbio;
+    int port_num = 5000;
     unsigned long bytesread;
     int buffer_size = 103900;
     uint8_t buffer[buffer_size];
@@ -64,7 +70,6 @@ int main()
         if (abio == NULL)
         {
             printf("failed retrieving the BIO object\n");
-            return 0;
         }
 
         //Disable retires
@@ -77,7 +82,7 @@ int main()
         //Chain
         abio = BIO_push(cbio, abio);
 
-        acpt = BIO_new_accept("5000");
+        acpt = BIO_new_accept(ITOA(port_num++));
 
         BIO_set_accept_bios(acpt, abio);
         //outbio = BIO_new_fd(stdout, BIO_NOCLOSE);
@@ -85,6 +90,9 @@ int main()
 
         //BIO wait and setup
         connection_status = connect(acpt);
+        if (connection_status == 0){
+            return 0;
+        }
 
         abio = BIO_pop(acpt);
 
