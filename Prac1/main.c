@@ -19,11 +19,8 @@ char *my_itoa(char *dest, int i)
 #define ITOA(n) my_itoa((char [41]) { 0 }, (n) )
 #define maxMediaItems  100
 #define maxMediaNameSize  256
-
-int numMediaItems = 0;
-
 char MediaItems[maxMediaItems][maxMediaNameSize];
-
+int numMediaItems = 0;
 
 void *print_message_function(void *ptr);
 
@@ -80,7 +77,8 @@ int main()
     // https://www.openssl.org/docs/man1.0.2/man3/SSL_CTX_set_default_passwd_cb.htmlls
 
     ctx = SSL_CTX_new(SSLv23_server_method());
-    if (ctx == NULL) {
+    if (ctx == NULL)
+    {
         printf("failed to create SSL context\n");
         return 0;
     }
@@ -91,7 +89,9 @@ int main()
 
     abio = BIO_new_ssl(ctx, 0);
     if (abio == NULL)
+    {
         printf("failed retrieving the BIO object\n");
+    }
 
     //Disable retires
     BIO_get_ssl(abio, &ssl);
@@ -113,9 +113,11 @@ int main()
     if (connection_status == 0)
         return 0;
 
-    while (1) {
+    while (1)
+    {
         BIO_set_nbio_accept(acpt, 0);
-        while (BIO_do_accept(acpt) <= 0) {
+        while (BIO_do_accept(acpt) <= 0)
+        {
             printf("error accepting the socket\n");
             printf("%s\n", ERR_error_string(ERR_get_error(), NULL));
             BIO_reset(acpt);
@@ -127,14 +129,14 @@ int main()
         num_clients++;
 
         //Double threads if max clients os reached
-        if (num_clients == max_clients) {
+        if (num_clients == max_clients)
+        {
             client_threads = double_size(client_threads, max_clients);
             max_clients = max_clients * 2;
         }
 
         // Create a new thread for the client
-        pthread_create(&client_threads[num_clients - 1], NULL, new_client_connection
-                           , (void *) abio);
+        pthread_create(&client_threads[num_clients - 1], NULL, new_client_connection, (void *) abio);
 
 
 /*        iret1 = pthread_create( &thread1, NULL, new_client_connection, (void*) abio);
@@ -261,7 +263,8 @@ void *new_client_connection(void *ptr)
 {
     BIO *client;
     client = (BIO *) ptr;
-    if (BIO_do_handshake(client) <= 0) {
+    if (BIO_do_handshake(client) <= 0)
+    {
         printf("failed handshake, wash hands and try again\n");
         printf("%s\n", ERR_error_string(ERR_get_error(), NULL));
     }
@@ -270,22 +273,28 @@ void *new_client_connection(void *ptr)
     char *endpos;
     char filename[256];
 
-    while (1) {
+    while (1)
+    {
         //read request and send the page if valid
-        if (BIO_gets(client, tempbuf, 256) > 0) {
+        if (BIO_gets(client, tempbuf, 256) > 0)
+        {
             printf("Received: %s \r\n", tempbuf);
             startpos = strstr(tempbuf, "GET ");
             startpos += 4;
             endpos = strstr(tempbuf, " HTTP");
-            if (startpos == NULL || endpos == NULL) {
+            if (startpos == NULL || endpos == NULL)
+            {
                 printf("invalid request received");
-            } else {
+            } else
+            {
                 // Get the requested item from the string
                 strncpy(filename, startpos, endpos - startpos);
 
-                if (strcmp(filename, "/") == 0) { //write the home page
+                if (strcmp(filename, "/") == 0)
+                { //write the home page
                     write_page(client, "../Media_files/test.html", 1);
-                } else {
+                } else
+                {
                     //delete leading "/"
                     startpos += 1;
                     strncpy(filename, startpos, endpos - startpos);
@@ -294,15 +303,19 @@ void *new_client_connection(void *ptr)
                     //search for file and send it if present
                     int i = 0;
                     unsigned char valid = 0;
-                    for (i = 0; i < numMediaItems + 1; i++) {
-                        if (strcmp(filename, MediaItems[i]) == 0) {
+                    for (i = 0; i < numMediaItems + 1; i++)
+                    {
+                        if (strcmp(filename, MediaItems[i]) == 0)
+                        {
                             valid = 1;
                             break;
                         }
                     }
-                    if (!valid) { // If item is not present, display error
+                    if (!valid)
+                    { // If item is not present, display error
                         printf("Error: Requested item not found\r\n");
-                    } else { //send file
+                    } else
+                    { //send file
                         char sendname[256];
                         sprintf(sendname, "%s%s", "../Media_files/", filename);
                         write_page(client, sendname, 1);
@@ -323,7 +336,8 @@ void *new_client_connection(void *ptr)
 // Attempt to setup to a socket and then wait for the client to connect to it
 int connect(BIO *bio)
 {
-    if (BIO_do_accept(bio) <= 0) {
+    if (BIO_do_accept(bio) <= 0)
+    {
         printf("Error setting up listening socket\n");
         printf("%s\n", ERR_error_string(ERR_get_error(), NULL));
         BIO_free(bio);
@@ -331,7 +345,8 @@ int connect(BIO *bio)
     }
 
     BIO_set_nbio_accept(bio, 0);
-    while (BIO_do_accept(bio) <= 0) {
+    while (BIO_do_accept(bio) <= 0)
+    {
         printf("Error accepting the socket\n");
         printf("%s\n", ERR_error_string(ERR_get_error(), NULL));
         BIO_reset(bio);
@@ -347,24 +362,30 @@ int write_page(BIO *bio, const char *page, int html)
     FILE *f;
     unsigned int bytesread;
     unsigned char buf[512];
-    unsigned char html_reply[15] = "HTTP/1.1 200 OK";
+    unsigned char html_reply[100] = "HTTP/1.1 200 OK\n"
+                                    "Content-Type: text/html; charset=utf-8\n"
+                                    "Connection: close\n"
+                                    "Content-Length: 500\n\r\n";
 
     f = fopen(page, "r");
-    if (!f) {
+    if (!f)
+    {
         printf("could not open page\n");
         return EXIT_FAILURE;
     }
 
     if (html) // If the file is an HTML file, include the header
-        BIO_write(bio, html_reply, 15);
+        BIO_write(bio, html_reply, 95);
 
-    while (1) { // Send the file in blocks of 512 Bytes
+    while (1)
+    { // Send the file in blocks of 512 Bytes
         bytesread = fread(buf, sizeof(unsigned char), 512, f);
 
         if (bytesread == 0)
             break;
 
-        if (BIO_write(bio, buf, bytesread) <= 0) {
+        if (BIO_write(bio, buf, bytesread) <= 0)
+        {
             printf("write failed\n");
             printf("%s\n", ERR_error_string(ERR_get_error(), NULL));
             break;
@@ -381,19 +402,48 @@ int readMedia()
     DIR *directory;
     struct dirent *ent;
     directory = opendir("../Media_files");
-    if (directory != NULL) {
+    if (directory != NULL)
+    {
         /* print all the files and directories within directory */
-        while((ent = readdir(directory)) != NULL) {
+        while ((ent = readdir(directory)) != NULL)
+        {
             strcpy(MediaItems[numMediaItems], ent->d_name);
             numMediaItems++;
         }
 
         closedir(directory);
-        return EXIT_SUCCESS;
-    } else {
+    } else
+    {
         /* could not open directory */
         return EXIT_FAILURE;
     }
+
+    FILE *fptr;
+    fptr = fopen("../Media_files/files_list.html", "w");
+
+    //generate an html file showing all the items available on the server and send it to the client
+
+    int i = 0;
+    char temp[maxMediaNameSize];
+//    fputs("HTTP/1.1 200 OK\n"
+//          "Content-Type: text/html; charset=utf-8\n"
+//          "Connection: close\n"
+//          "Content-Length: 500\n",fptr);
+//    fputs("\r\n",fptr);
+    fputs("<html>\r\n", fptr);
+    for (i = 2; i < numMediaItems; i++)
+    {
+        //build the html link command and send it to the client
+        strcpy(temp, "<p><a href=\"");
+        strcat(temp, MediaItems[i]);
+        strcat(temp, "\">");
+        strcat(temp, MediaItems[i]);
+        strcat(temp, "</a></p>\r\n");
+        fputs(temp, fptr);
+    }
+    fputs("</html>\r\n", fptr);
+    fclose(fptr);
+    return EXIT_SUCCESS;
 }
 
 // When the maximum amount of threads are created, create a new array with double the capacity,
@@ -402,7 +452,8 @@ pthread_t *double_size(pthread_t *old_clients, int current_size)
 {
     pthread_t *temp;
     temp = (pthread_t *) malloc((current_size * 2) * sizeof(pthread_t));
-    for (int i = 0; i < current_size; ++i) {
+    for (int i = 0; i < current_size; ++i)
+    {
         temp[i] = old_clients[i];
     }
     free(old_clients);
