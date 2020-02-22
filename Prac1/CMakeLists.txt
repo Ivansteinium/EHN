@@ -12,7 +12,7 @@ link_libraries(crypto)
 
 
 #-lpthread pthread1.c  client.c client.h
-add_executable(EHN_Prac1 main.c)
+add_executable(Server main.c)
 add_executable(Client client.c)
 
 #set(LDFLAGS -L/usr/local/ssl)
