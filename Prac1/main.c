@@ -31,7 +31,7 @@ void *new_client_connection(void *ptr);
 pthread_t *double_size(pthread_t *old_clients, int current_size);
 
 
-int write_page(BIO *bio, const char *page, int html);
+int write_page(BIO *bio, const char *page, const char *filename);
 
 
 int readMedia();
@@ -113,6 +113,8 @@ int main()
     if (connection_status == 0)
         return 0;
 
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wmissing-noreturn"
     while (1)
     {
         BIO_set_nbio_accept(acpt, 0);
@@ -210,6 +212,7 @@ int main()
 
        sleep(1);*/
     }
+#pragma clang diagnostic pop
 
 /*    pthread_join(client_threads[num_clients - 1], NULL);
     sleep(1);
@@ -240,23 +243,12 @@ int main()
     exit(0);*/
 }
 
-
-#pragma clang diagnostic push
-#pragma clang diagnostic ignored "-Wmissing-noreturn"
-
-
 void *print_message_function(void *ptr)
 {
     char *message;
     message = (char *) ptr;
     printf("%s \n", message);
 }
-
-
-#pragma clang diagnostic pop
-
-#pragma clang diagnostic push
-#pragma clang diagnostic ignored "-Wmissing-noreturn"
 
 // This thread is spawned every time a new connection request is received
 void *new_client_connection(void *ptr)
@@ -292,7 +284,7 @@ void *new_client_connection(void *ptr)
 
                 if (strcmp(filename, "/") == 0)
                 { //write the home page
-                    write_page(client, "../Media_files/test.html", 1);
+                    write_page(client, "../Media_files/test.html", "html");
                 } else
                 {
                     //delete leading "/"
@@ -318,7 +310,10 @@ void *new_client_connection(void *ptr)
                     { //send file
                         char sendname[256];
                         sprintf(sendname, "%s%s", "../Media_files/", filename);
-                        write_page(client, sendname, 1);
+                        if (strstr(tempbuf, "html") == NULL)
+                            write_page(client, sendname, filename);
+                        else
+                            write_page(client, sendname, "html");
                     }
                 }
             }
@@ -329,9 +324,6 @@ void *new_client_connection(void *ptr)
             break;
     }
 }
-
-
-#pragma clang diagnostic pop
 
 // Attempt to setup to a socket and then wait for the client to connect to it
 int connect(BIO *bio)
@@ -354,46 +346,6 @@ int connect(BIO *bio)
         sleep(1);
     }
     return 1;
-}
-
-// Send some file to the client
-int write_page(BIO *bio, const char *page, int html)
-{
-    FILE *f;
-    unsigned int bytesread;
-    unsigned char buf[512];
-    unsigned char html_reply[100] = "HTTP/1.1 200 OK\n"
-                                    "Content-Type: text/html; charset=utf-8\n"
-                                    "Connection: close\n"
-                                    "Content-Length: 500\n\r\n";
-
-    f = fopen(page, "r");
-    if (!f)
-    {
-        printf("could not open page\n");
-        return EXIT_FAILURE;
-    }
-
-    if (html) // If the file is an HTML file, include the header
-        BIO_write(bio, html_reply, 95);
-
-    while (1)
-    { // Send the file in blocks of 512 Bytes
-        bytesread = fread(buf, sizeof(unsigned char), 512, f);
-
-        if (bytesread == 0)
-            break;
-
-        if (BIO_write(bio, buf, bytesread) <= 0)
-        {
-            printf("write failed\n");
-            printf("%s\n", ERR_error_string(ERR_get_error(), NULL));
-            break;
-        }
-    }
-
-    fclose(f);
-    return EXIT_SUCCESS;
 }
 
 // Read all the contents of the Media_files folder for use later in GET requests
@@ -443,6 +395,55 @@ int readMedia()
     }
     fputs("</html>\r\n", fptr);
     fclose(fptr);
+    return EXIT_SUCCESS;
+}
+
+// Send some file to the client
+int write_page(BIO *bio, const char *page, const char* filename)
+{
+    FILE *f;
+    unsigned int bytesread;
+    unsigned char buf[512];
+    char html_reply[100] = "HTTP/1.1 200 OK\n"
+                           "Content-Type: text/html; charset=utf-8\n"
+                           "Connection: close\n"
+                           "Content-Length: 500\n\r\n";
+
+    if(strcmp(filename, "html") != 0)
+    {
+        sprintf(html_reply, "HTTP/1.1 200 OK\n"
+                            "Content-Disposition: attachment; filename=\"%s\" \n", filename);
+//        strcpy(html_reply, "HTTP/1.1 200 OK\n"
+//                           "Content-Disposition: attachment;");
+    }
+
+
+    f = fopen(page, "r");
+    if (!f)
+    {
+        printf("could not open page\n");
+        return EXIT_FAILURE;
+    }
+
+//    if (strcmp(filename, "html") == 0) // If the file is an HTML file, include the header
+        BIO_write(bio, html_reply, 95);
+
+    while (1)
+    { // Send the file in blocks of 512 Bytes
+        bytesread = fread(buf, sizeof(unsigned char), 512, f);
+
+        if (bytesread == 0)
+            break;
+
+        if (BIO_write(bio, buf, bytesread) <= 0)
+        {
+            printf("write failed\n");
+            printf("%s\n", ERR_error_string(ERR_get_error(), NULL));
+            break;
+        }
+    }
+
+    fclose(f);
     return EXIT_SUCCESS;
 }
 
