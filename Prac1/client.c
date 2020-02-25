@@ -10,12 +10,15 @@
 #include <unistd.h>
 #include <string.h>
 
+#define MAX_REQ_LEN 255
+
 
 int main()
 {
     BIO *sbio, *out;
     int len;
     char tmpbuf[1024];
+    char request[MAX_REQ_LEN];
     SSL_CTX *ctx;
     SSL *ssl;
 
@@ -80,11 +83,13 @@ int main()
         printf("%s", tmpbuf);
     }
 
-    printf("\n\n")
+    printf("\n\n");
 
     while(1)
     {
-
+        printf("Please type the name of the file that you want to request:");
+        fgets(request,MAX_REQ_LEN,stdin);
+        printf("%s \n",request);
     }
 
     //image send demo
