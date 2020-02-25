@@ -404,17 +404,23 @@ int write_page(BIO *bio, const char *page, const char* filename)
     FILE *f;
     unsigned int bytesread;
     unsigned char buf[512];
-    char html_reply[100] = "HTTP/1.1 200 OK\n"
+    char html_reply[100]; /*= "HTTP/1.1 200 OK\n"
                            "Content-Type: text/html; charset=utf-8\n"
                            "Connection: close\n"
-                           "Content-Length: 500\n\r\n";
+                           "Content-Length: 500\n\r\n";*/
 
     if(strcmp(filename, "html") != 0)
     {
         sprintf(html_reply, "HTTP/1.1 200 OK\n"
-                            "Content-Disposition: attachment; filename=\"%s\" \n", filename);
+                            "Content-Disposition: attachment; filename=\"%s\" \n\n", filename);
 //        strcpy(html_reply, "HTTP/1.1 200 OK\n"
 //                           "Content-Disposition: attachment;");
+    } else
+    {
+        sprintf(html_reply, "HTTP/1.1 200 OK\n"
+                            "Content-Type: text/html; charset=utf-8\n"
+                            "Connection: close\n"
+                            "Content-Length: 500\n\r\n");
     }
 
 
@@ -426,7 +432,7 @@ int write_page(BIO *bio, const char *page, const char* filename)
     }
 
 //    if (strcmp(filename, "html") == 0) // If the file is an HTML file, include the header
-        BIO_write(bio, html_reply, 95);
+        BIO_write(bio, html_reply, strlen(html_reply));
 
     while (1)
     { // Send the file in blocks of 512 Bytes

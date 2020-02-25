@@ -72,7 +72,7 @@ int main()
     }*/
     sleep(1);
 
-    BIO_puts(sbio, "GET /1.jpg HTTP/1.0\n\n");
+    BIO_puts(sbio, "GET / HTTP/1.0\n\n");
     while (1) {
         len = BIO_read(sbio, tmpbuf, 1024);
         if(len <= 0) break;
@@ -80,6 +80,12 @@ int main()
         printf("%s", tmpbuf);
     }
 
+    printf("\n\n")
+
+    while(1)
+    {
+
+    }
 
     //image send demo
 /*    int bytesread = 0;
