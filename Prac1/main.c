@@ -276,7 +276,8 @@ void *new_client_connection(void *ptr)
             endpos = strstr(tempbuf, " HTTP");
             if (startpos == NULL || endpos == NULL)
             {
-                printf("invalid request received");
+                printf("invalid request received\n");
+                BIO_puts(client,"Invalid request\n");
             } else
             {
                 // Get the requested item from the string
@@ -306,6 +307,7 @@ void *new_client_connection(void *ptr)
                     if (!valid)
                     { // If item is not present, display error
                         printf("Error: Requested item not found\r\n");
+                        BIO_puts(client,"Error: Requested item not found\r\n");
                     } else
                     { //send file
                         char sendname[256];
