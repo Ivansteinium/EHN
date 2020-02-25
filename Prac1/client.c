@@ -11,11 +11,17 @@
 #include <string.h>
 
 
+#define MAX_REQ_LEN 255
+
+
 int main()
 {
     BIO *sbio, *out;
     int len;
     char tmpbuf[1024];
+    char filename[MAX_REQ_LEN - 16];
+    char request[MAX_REQ_LEN];
+    char *isHTML = NULL;
     SSL_CTX *ctx;
     SSL *ssl;
 
@@ -34,16 +40,16 @@ int main()
      * any server whose certificate is signed by any CA.
      */
 
-    if (!SSL_CTX_load_verify_locations(ctx, "../keys/cert.crt", NULL))
+    if(!SSL_CTX_load_verify_locations(ctx, "../keys/cert.crt", NULL))
         printf("Failed to load verify location");
 
     sbio = BIO_new_ssl_connect(ctx);
 
     BIO_get_ssl(sbio, &ssl);
 
-    if (!ssl)
+    if(!ssl)
         fprintf(stderr, "Can't locate SSL pointer\n");
-        /* whatever ... */
+    /* whatever ... */
 
     /* Don't want any retries */
     SSL_set_mode(ssl, SSL_MODE_AUTO_RETRY);
@@ -53,12 +59,13 @@ int main()
     BIO_set_conn_hostname(sbio, "0.0.0.0:5000");
 
     out = BIO_new_fp(stdout, BIO_NOCLOSE);
-    if (BIO_do_connect(sbio) <= 0) {
+    if(BIO_do_connect(sbio) <= 0)
+    {
         printf("Error connecting to server:\n");
         printf("%s\n", ERR_error_string(ERR_get_error(), NULL));
     }
 
-    if (BIO_do_handshake(sbio) <= 0)
+    if(BIO_do_handshake(sbio) <= 0)
         printf("Error establishing SSL connection\n");
 
 /* Could examine ssl here to get connection info */
@@ -73,18 +80,85 @@ int main()
     sleep(1);
 
     BIO_puts(sbio, "GET / HTTP/1.0\n\n");
-    while (1) {
+    while(1)
+    {
         len = BIO_read(sbio, tmpbuf, 1024);
         if(len <= 0) break;
         tmpbuf[len] = '\0';
         printf("%s", tmpbuf);
     }
 
-    printf("\n\n")
+    printf("\n\n");
+
+    BIO_reset(sbio);
 
     while(1)
     {
+        printf("Please type the name of the file that you want to request:");
+        fgets(filename, MAX_REQ_LEN, stdin);
+        printf("getting %s \n", filename);
+        isHTML = strstr(filename, ".html");
+        filename[strlen(filename) - 1] = '\0';
 
+        sprintf(request, "GET /%s HTTP/1.0\n\n", filename);
+
+//        sbio = BIO_new_ssl_connect(ctx);
+        if(BIO_do_connect(sbio) <= 0)
+        {
+            printf("Error connecting to server:\n");
+            printf("%s\n", ERR_error_string(ERR_get_error(), NULL));
+        }
+
+        if(BIO_do_handshake(sbio) <= 0)
+            printf("Error establishing SSL connection\n");
+
+        BIO_puts(sbio, request);
+        sleep(1);
+        if(isHTML == NULL)
+        {
+            int bytesread = 0;
+            char buffer[256];
+            char local_filename[MAX_REQ_LEN - 16];
+            FILE *fptr;
+            char *messagepos = NULL;
+
+            sprintf(local_filename, "../%s", filename);
+            fptr = fopen(local_filename, "w");
+            printf("writing file to: %s \n", local_filename);
+            if(fptr == NULL)
+            {
+                printf("Error opening file");
+                return 1;
+            } else
+            {
+                while(1)
+                {
+                    bytesread = BIO_read(sbio, buffer, sizeof(buffer));
+                    if(bytesread == 0)
+                    {
+                        printf("server closed the connection\n");
+                        break;
+                    }
+                    messagepos = strstr(buffer, "\n\n");
+                    if(messagepos != NULL)
+                    {
+                        messagepos +=2;
+                        fwrite(messagepos, sizeof(char), bytesread - (messagepos - buffer), fptr);
+                    } else
+                        fwrite(buffer, sizeof(char), bytesread, fptr);
+                }
+            }
+            fclose(fptr);
+        }
+        while(1)
+        {
+            len = BIO_read(sbio, tmpbuf, 1024);
+            if(len <= 0) break;
+            tmpbuf[len] = '\0';
+            printf("%s", tmpbuf);
+        }
+        printf("\n\n");
+        BIO_reset(sbio);
     }
 
     //image send demo
