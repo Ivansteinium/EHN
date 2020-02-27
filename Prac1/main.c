@@ -9,6 +9,9 @@
 #include <string.h>
 
 
+#pragma clang diagnostic ignored "-Wmissing-noreturn"
+
+
 char *my_itoa(char *dest, int i)
 {
     sprintf(dest, "%d", i);
@@ -19,10 +22,19 @@ char *my_itoa(char *dest, int i)
 #define ITOA(n) my_itoa((char [41]) { 0 }, (n) )
 #define maxMediaItems  100
 #define maxMediaNameSize  256
+
 char MediaItems[maxMediaItems][maxMediaNameSize];
 int numMediaItems = 0;
 
-void *print_message_function(void *ptr);
+
+struct pthread_args
+{
+    BIO *abio;
+    int thread_number;
+};
+
+
+//void *print_message_function(void *ptr);
 
 
 void *new_client_connection(void *ptr);
@@ -43,30 +55,30 @@ int connect(BIO *bio);
 int main()
 {
     //Variables
+    int i;
     BIO *abio;
     BIO *cbio;
     BIO *acpt;
-    BIO *outbio;
+//    BIO *outbio;
     int port_num = 5000;
     unsigned long bytesread;
     int buffer_size = 103900;
-    uint8_t buffer[buffer_size];
+//    uint8_t buffer[buffer_size];
     int connection_status;
-    int write_status;
-    const char *filename = "../webpage_1.txt";
+//    int write_status;
+//    const char *filename = "../webpage_1.txt";
     const char *certificate_file = "../keys/webServCert.crt";
     const char *private_file = "../keys/webServ.key";
     SSL_CTX *ctx;
     SSL *ssl;
 
-    //Threads
-    pthread_t thread1;
-    int iret1;
-
     //Dynamic Threads
-    pthread_t *temp, *client_threads;
-    int max_clients = 4, num_clients = 0;
-    client_threads = (pthread_t *) malloc(max_clients * sizeof(pthread_t));
+    int max_clients = 4;
+    int current_clients = 0;
+    pthread_t *client_threads = (pthread_t *) malloc(max_clients * sizeof(pthread_t));
+
+    // Initialize the server
+    printf("Starting Server...\n\n");
 
     //SSL initialize
     OpenSSL_add_all_algorithms();
@@ -89,32 +101,29 @@ int main()
 
     abio = BIO_new_ssl(ctx, 0);
     if (abio == NULL)
-    {
         printf("failed retrieving the BIO object\n");
-    }
 
-    //Disable retires
+    // Disable retires
     BIO_get_ssl(abio, &ssl);
     SSL_set_mode(ssl, SSL_MODE_AUTO_RETRY);
 
-    //Buffer
+    // Buffer
     cbio = BIO_new(BIO_f_buffer());
-
-    //Chain
+    // Chain
     abio = BIO_push(cbio, abio);
-
     acpt = BIO_new_accept(ITOA(port_num++));
+
+    // Server initialization is complete
+    printf("Server Running\n\n");
 
     BIO_set_accept_bios(acpt, abio);
 //    outbio = BIO_new_fd(stdout, BIO_NOCLOSE);
 
-    //BIO wait and setup
+    // BIO wait and setup
     connection_status = connect(acpt);
     if (connection_status == 0)
         return 0;
 
-#pragma clang diagnostic push
-#pragma clang diagnostic ignored "-Wmissing-noreturn"
     while (1)
     {
         BIO_set_nbio_accept(acpt, 0);
@@ -127,19 +136,26 @@ int main()
 //            sleep(1);
         }
 
+        // Get new client
         abio = BIO_pop(acpt);
-        num_clients++;
 
-        //Double threads if max clients os reached
-        if (num_clients == max_clients)
+        // Allocate the new client to a thread
+
+        // Double threads when max clients is reached
+        if (current_clients == max_clients)
         {
             client_threads = double_size(client_threads, max_clients);
             max_clients = max_clients * 2;
         }
 
-        // Create a new thread for the client
-        pthread_create(&client_threads[num_clients - 1], NULL, new_client_connection, (void *) abio);
+        current_clients++;
 
+        struct pthread_args *args = (struct pthread_args*) malloc (sizeof(struct pthread_args));
+        args->abio = abio;
+        args->thread_number = current_clients - 1;
+
+        // Create a new thread for the client
+        pthread_create(&client_threads[current_clients - 1], NULL, new_client_connection, (void *) args);
 
 /*        iret1 = pthread_create( &thread1, NULL, new_client_connection, (void*) abio);
         pthread_join(client_threads[num_clients-1], NULL);
@@ -212,7 +228,6 @@ int main()
 
        sleep(1);*/
     }
-#pragma clang diagnostic pop
 
 /*    pthread_join(client_threads[num_clients - 1], NULL);
     sleep(1);
@@ -243,29 +258,34 @@ int main()
     exit(0);*/
 }
 
-void *print_message_function(void *ptr)
-{
-    char *message;
-    message = (char *) ptr;
-    printf("%s \n", message);
-}
+//void *print_message_function(void *ptr)
+//{
+//    char *message;
+//    message = (char *) ptr;
+//    printf("%s \n", message);
+//}
+
 
 // This thread is spawned every time a new connection request is received
 void *new_client_connection(void *ptr)
 {
-    BIO *client;
-    client = (BIO *) ptr;
+    struct pthread_args *args = (struct pthread_args *) ptr;
+    BIO *client = args->abio;
+
+    printf("Connection %d Opened\n\n", args->thread_number);
+
     if (BIO_do_handshake(client) <= 0)
     {
         printf("failed handshake, wash hands and try again\n");
         printf("%s\n", ERR_error_string(ERR_get_error(), NULL));
     }
+
     char tempbuf[256];
     char *startpos;
     char *endpos;
     char filename[256];
 
-    while (1)
+    while (1)  // Service the client's requests
     {
         //read request and send the page if valid
         if (BIO_gets(client, tempbuf, 256) > 0)
@@ -274,26 +294,25 @@ void *new_client_connection(void *ptr)
             startpos = strstr(tempbuf, "GET ");
             startpos += 4;
             endpos = strstr(tempbuf, " HTTP");
-            if (startpos == NULL || endpos == NULL)
+            if (startpos == NULL || endpos == NULL)  // Invalid GET request
             {
                 printf("invalid request received\n");
                 BIO_puts(client,"Invalid request\n");
-            } else
+            } else  // Valid GET request
             {
                 // Get the requested item from the string
                 strncpy(filename, startpos, endpos - startpos);
 
-                if (strcmp(filename, "/") == 0)
-                { //write the home page
+                if (strcmp(filename, "/") == 0)  // Write the home page
                     write_page(client, "../Media_files/test.html", "html");
-                } else
+                else
                 {
-                    //delete leading "/"
+                    // Delete leading "/"
                     startpos += 1;
                     strncpy(filename, startpos, endpos - startpos);
                     filename[endpos - startpos] = '\0';
 
-                    //search for file and send it if present
+                    // Search for file and send it if present
                     int i = 0;
                     unsigned char valid = 0;
                     for (i = 0; i < numMediaItems + 1; i++)
@@ -304,12 +323,13 @@ void *new_client_connection(void *ptr)
                             break;
                         }
                     }
+
                     if (!valid)
-                    { // If item is not present, display error
+                    {   // If item is not present, display error
                         printf("Error: Requested item not found\r\n");
                         BIO_puts(client,"Error: Requested item not found\r\n");
                     } else
-                    { //send file
+                    {   // Send file
                         char sendname[256];
                         sprintf(sendname, "%s%s", "../Media_files/", filename);
                         if (strstr(tempbuf, "html") == NULL)
@@ -325,7 +345,11 @@ void *new_client_connection(void *ptr)
         } else
             break;
     }
+
+    printf("Connection %d Closed\n\n", args->thread_number);
+    free(args);
 }
+
 
 // Attempt to setup to a socket and then wait for the client to connect to it
 int connect(BIO *bio)
@@ -347,8 +371,10 @@ int connect(BIO *bio)
 //        BIO_set_nbio_accept(bio, 0);
         sleep(1);
     }
+
     return 1;
 }
+
 
 // Read all the contents of the Media_files folder for use later in GET requests
 int readMedia()
@@ -358,7 +384,7 @@ int readMedia()
     directory = opendir("../Media_files");
     if (directory != NULL)
     {
-        /* print all the files and directories within directory */
+        // Print all the files and directories within directory
         while ((ent = readdir(directory)) != NULL)
         {
             strcpy(MediaItems[numMediaItems], ent->d_name);
@@ -366,16 +392,13 @@ int readMedia()
         }
 
         closedir(directory);
-    } else
-    {
-        /* could not open directory */
+    } else  // Could not open directory
         return EXIT_FAILURE;
-    }
 
-    FILE *fptr;
-    fptr = fopen("../Media_files/files_list.html", "w");
+    FILE *file;
+    file = fopen("../Media_files/files_list.html", "w");
 
-    //generate an html file showing all the items available on the server and send it to the client
+    // Generate an html file showing all the items available on the server and send it to the client
 
     int i = 0;
     char temp[maxMediaNameSize];
@@ -384,26 +407,27 @@ int readMedia()
 //          "Connection: close\n"
 //          "Content-Length: 500\n",fptr);
 //    fputs("\r\n",fptr);
-    fputs("<html>\r\n", fptr);
+    fputs("<html>\r\n", file);
     for (i = 2; i < numMediaItems; i++)
     {
-        //build the html link command and send it to the client
+        // Build the html link command and send it to the client
         strcpy(temp, "<p><a href=\"");
         strcat(temp, MediaItems[i]);
         strcat(temp, "\">");
         strcat(temp, MediaItems[i]);
         strcat(temp, "</a></p>\r\n");
-        fputs(temp, fptr);
+        fputs(temp, file);
     }
-    fputs("</html>\r\n", fptr);
-    fclose(fptr);
+    fputs("</html>\r\n", file);
+    fclose(file);
     return EXIT_SUCCESS;
 }
+
 
 // Send some file to the client
 int write_page(BIO *bio, const char *page, const char* filename)
 {
-    FILE *f;
+    FILE *file;
     unsigned int bytesread;
     unsigned char buf[512];
     char html_reply[100]; /*= "HTTP/1.1 200 OK\n"
@@ -426,8 +450,8 @@ int write_page(BIO *bio, const char *page, const char* filename)
     }
 
 
-    f = fopen(page, "r");
-    if (!f)
+    file = fopen(page, "r");
+    if (!file)
     {
         printf("could not open page\n");
         return EXIT_FAILURE;
@@ -437,8 +461,8 @@ int write_page(BIO *bio, const char *page, const char* filename)
         BIO_write(bio, html_reply, strlen(html_reply));
 
     while (1)
-    { // Send the file in blocks of 512 Bytes
-        bytesread = fread(buf, sizeof(unsigned char), 512, f);
+    {   // Send the file in blocks of 512 Bytes
+        bytesread = fread(buf, sizeof(unsigned char), 512, file);
 
         if (bytesread == 0)
             break;
@@ -451,20 +475,22 @@ int write_page(BIO *bio, const char *page, const char* filename)
         }
     }
 
-    fclose(f);
+    fclose(file);
     return EXIT_SUCCESS;
 }
+
 
 // When the maximum amount of threads are created, create a new array with double the capacity,
 // copy the old threads to the new array and delete the old array
 pthread_t *double_size(pthread_t *old_clients, int current_size)
 {
-    pthread_t *temp;
-    temp = (pthread_t *) malloc((current_size * 2) * sizeof(pthread_t));
-    for (int i = 0; i < current_size; ++i)
-    {
-        temp[i] = old_clients[i];
-    }
+    printf("Clients list doubled\n\n");
+
+    pthread_t *new_clients;
+    new_clients = (pthread_t *) malloc((current_size * 2) * sizeof(pthread_t));
+    int i;
+    for (i = 0; i < current_size; ++i)
+        new_clients[i] = old_clients[i];
     free(old_clients);
-    return temp;
+    return new_clients;
 }
