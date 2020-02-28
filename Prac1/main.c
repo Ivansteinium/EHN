@@ -429,7 +429,7 @@ int write_page(BIO *bio, const char *page, const char* filename)
 {
     FILE *file;
     unsigned int bytesread;
-    unsigned char buf[512];
+    char buf[512];
     char html_reply[100]; /*= "HTTP/1.1 200 OK\n"
                            "Content-Type: text/html; charset=utf-8\n"
                            "Connection: close\n"
@@ -462,7 +462,7 @@ int write_page(BIO *bio, const char *page, const char* filename)
 
     while (1)
     {   // Send the file in blocks of 512 Bytes
-        bytesread = fread(buf, sizeof(unsigned char), 512, file);
+        bytesread = fread(buf, sizeof(char), 512, file);
 
         if (bytesread == 0)
             break;

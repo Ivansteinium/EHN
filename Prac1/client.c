@@ -91,6 +91,7 @@ int main()
     }
 
     printf("\n\n");
+    BIO_reset(sbio);
 
     while(1)
     {
@@ -113,11 +114,11 @@ int main()
             printf("Error establishing SSL connection\n");
 
         BIO_puts(sbio, request);
-        sleep(1);
+//        sleep(1);
         if(isHTML == NULL)
         {
             int bytesread = 0;
-            char buffer[256];
+            char buffer[513]; //has to be 1 bigger than 512(send buffer size) otherwise corrupt. dont know why
             char local_filename[MAX_REQ_LEN - 16];
             FILE *fptr;
             char *messagepos = NULL;
@@ -146,16 +147,19 @@ int main()
                         fwrite(messagepos, sizeof(char), bytesread - (messagepos - buffer), fptr);
                     } else
                         fwrite(buffer, sizeof(char), bytesread, fptr);
+//                    usleep(100);
                 }
             }
             fclose(fptr);
-        }
-        while(1)
+        } else
         {
-            len = BIO_read(sbio, tmpbuf, 1024);
-            if(len <= 0) break;
-            tmpbuf[len] = '\0';
-            printf("%s", tmpbuf);
+            while (1)
+            {
+                len = BIO_read(sbio, tmpbuf, 1024);
+                if (len <= 0) break;
+                tmpbuf[len] = '\0';
+                printf("%s", tmpbuf);
+            }
         }
         printf("\n\n");
         BIO_reset(sbio);
