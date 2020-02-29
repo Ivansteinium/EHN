@@ -49,7 +49,7 @@ int readMedia();
 int connect(BIO *bio);
 
 
-int main()
+int main(int argc, char *argv[])
 {
     //Variables
     int i;
@@ -64,8 +64,18 @@ int main()
 //    const char *filename = "../webpage_1.txt";
     int port_num = 5000;
     int connection_status;
-    const char *certificate_file = "../keys/webServCert.crt";
-    const char *private_file = "../keys/webServ.key";
+    char certificate_file[200];
+    char private_file[200];
+    if (argc < 3)
+    {
+        strcpy(certificate_file,"../keys/webServCert.crt");
+        strcpy(private_file,"../keys/webServ.key");
+    } else
+    {
+        strcpy(certificate_file,argv[1]);
+        strcpy(private_file,argv[2]);
+    }
+
     SSL_CTX *ctx;
     SSL *ssl;
 
@@ -82,7 +92,7 @@ int main()
     SSL_load_error_strings();
     SSL_library_init();
 
-    // supply password to decrypt key
+    // supply password to decrypt key if key is encrypted
     // https://www.openssl.org/docs/man1.0.2/man3/SSL_CTX_set_default_passwd_cb.htmlls
 
     ctx = SSL_CTX_new(SSLv23_server_method());
@@ -150,15 +160,15 @@ int main()
 
         current_clients++;
 
-        struct pthread_args *args = (struct pthread_args*) malloc (sizeof(struct pthread_args));
+        struct pthread_args *args = (struct pthread_args *) malloc(sizeof(struct pthread_args));
         args->abio = abio;
         args->thread_number = current_clients - 1;
 
         // Create a new thread for the client
         pthread_create(&client_threads[current_clients - 1],
-                NULL,
-                new_client_connection,
-                (void *) args);
+                       NULL,
+                       new_client_connection,
+                       (void *) args);
 
 /*        temp = pthread_create( &thread1, NULL, new_client_connection, (void*) abio);
         pthread_join(client_threads[num_clients-1], NULL);
@@ -267,7 +277,7 @@ void *new_client_connection(void *ptr)
             if (startpos == NULL || endpos == NULL)  // Invalid GET request
             {
                 printf("invalid request received\n");
-                BIO_puts(client,"Invalid request\n");
+                BIO_puts(client, "Invalid request\n");
             } else  // Valid GET request
             {
                 // Get the requested item from the string
@@ -297,7 +307,7 @@ void *new_client_connection(void *ptr)
                     if (!valid)
                     {   // If item is not present, display error
                         printf("Error: Requested item not found\n");
-                        BIO_puts(client,"Error: Requested item not found\r\n");
+                        BIO_puts(client, "Error: Requested item not found\r\n");
                     } else
                     {   // Send file
                         char sendname[256];
@@ -394,7 +404,7 @@ int readMedia()
 
 
 // Send some file to the client
-int write_page(BIO *bio, const char *page, const char* filename)
+int write_page(BIO *bio, const char *page, const char *filename)
 {
     FILE *file;
     unsigned long bytesread;
@@ -404,7 +414,7 @@ int write_page(BIO *bio, const char *page, const char* filename)
                            "Connection: close\n"
                            "Content-Length: 500\n\r\n";*/
 
-    if(strcmp(filename, "html") != 0)
+    if (strcmp(filename, "html") != 0)
     {
         sprintf(html_reply, "HTTP/1.1 200 OK\n"
                             "Content-Disposition: attachment; filename=\"%s\" \n\n", filename);
@@ -427,7 +437,7 @@ int write_page(BIO *bio, const char *page, const char* filename)
     }
 
 //    if (strcmp(filename, "html") == 0) // If the file is an HTML file, include the header
-        BIO_write(bio, html_reply, strlen(html_reply));
+    BIO_write(bio, html_reply, strlen(html_reply));
 
     bytesread = fread(buf, sizeof(char), 512, file);
     while (bytesread > 0)

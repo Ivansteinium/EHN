@@ -18,7 +18,7 @@ void clear_buffer(char * buffer, int length)
 }
 
 
-int main()
+int main(int argc, char * argv[])
 {
     BIO *sbio;
     BIO *out;
@@ -39,11 +39,20 @@ int main()
      * mode here because as things stand this will connect to
      * any server whose certificate is signed by any CA.
      */
-
-    if (!SSL_CTX_load_verify_locations(ctx, "../keys/cert.crt", NULL))
+    if(argc<2)
     {
-        printf("Failed to load verify location\n");
-        return EXIT_FAILURE;
+        if (!SSL_CTX_load_verify_locations(ctx, "../keys/cert.crt", NULL))
+        {
+            printf("Failed to load verify location\n");
+            return EXIT_FAILURE;
+        }
+    } else
+    {
+        if (!SSL_CTX_load_verify_locations(ctx, argv[1], NULL))
+        {
+            printf("Failed to load verify location\n");
+            return EXIT_FAILURE;
+        }
     }
 
     sbio = BIO_new_ssl_connect(ctx);
@@ -69,6 +78,7 @@ int main()
     {
         printf("Error connecting to server:\n");
         printf("%s\n", ERR_error_string(ERR_get_error(), NULL));
+        return EXIT_FAILURE;
     }
 
     if (BIO_do_handshake(sbio) <= 0)
