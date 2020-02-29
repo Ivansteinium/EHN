@@ -34,9 +34,6 @@ struct pthread_args
 };
 
 
-//void *print_message_function(void *ptr);
-
-
 void *new_client_connection(void *ptr);
 
 
@@ -60,13 +57,13 @@ int main()
     BIO *cbio;
     BIO *acpt;
 //    BIO *outbio;
-    int port_num = 5000;
-    unsigned long bytesread;
-    int buffer_size = 103900;
+//    unsigned long bytesread;
+//    int buffer_size = 103900;
 //    uint8_t buffer[buffer_size];
-    int connection_status;
 //    int write_status;
 //    const char *filename = "../webpage_1.txt";
+    int port_num = 5000;
+    int connection_status;
     const char *certificate_file = "../keys/webServCert.crt";
     const char *private_file = "../keys/webServ.key";
     SSL_CTX *ctx;
@@ -155,9 +152,12 @@ int main()
         args->thread_number = current_clients - 1;
 
         // Create a new thread for the client
-        pthread_create(&client_threads[current_clients - 1], NULL, new_client_connection, (void *) args);
+        pthread_create(&client_threads[current_clients - 1],
+                NULL,
+                new_client_connection,
+                (void *) args);
 
-/*        iret1 = pthread_create( &thread1, NULL, new_client_connection, (void*) abio);
+/*        temp = pthread_create( &thread1, NULL, new_client_connection, (void*) abio);
         pthread_join(client_threads[num_clients-1], NULL);
 
         if (BIO_do_handshake(abio) <= 0)
@@ -170,7 +170,7 @@ int main()
         BIO_puts(abio, "\r\nConnection Established\r\nRequest headers:\r\n");
         BIO_puts(abio, "--------------------------------------------------\r\n");
 
-        for (;;)
+        while (1)
         {
             bytesread = BIO_gets(abio, buffer, buffer_size);
             if (bytesread <= 0) break;
@@ -183,8 +183,8 @@ int main()
         BIO_puts(abio, "--------------------------------------------------\r\n");
         BIO_puts(abio, "\r\n");
 
-        FILE *fptr;
-        fptr = fopen("../Media_files/files_list.html", "w");
+        FILE *file;
+        file = fopen("../Media_files/files_list.html", "w");
 
         //generate an html file showing all the items available on the server and send it to the client
 
@@ -198,21 +198,20 @@ int main()
             strcat(temp, "\">");
             strcat(temp, MediaItems[i]);
             strcat(temp, "</a>\r\n");
-            fputs(temp,fptr);
+            fputs(temp,file);
         }
-        fputs("</html>\r\n",fptr);
+        fputs("</html>\r\n",file);
         BIO_puts(abio, "</html>");
-        fclose(fptr);
+        fclose(file);
 
-        fptr = fopen("../Media_files/test.html", "r");
-        if (fptr == NULL)
-        {
+        file = fopen("../Media_files/test.html", "r");
+        if (file == NULL)
             printf("Error opening file\n");
-        } else
+        else
         {
-            for (;;)
+            while (1)
             {
-                bytesread = fread(buffer, sizeof(char), buffer_size, fptr);
+                bytesread = fread(buffer, sizeof(char), buffer_size, file);
                 if (bytesread <= 0) break;
                 SSL_write(abio, buffer, bytesread);
                 printf("%s\n", ERR_error_string(ERR_get_error(), NULL));
@@ -221,50 +220,18 @@ int main()
                 // Look for blank line signifying end of headers
             }
         }
-        fclose(fptr);
 
+        fclose(file);
         write_page(abio,"../Media_files/test.html", 1);
-
-
-       sleep(1);*/
+        sleep(1); */
     }
 
 /*    pthread_join(client_threads[num_clients - 1], NULL);
     sleep(1);
     BIO_flush(abio);
     BIO_free_all(acpt);
-    BIO_free_all(abio);
-
-    //example threading code
-    pthread_t thread1, thread2;
-    char *message1 = "Thread 1";
-    char *message2 = "Thread 2";
-    int  iret1, iret2;
-
-    // Create independent threads each of which will execute function
-
-    iret1 = pthread_create( &thread1, NULL, print_message_function, (void*) message1);
-    iret2 = pthread_create( &thread2, NULL, print_message_function, (void*) message2);
-
-    // Wait till threads are complete before main continues. Unless we  //
-    // wait we run the risk of executing an exit which will terminate   //
-    // the process and all threads before the threads have completed.   //
-
-    pthread_join( thread1, NULL);
-    pthread_join( thread2, NULL);
-
-    printf("Thread 1 returns: %d\n",iret1);
-    printf("Thread 2 returns: %d\n",iret2);
-    exit(0);*/
+    BIO_free_all(abio); */
 }
-
-//void *print_message_function(void *ptr)
-//{
-//    char *message;
-//    message = (char *) ptr;
-//    printf("%s \n", message);
-//}
-
 
 // This thread is spawned every time a new connection request is received
 void *new_client_connection(void *ptr)
@@ -272,12 +239,13 @@ void *new_client_connection(void *ptr)
     struct pthread_args *args = (struct pthread_args *) ptr;
     BIO *client = args->abio;
 
-    printf("Connection %d Opened\n\n", args->thread_number);
+    printf("Connection %d Opened\n", args->thread_number);
 
     if (BIO_do_handshake(client) <= 0)
     {
-        printf("failed handshake, wash hands and try again\n");
+        printf("Handshake Failed\n");
         printf("%s\n", ERR_error_string(ERR_get_error(), NULL));
+        return EXIT_FAILURE;
     }
 
     char tempbuf[256];
@@ -287,10 +255,9 @@ void *new_client_connection(void *ptr)
 
     while (1)  // Service the client's requests
     {
-        //read request and send the page if valid
         if (BIO_gets(client, tempbuf, 256) > 0)
-        {
-            printf("Received: %s \r\n", tempbuf);
+        {   //read request and send the page if valid
+            printf("Received: %s", tempbuf);
             startpos = strstr(tempbuf, "GET ");
             startpos += 4;
             endpos = strstr(tempbuf, " HTTP");
@@ -314,7 +281,7 @@ void *new_client_connection(void *ptr)
 
                     // Search for file and send it if present
                     int i = 0;
-                    unsigned char valid = 0;
+                    int valid = 0;
                     for (i = 0; i < numMediaItems + 1; i++)
                     {
                         if (strcmp(filename, MediaItems[i]) == 0)
@@ -326,7 +293,7 @@ void *new_client_connection(void *ptr)
 
                     if (!valid)
                     {   // If item is not present, display error
-                        printf("Error: Requested item not found\r\n");
+                        printf("Error: Requested item not found\n");
                         BIO_puts(client,"Error: Requested item not found\r\n");
                     } else
                     {   // Send file
@@ -346,8 +313,9 @@ void *new_client_connection(void *ptr)
             break;
     }
 
-    printf("Connection %d Closed\n\n", args->thread_number);
+    printf("Connection %d Closed\n", args->thread_number);
     free(args);
+    return EXIT_SUCCESS;
 }
 
 
@@ -359,7 +327,7 @@ int connect(BIO *bio)
         printf("Error setting up listening socket\n");
         printf("%s\n", ERR_error_string(ERR_get_error(), NULL));
         BIO_free(bio);
-        return 0;
+        return EXIT_SUCCESS;
     }
 
     BIO_set_nbio_accept(bio, 0);
@@ -372,7 +340,7 @@ int connect(BIO *bio)
         sleep(1);
     }
 
-    return 1;
+    return EXIT_FAILURE;
 }
 
 
@@ -383,8 +351,7 @@ int readMedia()
     struct dirent *ent;
     directory = opendir("../Media_files");
     if (directory != NULL)
-    {
-        // Print all the files and directories within directory
+    {   // Print all the files and directories within directory
         while ((ent = readdir(directory)) != NULL)
         {
             strcpy(MediaItems[numMediaItems], ent->d_name);
@@ -405,12 +372,11 @@ int readMedia()
 //    fputs("HTTP/1.1 200 OK\n"
 //          "Content-Type: text/html; charset=utf-8\n"
 //          "Connection: close\n"
-//          "Content-Length: 500\n",fptr);
-//    fputs("\r\n",fptr);
+//          "Content-Length: 500\n",file);
+//    fputs("\r\n",file);
     fputs("<html>\r\n", file);
     for (i = 2; i < numMediaItems; i++)
-    {
-        // Build the html link command and send it to the client
+    {   // Build the html link command and send it to the client
         strcpy(temp, "<p><a href=\"");
         strcat(temp, MediaItems[i]);
         strcat(temp, "\">");
@@ -428,7 +394,7 @@ int readMedia()
 int write_page(BIO *bio, const char *page, const char* filename)
 {
     FILE *file;
-    unsigned int bytesread;
+    unsigned long bytesread;
     char buf[512];
     char html_reply[100]; /*= "HTTP/1.1 200 OK\n"
                            "Content-Type: text/html; charset=utf-8\n"
@@ -460,19 +426,16 @@ int write_page(BIO *bio, const char *page, const char* filename)
 //    if (strcmp(filename, "html") == 0) // If the file is an HTML file, include the header
         BIO_write(bio, html_reply, strlen(html_reply));
 
-    while (1)
+    bytesread = fread(buf, sizeof(char), 512, file);
+    while (bytesread > 0)
     {   // Send the file in blocks of 512 Bytes
-        bytesread = fread(buf, sizeof(char), 512, file);
-
-        if (bytesread == 0)
-            break;
-
         if (BIO_write(bio, buf, bytesread) <= 0)
         {
             printf("write failed\n");
             printf("%s\n", ERR_error_string(ERR_get_error(), NULL));
             break;
         }
+        bytesread = fread(buf, sizeof(char), 512, file);
     }
 
     fclose(file);
@@ -484,7 +447,7 @@ int write_page(BIO *bio, const char *page, const char* filename)
 // copy the old threads to the new array and delete the old array
 pthread_t *double_size(pthread_t *old_clients, int current_size)
 {
-    printf("Clients list doubled\n\n");
+    printf("Clients list doubled\n");
 
     pthread_t *new_clients;
     new_clients = (pthread_t *) malloc((current_size * 2) * sizeof(pthread_t));

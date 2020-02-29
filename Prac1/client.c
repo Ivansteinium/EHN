@@ -1,7 +1,3 @@
-//
-// Created by ivan on 2020/02/18.
-//
-
 #include <stdio.h>
 #include <stdlib.h>
 #include <openssl/ssl.h>
@@ -10,31 +6,25 @@
 #include <unistd.h>
 #include <string.h>
 
-#define MAX_REQ_LEN 255
-
 
 #define MAX_REQ_LEN 255
 
 
 int main()
 {
-    BIO *sbio, *out;
-    int len;
-    char tmpbuf[1024];
+    BIO *sbio;
+    BIO *out;
+    unsigned long bytesread;
+    char buffer[513]; // has to be 1 bigger than send buffer size for \0
     char filename[MAX_REQ_LEN - 16];
     char request[MAX_REQ_LEN];
-    char *isHTML = NULL;
+    int isHTML = 0;
     SSL_CTX *ctx;
     SSL *ssl;
 
     OpenSSL_add_all_algorithms();
     SSL_load_error_strings();
     SSL_library_init();
-
-    /* We would seed the PRNG here if the platform didn't
-     * do it automatically
-     */
-
     ctx = SSL_CTX_new(SSLv23_client_method());
 
     /* We'd normally set some stuff like the verify paths and
@@ -42,156 +32,162 @@ int main()
      * any server whose certificate is signed by any CA.
      */
 
-    if(!SSL_CTX_load_verify_locations(ctx, "../keys/cert.crt", NULL))
-        printf("Failed to load verify location");
+    if (!SSL_CTX_load_verify_locations(ctx, "../keys/cert.crt", NULL))
+    {
+        printf("Failed to load verify location\n");
+        return EXIT_FAILURE;
+    }
 
     sbio = BIO_new_ssl_connect(ctx);
-
     BIO_get_ssl(sbio, &ssl);
 
-    if(!ssl)
-        fprintf(stderr, "Can't locate SSL pointer\n");
-    /* whatever ... */
+    if (!ssl)
+    {
+        printf("Can't locate SSL pointer\n");
+        return EXIT_FAILURE;
+    }
 
-    /* Don't want any retries */
+    // Disable retries
     SSL_set_mode(ssl, SSL_MODE_AUTO_RETRY);
 
-    /* We might want to do other things with ssl here */
+    // We might want to do other things with ssl here
+    // R: soos wat?
 
+    // Attempt to connect to the server
+    printf("Attempting to connect to server...\n\n");
     BIO_set_conn_hostname(sbio, "0.0.0.0:5000");
-
     out = BIO_new_fp(stdout, BIO_NOCLOSE);
-    if(BIO_do_connect(sbio) <= 0)
+    if (BIO_do_connect(sbio) <= 0)
     {
         printf("Error connecting to server:\n");
         printf("%s\n", ERR_error_string(ERR_get_error(), NULL));
     }
 
-    if(BIO_do_handshake(sbio) <= 0)
-        printf("Error establishing SSL connection\n");
+    if (BIO_do_handshake(sbio) <= 0)
+    {
+        printf("Handshake Failed\n");
+        return EXIT_FAILURE;
+    }
 
-/* Could examine ssl here to get connection info */
+    // Could examine ssl here to get connection info
 
 /*    BIO_puts(sbio, "GET / HTTP/1.0\n\n");
-    for (;;)
+    bytesread = BIO_read(sbio, tmpbuf, 1024);
+    while (bytesread > 0)
     {
-        len = BIO_read(sbio, tmpbuf, 1024);
-        if (len <= 0) break;
-        BIO_write(out, tmpbuf, len);
+        BIO_write(out, tmpbuf, bytesread);
+        bytesread = BIO_read(sbio, tmpbuf, 1024);
     }*/
     sleep(1);
 
-    BIO_puts(sbio, "GET / HTTP/1.0\n\n");
-    while(1)
+    // Print the home .html file to the terminal
+    BIO_puts(sbio, "GET / HTTP/1.0\n");
+    bytesread = BIO_read(sbio, buffer, sizeof(buffer));
+    while (bytesread > 0)
     {
-        len = BIO_read(sbio, tmpbuf, 1024);
-        if(len <= 0) break;
-        tmpbuf[len] = '\0';
-        printf("%s", tmpbuf);
+        buffer[bytesread] = '\0';
+        printf("%s", buffer);
+        bytesread = BIO_read(sbio, buffer, sizeof(buffer));
     }
 
     printf("\n\n");
     BIO_reset(sbio);
 
-    while(1)
-    {
-        printf("Please type the name of the file that you want to request:");
-        fgets(filename, MAX_REQ_LEN, stdin);
-        printf("getting %s \n", filename);
-        isHTML = strstr(filename, ".html");
-        filename[strlen(filename) - 1] = '\0';
-
-        sprintf(request, "GET /%s HTTP/1.0\n\n", filename);
+    while (1)
+    {   // In a loop, ask the user for a file to download from the server
+        printf("Please type the name of the file that you want to request: ");
+        fgets(filename, MAX_REQ_LEN, stdin); // Wait for user input
+        printf("Getting %s \n", filename);
+        isHTML = strstr(filename, ".html") != NULL;
+        filename[strlen(filename) - 1] = '\0'; // Overwrite \n with \0
+        sprintf(request, "GET /%s HTTP/1.0\n", filename);
 
 //        sbio = BIO_new_ssl_connect(ctx);
-        if(BIO_do_connect(sbio) <= 0)
+        if (BIO_do_connect(sbio) <= 0)
         {
             printf("Error connecting to server:\n");
             printf("%s\n", ERR_error_string(ERR_get_error(), NULL));
+            break;
         }
 
-        if(BIO_do_handshake(sbio) <= 0)
-            printf("Error establishing SSL connection\n");
+        if (BIO_do_handshake(sbio) <= 0)
+        {
+            printf("Handshake Failed\n");
+            break;
+        }
 
         BIO_puts(sbio, request);
 //        sleep(1);
-        if(isHTML == NULL)
-        {
-            int bytesread = 0;
-            char buffer[513]; //has to be 1 bigger than 512(send buffer size) otherwise corrupt. dont know why
+        if (isHTML) 
+        {   // If .html file, save to new text file
             char local_filename[MAX_REQ_LEN - 16];
-            FILE *fptr;
+            FILE *file;
             char *messagepos = NULL;
 
             sprintf(local_filename, "../%s", filename);
-            fptr = fopen(local_filename, "w");
-            printf("writing file to: %s \n", local_filename);
-            if(fptr == NULL)
+            file = fopen(local_filename, "w");
+            printf("Writing file to: %s \n", local_filename);
+
+            if (file == NULL)
+            {   // R: Gaan dit nie create as dit ne bestaan nie?
+                printf("Error opening new file"); 
+                return EXIT_FAILURE;
+            } else // Write the .html file to the new text file, piece by piece
             {
-                printf("Error opening file");
-                return 1;
-            } else
-            {
-                while(1)
+                bytesread = BIO_read(sbio, buffer, sizeof(buffer));
+                while (bytesread > 0)
                 {
-                    bytesread = BIO_read(sbio, buffer, sizeof(buffer));
-                    if(bytesread == 0)
-                    {
-                        printf("server closed the connection\n");
-                        break;
-                    }
                     messagepos = strstr(buffer, "\n\n");
-                    if(messagepos != NULL)
+                    if (messagepos != NULL)
                     {
                         messagepos +=2;
-                        fwrite(messagepos, sizeof(char), bytesread - (messagepos - buffer), fptr);
+                        fwrite(messagepos, sizeof(char), bytesread - (messagepos - buffer), file);
                     } else
-                        fwrite(buffer, sizeof(char), bytesread, fptr);
-//                    usleep(100);
+                        fwrite(buffer, sizeof(char), bytesread, file);
+                    bytesread = BIO_read(sbio, buffer, sizeof(buffer));
                 }
             }
-            fclose(fptr);
-        } else
-        {
-            while (1)
+            printf("Server closed the connection\n");
+            fclose(file);
+            printf("File download completed: %s", filename);
+        } else 
+        {   // Simply print out the file to the terminal
+            bytesread = BIO_read(sbio, buffer, sizeof(buffer));
+            while (bytesread > 0)
             {
-                len = BIO_read(sbio, tmpbuf, 1024);
-                if (len <= 0) break;
-                tmpbuf[len] = '\0';
-                printf("%s", tmpbuf);
+                buffer[bytesread] = '\0';
+                printf("%s", buffer);
+                bytesread = BIO_read(sbio, buffer, sizeof(buffer));
             }
         }
         printf("\n\n");
         BIO_reset(sbio);
     }
 
-    //image send demo
-/*    int bytesread = 0;
+/*    //image send demo
+    unsigned long bytesread = 0;
     char buffer[103900];
-    FILE *fptr;
-    fptr = fopen("../1.jpg", "wb");
-    if (fptr == NULL)
+    FILE *file;
+    file = fopen("../1.jpg", "wb");
+    if (file == NULL)
     {
         printf("Error opening file");
-        return 1;
+        return EXIT_FAILURE;
     } else
     {
-        while (1)
+        bytesread = BIO_read(sbio, buffer, sizeof(buffer));
+        while (bytesread > 0)
         {
+            fwrite(buffer, sizeof(char), bytesread, file);
             bytesread = BIO_read(sbio, buffer, sizeof(buffer));
-            if (bytesread == 0)
-            {
-                printf("server closed the connection\n");
-                break;
-            }
-            fwrite(buffer, sizeof(char), bytesread, fptr);
         }
+        printf("server closed the connection\n");
     }
-    fclose(fptr);*/
+    fclose(file);*/
 
     BIO_free_all(sbio);
     BIO_free(out);
-    return 0;
+    return EXIT_SUCCESS;
 }
 
 
