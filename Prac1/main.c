@@ -88,8 +88,8 @@ int main()
     ctx = SSL_CTX_new(SSLv23_server_method());
     if (ctx == NULL)
     {
-        printf("failed to create SSL context\n");
-        return 0;
+        printf("Failed to create SSL context\n");
+        return EXIT_FAILURE;
     }
 
     SSL_CTX_use_certificate_file(ctx, certificate_file, SSL_FILETYPE_PEM);
@@ -98,7 +98,10 @@ int main()
 
     abio = BIO_new_ssl(ctx, 0);
     if (abio == NULL)
-        printf("failed retrieving the BIO object\n");
+    {
+        printf("Failed retrieving the BIO object\n");
+        return EXIT_FAILURE;
+    }
 
     // Disable retires
     BIO_get_ssl(abio, &ssl);
@@ -273,7 +276,7 @@ void *new_client_connection(void *ptr)
                 if (strcmp(filename, "/") == 0)  // Write the home page
                     write_page(client, "../Media_files/test.html", "html");
                 else
-                {
+                {   // Not home page
                     // Delete leading "/"
                     startpos += 1;
                     strncpy(filename, startpos, endpos - startpos);

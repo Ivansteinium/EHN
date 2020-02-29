@@ -10,6 +10,14 @@
 #define MAX_REQ_LEN 255
 
 
+void clear_buffer(char * buffer, int length)
+{
+    int i;
+    for (i = 0; i < length; i ++)
+        buffer[i] = 0;
+}
+
+
 int main()
 {
     BIO *sbio;
@@ -90,6 +98,7 @@ int main()
         bytesread = BIO_read(sbio, buffer, sizeof(buffer));
     }
 
+    clear_buffer(buffer, 513);
     printf("\n\n");
     BIO_reset(sbio);
 
@@ -118,39 +127,47 @@ int main()
 
         BIO_puts(sbio, request);
 //        sleep(1);
-        if (isHTML) 
+        if (isHTML)
         {   // If .html file, save to new text file
             char local_filename[MAX_REQ_LEN - 16];
             FILE *file;
             char *messagepos = NULL;
+            int fileExists;
 
             sprintf(local_filename, "../%s", filename);
             file = fopen(local_filename, "w");
             printf("Writing file to: %s \n", local_filename);
 
-            if (file == NULL)
-            {   // R: Gaan dit nie create as dit ne bestaan nie?
-                printf("Error opening new file"); 
-                return EXIT_FAILURE;
-            } else // Write the .html file to the new text file, piece by piece
+            // Write the .html file to the new text file, piece by piece
+            bytesread = BIO_read(sbio, buffer, sizeof(buffer));
+            if (!strcmp("Error: Requested item not found\r\n", buffer))
+            {   // Server says the file does not exist
+                fileExists = 0;
+                bytesread = 0;
+            } else
+                fileExists = 1;
+            while (bytesread > 0)
             {
-                bytesread = BIO_read(sbio, buffer, sizeof(buffer));
-                while (bytesread > 0)
+                messagepos = strstr(buffer, "\n\n");
+                if (messagepos != NULL)
                 {
-                    messagepos = strstr(buffer, "\n\n");
-                    if (messagepos != NULL)
-                    {
-                        messagepos +=2;
-                        fwrite(messagepos, sizeof(char), bytesread - (messagepos - buffer), file);
-                    } else
-                        fwrite(buffer, sizeof(char), bytesread, file);
-                    bytesread = BIO_read(sbio, buffer, sizeof(buffer));
-                }
+                    messagepos +=2;
+                    fwrite(messagepos, sizeof(char), bytesread - (messagepos - buffer), file);
+                } else
+                    fwrite(buffer, sizeof(char), bytesread, file);
+                bytesread = BIO_read(sbio, buffer, sizeof(buffer));
             }
+
             printf("Server closed the connection\n");
             fclose(file);
-            printf("File download completed: %s", filename);
-        } else 
+            if (fileExists)
+                printf("File download completed: %s \n", filename);
+            else
+            {   // Server returened error
+                printf("Error: Requested item not found\n");
+                remove(local_filename); // Delete the newly created file
+            }
+        } else
         {   // Simply print out the file to the terminal
             bytesread = BIO_read(sbio, buffer, sizeof(buffer));
             while (bytesread > 0)
@@ -162,6 +179,7 @@ int main()
         }
         printf("\n\n");
         BIO_reset(sbio);
+        clear_buffer(buffer, 513);
     }
 
 /*    //image send demo
