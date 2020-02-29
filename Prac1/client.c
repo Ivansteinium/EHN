@@ -127,8 +127,8 @@ int main()
 
         BIO_puts(sbio, request);
 //        sleep(1);
-        if (isHTML)
-        {   // If .html file, save to new text file
+        if (!isHTML)
+        {   // If general file, save as a new file
             char local_filename[MAX_REQ_LEN - 16];
             FILE *file;
             char *messagepos = NULL;
@@ -168,7 +168,7 @@ int main()
                 remove(local_filename); // Delete the newly created file
             }
         } else
-        {   // Simply print out the file to the terminal
+        {   // Simply print out the .html file to the terminal
             bytesread = BIO_read(sbio, buffer, sizeof(buffer));
             while (bytesread > 0)
             {
