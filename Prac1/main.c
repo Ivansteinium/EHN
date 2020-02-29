@@ -217,7 +217,7 @@ int main(int argc, char *argv[])
         BIO_puts(abio, "</html>");
         fclose(file);
 
-        file = fopen("../Media_files/test.html", "r");
+        file = fopen("../Media_files/home.html", "r");
         if (file == NULL)
             printf("Error opening file\n");
         else
@@ -235,7 +235,7 @@ int main(int argc, char *argv[])
         }
 
         fclose(file);
-        write_page(abio,"../Media_files/test.html", 1);
+        write_page(abio,"../Media_files/home.html", 1);
         sleep(1); */
     }
 
@@ -284,7 +284,7 @@ void *new_client_connection(void *ptr)
                 strncpy(filename, startpos, endpos - startpos);
 
                 if (strcmp(filename, "/") == 0)  // Write the home page
-                    write_page(client, "../Media_files/test.html", "html");
+                    write_page(client, "../Media_files/home.html", "html");
                 else
                 {   // Not home page
                     // Delete leading "/"
