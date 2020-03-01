@@ -1,59 +1,12 @@
-#include <stdio.h>
-#include <stdlib.h>
-#include <pthread.h>
-#include <openssl/ssl.h>
-#include <openssl/bio.h>
-#include <openssl/err.h>
-#include <unistd.h>
-#include <dirent.h>
-#include <string.h>
+#include "Server.h"
 
 
 #pragma clang diagnostic ignored "-Wmissing-noreturn"
 
 
-char *my_itoa(char *dest, int i)
-{   // Use sprintf to convert between integer and string
-    sprintf(dest, "%d", i);
-    return dest;
-}
-
-
-#define ITOA(n) my_itoa((char [41]) { 0 }, (n) )
-#define maxMediaItems  100
-#define maxMediaNameSize  256
-
-char MediaItems[maxMediaItems][maxMediaNameSize];
-int numMediaItems = 0;
-
-
-struct pthread_args
-{   // This struct is passed as an argument to newly created threads
-    // to allow multiple arguments to be passed
-    BIO *abio; // The SSL object pointer
-    int thread_number; // The current thread number
-};
-
-
-void *new_client_connection(void *ptr);
-
-
-pthread_t *double_size(pthread_t *old_clients, int current_size);
-
-
-int write_page(BIO *bio, const char *page, const char *filename);
-
-
-int read_media();
-
-
-int connect(BIO *bio);
-
-
 int main(int argc, char *argv[])
 {
     //Variables
-    int i;
     BIO *abio;
     BIO *cbio;
     BIO *acpt;
@@ -64,7 +17,6 @@ int main(int argc, char *argv[])
 //    int write_status;
 //    const char *filename = "../webpage_1.txt";
     int port_num = 5000;
-    int connection_status;
     char certificate_file[200];
     char private_file[200];
 
@@ -124,7 +76,8 @@ int main(int argc, char *argv[])
     cbio = BIO_new(BIO_f_buffer());
     // Chain
     abio = BIO_push(cbio, abio);
-    acpt = BIO_new_accept(ITOA(port_num++));
+    char temp[10];
+    acpt = BIO_new_accept(itoa(temp, port_num));
 
     // Server initialization is complete
     printf("Server Running\n\n");
@@ -133,9 +86,8 @@ int main(int argc, char *argv[])
 //    outbio = BIO_new_fd(stdout, BIO_NOCLOSE);
 
     // BIO wait and setup
-    connection_status = connect(acpt);
-//    if (connection_status == 0)
-//        return EXIT_FAILURE;
+    if (connect(acpt) == EXIT_FAILURE)
+        return EXIT_FAILURE;
 
     while (1)
     {   // Set the SSL to non-blocking mode continuously attempt to setup the socket
@@ -221,7 +173,7 @@ int main(int argc, char *argv[])
         BIO_puts(abio, "</html>");
         fclose(file);
 
-        file = fopen("../Media_files/home.html", "r");
+        file = fopen("../Media_files/index.html", "r");
         if (file == NULL)
             printf("Error opening file\n");
         else
@@ -239,7 +191,7 @@ int main(int argc, char *argv[])
         }
 
         fclose(file);
-        write_page(abio,"../Media_files/home.html", 1);
+        write_page(abio,"../Media_files/index.html", 1);
         sleep(1); */
     }
 
@@ -290,7 +242,7 @@ void *new_client_connection(void *ptr)
                 strncpy(filename, startpos, endpos - startpos);
 
                 if (strcmp(filename, "/") == 0)  // Write the home page
-                    write_page(client, "../Media_files/home.html", "html");
+                    write_page(client, "../Media_files/index.html", "html");
                 else
                 {   // Not home page
                     // Delete leading "/"
@@ -472,4 +424,11 @@ pthread_t *double_size(pthread_t *old_clients, int current_size)
         new_clients[i] = old_clients[i];
     free(old_clients);
     return new_clients;
+}
+
+// Use sprintf to convert between integer and string
+char *itoa(char *dest, int i)
+{
+    sprintf(dest, "%d", i);
+    return dest;
 }

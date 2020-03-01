@@ -11,9 +11,9 @@ link_libraries(crypto)
 
 
 
-#-lpthread pthread1.c  client.c client.h
-add_executable(Server main.c)
-add_executable(Client client.c)
+#-lpthread pthread1.c  Client.c Client.h Server.c Server.h
+add_executable(Server Server.c Server.h)
+add_executable(Client Client.c Client.h)
 
 #set(LDFLAGS -L/usr/local/ssl)
 #set(LDLIBS -lssl -lcrypto)

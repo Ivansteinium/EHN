@@ -1,21 +1,7 @@
-#include <stdio.h>
-#include <stdlib.h>
-#include <openssl/ssl.h>
-#include <openssl/bio.h>
-#include <openssl/err.h>
-#include <unistd.h>
-#include <string.h>
+#include "Client.h"
 
 
 #define MAX_REQ_LEN 255
-
-
-void clear_buffer(char * buffer, int length)
-{   // Clear any message buffer up to the specified point
-    int i;
-    for (i = 0; i < length; i ++)
-        buffer[i] = 0;
-}
 
 
 int main(int argc, char * argv[])
@@ -228,5 +214,15 @@ int main(int argc, char * argv[])
     BIO_free(out);
     return EXIT_SUCCESS;
 }
+
+
+// Clear any message buffer up to the specified point
+void clear_buffer(char * buffer, int length)
+{
+    int i;
+    for (i = 0; i < length; i ++)
+        buffer[i] = 0;
+}
+
 
 
