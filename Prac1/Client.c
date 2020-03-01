@@ -18,11 +18,6 @@ int main(int argc, char * argv[])
     SSL_library_init();
     ctx = SSL_CTX_new(SSLv23_client_method());
 
-    /* We'd normally set some stuff like the verify paths and
-     * mode here because as things stand this will connect to
-     * any server whose certificate is signed by any CA.
-     */
-
     // Setup certificate file paths
     if (argc < 2)
     {
@@ -54,7 +49,7 @@ int main(int argc, char * argv[])
     SSL_set_mode(ssl, SSL_MODE_AUTO_RETRY);
 
     // We might want to do other things with ssl here
-    // TODO: R: soos wat?
+    // TODO: R: soos wat? Ivan het n template gebruik met hierdie alarming comments in, kan dit probably net delete
 
     // Attempt to connect to the server
     printf("Attempting to connect to server...\n\n");
@@ -74,19 +69,8 @@ int main(int argc, char * argv[])
         return EXIT_FAILURE;
     }
 
-    // Could examine ssl here to get connection info
-
-/*    BIO_puts(sbio, "GET / HTTP/1.0\n\n");
-    bytesread = BIO_read(sbio, buffer, sizeof(buffer));
-    while (bytesread > 0)
-    {
-        BIO_write(out, buffer, bytesread);
-        bytesread = BIO_read(sbio, buffer, sizeof(buffer));
-    }*/
-    sleep(1);
-
-    // Print the home .html file to the terminal
-    BIO_puts(sbio, "GET / HTTP/1.0\n");
+    // Print the file list .html file to the terminal
+    BIO_puts(sbio, "GET /files_list.html HTTP/1.0\n");
     bytesread = BIO_read(sbio, buffer, sizeof(buffer));
     while (bytesread > 0)
     {   // While there are bytes to read, read them and print them to the terminal
@@ -95,6 +79,7 @@ int main(int argc, char * argv[])
         bytesread = BIO_read(sbio, buffer, sizeof(buffer));
     }
 
+    // prepare the receive buffer for the next read operation and close the connection to the server
     clear_buffer(buffer, 513);
     printf("\n\n");
     BIO_reset(sbio);
@@ -125,6 +110,7 @@ int main(int argc, char * argv[])
         if (BIO_do_handshake(sbio) <= 0)
         {   // The handshake was not successful
             printf("Handshake Failed\n");
+            printf("%s\n", ERR_error_string(ERR_get_error(), NULL));
             break;
         }
 
@@ -139,6 +125,7 @@ int main(int argc, char * argv[])
             char *messagepos = NULL;
             int fileExists;
 
+            // Notify the user where the file will be saved
             sprintf(local_filename, "../%s", filename);
             file = fopen(local_filename, "w");
             printf("Writing file to: %s \n", local_filename);
@@ -189,27 +176,6 @@ int main(int argc, char * argv[])
         BIO_reset(sbio);
         clear_buffer(buffer, 513);
     }
-
-/*    //image send demo
-    unsigned long bytesread = 0;
-    char buffer[103900];
-    FILE *file;
-    file = fopen("../1.jpg", "wb");
-    if (file == NULL)
-    {
-        printf("Error opening file");
-        return EXIT_FAILURE;
-    } else
-    {
-        bytesread = BIO_read(sbio, buffer, sizeof(buffer));
-        while (bytesread > 0)
-        {
-            fwrite(buffer, sizeof(char), bytesread, file);
-            bytesread = BIO_read(sbio, buffer, sizeof(buffer));
-        }
-        printf("server closed the connection\n");
-    }
-    fclose(file);*/
 
     // Free all SSL connections
     BIO_free_all(sbio);
