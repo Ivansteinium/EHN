@@ -13,7 +13,7 @@
 
 
 char *my_itoa(char *dest, int i)
-{
+{   // Use sprintf to convert between integer and string
     sprintf(dest, "%d", i);
     return dest;
 }
@@ -28,9 +28,10 @@ int numMediaItems = 0;
 
 
 struct pthread_args
-{
-    BIO *abio;
-    int thread_number;
+{   // This struct is passed as an argument to newly created threads
+    // to allow multiple arguments to be passed
+    BIO *abio; // The SSL object pointer
+    int thread_number; // The current thread number
 };
 
 
@@ -43,7 +44,7 @@ pthread_t *double_size(pthread_t *old_clients, int current_size);
 int write_page(BIO *bio, const char *page, const char *filename);
 
 
-int readMedia();
+int read_media();
 
 
 int connect(BIO *bio);
@@ -66,6 +67,8 @@ int main(int argc, char *argv[])
     int connection_status;
     char certificate_file[200];
     char private_file[200];
+
+    // Setup certificate file paths
     if (argc < 3)
     {
         strcpy(certificate_file,"../keys/webServCert.crt");
@@ -79,7 +82,7 @@ int main(int argc, char *argv[])
     SSL_CTX *ctx;
     SSL *ssl;
 
-    //Dynamic Threads
+    // Dynamic Threads
     int max_clients = 4;
     int current_clients = 0;
     pthread_t *client_threads = (pthread_t *) malloc(max_clients * sizeof(pthread_t));
@@ -104,7 +107,7 @@ int main(int argc, char *argv[])
 
     SSL_CTX_use_certificate_file(ctx, certificate_file, SSL_FILETYPE_PEM);
     SSL_CTX_use_PrivateKey_file(ctx, private_file, SSL_FILETYPE_PEM);
-    readMedia();
+    read_media();
 
     abio = BIO_new_ssl(ctx, 0);
     if (abio == NULL)
@@ -131,11 +134,11 @@ int main(int argc, char *argv[])
 
     // BIO wait and setup
     connection_status = connect(acpt);
-    if (connection_status == 0)
-        return 0;
+//    if (connection_status == 0)
+//        return EXIT_FAILURE;
 
     while (1)
-    {
+    {   // Set the SSL to non-blocking mode continuously attempt to setup the socket
         BIO_set_nbio_accept(acpt, 0);
         while (BIO_do_accept(acpt) <= 0)
         {
@@ -160,6 +163,7 @@ int main(int argc, char *argv[])
 
         current_clients++;
 
+        // Setup the argument information
         struct pthread_args *args = (struct pthread_args *) malloc(sizeof(struct pthread_args));
         args->abio = abio;
         args->thread_number = current_clients - 1;
@@ -183,14 +187,14 @@ int main(int argc, char *argv[])
         BIO_puts(abio, "\r\nConnection Established\r\nRequest headers:\r\n");
         BIO_puts(abio, "--------------------------------------------------\r\n");
 
-        while (1)
+        bytesread = BIO_gets(abio, buffer, buffer_size);
+        while (bytesread > 0)
         {
-            bytesread = BIO_gets(abio, buffer, buffer_size);
-            if (bytesread <= 0) break;
             BIO_write(abio, buffer, bytesread);
             BIO_write(outbio, buffer, bytesread);
             // Look for blank line signifying end of headers
             if ((buffer[0] == '\r') || (buffer[0] == '\n')) break;
+            bytesread = BIO_gets(abio, buffer, buffer_size);
         }
 
         BIO_puts(abio, "--------------------------------------------------\r\n");
@@ -222,15 +226,15 @@ int main(int argc, char *argv[])
             printf("Error opening file\n");
         else
         {
-            while (1)
+            bytesread = fread(buffer, sizeof(char), buffer_size, file);
+            while (bytesread > 0)
             {
-                bytesread = fread(buffer, sizeof(char), buffer_size, file);
-                if (bytesread <= 0) break;
                 SSL_write(abio, buffer, bytesread);
                 printf("%s\n", ERR_error_string(ERR_get_error(), NULL));
                 BIO_write(outbio, buffer, bytesread);
                 printf("%s\n", ERR_error_string(ERR_get_error(), NULL));
                 // Look for blank line signifying end of headers
+                bytesread = fread(buffer, sizeof(char), buffer_size, file);
             }
         }
 
@@ -249,13 +253,15 @@ int main(int argc, char *argv[])
 // This thread is spawned every time a new connection request is received
 void *new_client_connection(void *ptr)
 {
+    // Retrieve the SSL object and thread number from the argument
     struct pthread_args *args = (struct pthread_args *) ptr;
     BIO *client = args->abio;
 
     printf("Connection %d Opened\n", args->thread_number);
 
+    // Perform the SSL handshake
     if (BIO_do_handshake(client) <= 0)
-    {
+    {   // The handshake was not successful
         printf("Handshake Failed\n");
         printf("%s\n", ERR_error_string(ERR_get_error(), NULL));
         return EXIT_FAILURE;
@@ -274,8 +280,8 @@ void *new_client_connection(void *ptr)
             startpos = strstr(tempbuf, "GET ");
             startpos += 4;
             endpos = strstr(tempbuf, " HTTP");
-            if (startpos == NULL || endpos == NULL)  // Invalid GET request
-            {
+            if (startpos == NULL || endpos == NULL)
+            {   // Invalid GET request
                 printf("invalid request received\n");
                 BIO_puts(client, "Invalid request\n");
             } else  // Valid GET request
@@ -313,9 +319,9 @@ void *new_client_connection(void *ptr)
                         char sendname[256];
                         sprintf(sendname, "%s%s", "../Media_files/", filename);
                         if (strstr(tempbuf, "html") == NULL)
-                            write_page(client, sendname, filename);
+                            write_page(client, sendname, filename); // General file
                         else
-                            write_page(client, sendname, "html");
+                            write_page(client, sendname, "html"); // HTML file
                     }
                 }
             }
@@ -335,17 +341,19 @@ void *new_client_connection(void *ptr)
 // Attempt to setup to a socket and then wait for the client to connect to it
 int connect(BIO *bio)
 {
+    // Setup the SSL socket in blocking mode
     if (BIO_do_accept(bio) <= 0)
-    {
+    {   // The setup operation was not successful
         printf("Error setting up listening socket\n");
         printf("%s\n", ERR_error_string(ERR_get_error(), NULL));
         BIO_free(bio);
-        return EXIT_SUCCESS;
+        return EXIT_FAILURE;
     }
 
+    // Set the SSL to non-blocking mode continuously attempt to setup the socket
     BIO_set_nbio_accept(bio, 0);
     while (BIO_do_accept(bio) <= 0)
-    {
+    {   // Not yet accepted
         printf("Error accepting the socket\n");
         printf("%s\n", ERR_error_string(ERR_get_error(), NULL));
         BIO_reset(bio);
@@ -353,12 +361,12 @@ int connect(BIO *bio)
         sleep(1);
     }
 
-    return EXIT_FAILURE;
+    return EXIT_SUCCESS;
 }
 
 
 // Read all the contents of the Media_files folder for use later in GET requests
-int readMedia()
+int read_media()
 {
     DIR *directory;
     struct dirent *ent;
@@ -409,10 +417,7 @@ int write_page(BIO *bio, const char *page, const char *filename)
     FILE *file;
     unsigned long bytesread;
     char buf[512];
-    char html_reply[100]; /*= "HTTP/1.1 200 OK\n"
-                           "Content-Type: text/html; charset=utf-8\n"
-                           "Connection: close\n"
-                           "Content-Length: 500\n\r\n";*/
+    char html_reply[100];
 
     if (strcmp(filename, "html") != 0)
     {
@@ -431,20 +436,20 @@ int write_page(BIO *bio, const char *page, const char *filename)
 
     file = fopen(page, "r");
     if (!file)
-    {
-        printf("could not open page\n");
+    {   // File to be written not found
+        printf("Could not open page to be written\n");
         return EXIT_FAILURE;
     }
 
-//    if (strcmp(filename, "html") == 0) // If the file is an HTML file, include the header
+    // Send the correct file header
     BIO_write(bio, html_reply, strlen(html_reply));
 
     bytesread = fread(buf, sizeof(char), 512, file);
     while (bytesread > 0)
     {   // Send the file in blocks of 512 Bytes
         if (BIO_write(bio, buf, bytesread) <= 0)
-        {
-            printf("write failed\n");
+        {   // The SSL object did not accept the data
+            printf("Write failed\n");
             printf("%s\n", ERR_error_string(ERR_get_error(), NULL));
             break;
         }
@@ -460,8 +465,6 @@ int write_page(BIO *bio, const char *page, const char *filename)
 // copy the old threads to the new array and delete the old array
 pthread_t *double_size(pthread_t *old_clients, int current_size)
 {
-    printf("Clients list doubled\n");
-
     pthread_t *new_clients;
     new_clients = (pthread_t *) malloc((current_size * 2) * sizeof(pthread_t));
     int i;

@@ -11,7 +11,7 @@
 
 
 void clear_buffer(char * buffer, int length)
-{
+{   // Clear any message buffer up to the specified point
     int i;
     for (i = 0; i < length; i ++)
         buffer[i] = 0;
@@ -39,7 +39,9 @@ int main(int argc, char * argv[])
      * mode here because as things stand this will connect to
      * any server whose certificate is signed by any CA.
      */
-    if(argc<2)
+
+    // Setup certificate file paths
+    if (argc < 2)
     {
         if (!SSL_CTX_load_verify_locations(ctx, "../keys/cert.crt", NULL))
         {
@@ -55,6 +57,7 @@ int main(int argc, char * argv[])
         }
     }
 
+    // Setup a new SSL connection
     sbio = BIO_new_ssl_connect(ctx);
     BIO_get_ssl(sbio, &ssl);
 
@@ -68,21 +71,22 @@ int main(int argc, char * argv[])
     SSL_set_mode(ssl, SSL_MODE_AUTO_RETRY);
 
     // We might want to do other things with ssl here
-    // R: soos wat?
+    // TODO: R: soos wat?
 
     // Attempt to connect to the server
     printf("Attempting to connect to server...\n\n");
-    BIO_set_conn_hostname(sbio, "0.0.0.0:5000");
+    BIO_set_conn_hostname(sbio, "0.0.0.0:5000"); // Set the address and port of the server
     out = BIO_new_fp(stdout, BIO_NOCLOSE);
     if (BIO_do_connect(sbio) <= 0)
-    {
+    {   // Connection to the server was not successful
         printf("Error connecting to server:\n");
         printf("%s\n", ERR_error_string(ERR_get_error(), NULL));
         return EXIT_FAILURE;
     }
 
+    // Perform the SSL handshake
     if (BIO_do_handshake(sbio) <= 0)
-    {
+    {   // The handshake was not successful
         printf("Handshake Failed\n");
         return EXIT_FAILURE;
     }
@@ -90,11 +94,11 @@ int main(int argc, char * argv[])
     // Could examine ssl here to get connection info
 
 /*    BIO_puts(sbio, "GET / HTTP/1.0\n\n");
-    bytesread = BIO_read(sbio, tmpbuf, 1024);
+    bytesread = BIO_read(sbio, buffer, sizeof(buffer));
     while (bytesread > 0)
     {
-        BIO_write(out, tmpbuf, bytesread);
-        bytesread = BIO_read(sbio, tmpbuf, 1024);
+        BIO_write(out, buffer, bytesread);
+        bytesread = BIO_read(sbio, buffer, sizeof(buffer));
     }*/
     sleep(1);
 
@@ -102,7 +106,7 @@ int main(int argc, char * argv[])
     BIO_puts(sbio, "GET / HTTP/1.0\n");
     bytesread = BIO_read(sbio, buffer, sizeof(buffer));
     while (bytesread > 0)
-    {
+    {   // While there are bytes to read, read them and print them to the terminal
         buffer[bytesread] = '\0';
         printf("%s", buffer);
         bytesread = BIO_read(sbio, buffer, sizeof(buffer));
@@ -117,26 +121,29 @@ int main(int argc, char * argv[])
         printf("Please type the name of the file that you want to request: ");
         fgets(filename, MAX_REQ_LEN, stdin); // Wait for user input
         printf("Getting %s \n", filename);
-        isHTML = strstr(filename, ".html") != NULL;
+        isHTML = strstr(filename, ".html") != NULL; // File name contains ".html"?
         filename[strlen(filename) - 1] = '\0'; // Overwrite \n with \0
         sprintf(request, "GET /%s HTTP/1.0\n", filename);
 
-//        sbio = BIO_new_ssl_connect(ctx);
+        // Attempt to connect to the Server
         if (BIO_do_connect(sbio) <= 0)
-        {
+        {   // Connection to the server was not successful
             printf("Error connecting to server:\n");
             printf("%s\n", ERR_error_string(ERR_get_error(), NULL));
             break;
         }
 
+        // Perform the SSL handshake
         if (BIO_do_handshake(sbio) <= 0)
-        {
+        {   // The handshake was not successful
             printf("Handshake Failed\n");
             break;
         }
 
+        // Send the GET request to the server
         BIO_puts(sbio, request);
-//        sleep(1);
+
+        // Decide what to do with the response based on the file type
         if (!isHTML)
         {   // If general file, save as a new file
             char local_filename[MAX_REQ_LEN - 16];
@@ -148,16 +155,18 @@ int main(int argc, char * argv[])
             file = fopen(local_filename, "w");
             printf("Writing file to: %s \n", local_filename);
 
-            // Write the .html file to the new text file, piece by piece
+            // Write the file to the new text file, piece by piece
             bytesread = BIO_read(sbio, buffer, sizeof(buffer));
+
             if (!strcmp("Error: Requested item not found\r\n", buffer))
             {   // Server says the file does not exist
                 fileExists = 0;
                 bytesread = 0;
             } else
                 fileExists = 1;
+
             while (bytesread > 0)
-            {
+            {   // While there are bytes to read, read them and write them to the file
                 messagepos = strstr(buffer, "\n\n");
                 if (messagepos != NULL)
                 {
@@ -168,6 +177,7 @@ int main(int argc, char * argv[])
                 bytesread = BIO_read(sbio, buffer, sizeof(buffer));
             }
 
+            // No more response from the server
             printf("Server closed the connection\n");
             fclose(file);
             if (fileExists)
@@ -181,7 +191,7 @@ int main(int argc, char * argv[])
         {   // Simply print out the .html file to the terminal
             bytesread = BIO_read(sbio, buffer, sizeof(buffer));
             while (bytesread > 0)
-            {
+            {   // While there are bytes to read, read them and print them to the terminal
                 buffer[bytesread] = '\0';
                 printf("%s", buffer);
                 bytesread = BIO_read(sbio, buffer, sizeof(buffer));
@@ -213,6 +223,7 @@ int main(int argc, char * argv[])
     }
     fclose(file);*/
 
+    // Free all SSL connections
     BIO_free_all(sbio);
     BIO_free(out);
     return EXIT_SUCCESS;
