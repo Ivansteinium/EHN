@@ -375,8 +375,6 @@ int write_page(BIO *bio, const char *page, const char *filename)
     {
         sprintf(html_reply, "HTTP/1.1 200 OK\n"
                             "Content-Disposition: attachment; filename=\"%s\" \n\n", filename);
-//        strcpy(html_reply, "HTTP/1.1 200 OK\n"
-//                           "Content-Disposition: attachment;");
     } else
     {
         sprintf(html_reply, "HTTP/1.1 200 OK\n"
@@ -425,6 +423,7 @@ pthread_t *double_size(pthread_t *old_clients, int current_size)
     free(old_clients);
     return new_clients;
 }
+
 
 // Use sprintf to convert between integer and string
 char *itoa(char *dest, int i)

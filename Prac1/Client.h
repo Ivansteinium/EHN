@@ -11,6 +11,12 @@
 #include <string.h>
 
 
+#define MAX_REQ_LEN 255
+
+
+int main(int argc, char * argv[]);
+
+
 void clear_buffer(char * buffer, int length);
 
 

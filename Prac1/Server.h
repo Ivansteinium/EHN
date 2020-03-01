@@ -29,6 +29,9 @@ struct pthread_args
 };
 
 
+int main(int argc, char *argv[]);
+
+
 void *new_client_connection(void *ptr);
 
 

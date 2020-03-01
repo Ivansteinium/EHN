@@ -1,9 +1,6 @@
 #include "Client.h"
 
 
-#define MAX_REQ_LEN 255
-
-
 int main(int argc, char * argv[])
 {
     BIO *sbio;
@@ -104,8 +101,13 @@ int main(int argc, char * argv[])
 
     while (1)
     {   // In a loop, ask the user for a file to download from the server
-        printf("Please type the name of the file that you want to request: ");
+        printf("Please type the name of the file that you want to request\n");
+        printf("or type 'EXIT' to close: ");
         fgets(filename, MAX_REQ_LEN, stdin); // Wait for user input
+
+        if (!strcmp(filename, "EXIT\n"))
+            return EXIT_SUCCESS; // User terminated program
+
         printf("Getting %s \n", filename);
         isHTML = strstr(filename, ".html") != NULL; // File name contains ".html"?
         filename[strlen(filename) - 1] = '\0'; // Overwrite \n with \0
