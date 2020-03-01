@@ -10,12 +10,6 @@ int main(int argc, char *argv[])
     BIO *abio;
     BIO *cbio;
     BIO *acpt;
-//    BIO *outbio;
-//    unsigned long bytesread;
-//    int buffer_size = 103900;
-//    uint8_t buffer[buffer_size];
-//    int write_status;
-//    const char *filename = "../webpage_1.txt";
     int port_num = 5000;
     char certificate_file[200];
     char private_file[200];
@@ -83,7 +77,6 @@ int main(int argc, char *argv[])
     printf("Server Running\n\n");
 
     BIO_set_accept_bios(acpt, abio);
-//    outbio = BIO_new_fd(stdout, BIO_NOCLOSE);
 
     // BIO wait and setup
     if (connect(acpt) == EXIT_FAILURE)
@@ -97,8 +90,6 @@ int main(int argc, char *argv[])
             printf("error accepting the socket\n");
             printf("%s\n", ERR_error_string(ERR_get_error(), NULL));
             BIO_reset(acpt);
-//            BIO_set_nbio_accept(bio, 0);
-//            sleep(1);
         }
 
         // Get new client
@@ -125,74 +116,6 @@ int main(int argc, char *argv[])
                        NULL,
                        new_client_connection,
                        (void *) args);
-
-/*        temp = pthread_create( &thread1, NULL, new_client_connection, (void*) abio);
-        pthread_join(client_threads[num_clients-1], NULL);
-
-        if (BIO_do_handshake(abio) <= 0)
-        {
-            printf("failed handshake, wash hands and try again\n");
-            printf("%s\n", ERR_error_string(ERR_get_error(), NULL));
-        }
-
-        BIO_puts(abio, "HTTP/1.0 200 OK\r\nContent-type: text/plain\r\n\r\n");
-        BIO_puts(abio, "\r\nConnection Established\r\nRequest headers:\r\n");
-        BIO_puts(abio, "--------------------------------------------------\r\n");
-
-        bytesread = BIO_gets(abio, buffer, buffer_size);
-        while (bytesread > 0)
-        {
-            BIO_write(abio, buffer, bytesread);
-            BIO_write(outbio, buffer, bytesread);
-            // Look for blank line signifying end of headers
-            if ((buffer[0] == '\r') || (buffer[0] == '\n')) break;
-            bytesread = BIO_gets(abio, buffer, buffer_size);
-        }
-
-        BIO_puts(abio, "--------------------------------------------------\r\n");
-        BIO_puts(abio, "\r\n");
-
-        FILE *file;
-        file = fopen("../Media_files/files_list.html", "w");
-
-        //generate an html file showing all the items available on the server and send it to the client
-
-        int i = 0;
-        char temp[maxMediaNameSize];
-        for (i = 2; i < numMediaItems; i++)
-        {
-            //build the html link command and send it to the client
-            strcpy(temp, "<a href=\"");
-            strcat(temp, MediaItems[i]);
-            strcat(temp, "\">");
-            strcat(temp, MediaItems[i]);
-            strcat(temp, "</a>\r\n");
-            fputs(temp,file);
-        }
-        fputs("</html>\r\n",file);
-        BIO_puts(abio, "</html>");
-        fclose(file);
-
-        file = fopen("../Media_files/index.html", "r");
-        if (file == NULL)
-            printf("Error opening file\n");
-        else
-        {
-            bytesread = fread(buffer, sizeof(char), buffer_size, file);
-            while (bytesread > 0)
-            {
-                SSL_write(abio, buffer, bytesread);
-                printf("%s\n", ERR_error_string(ERR_get_error(), NULL));
-                BIO_write(outbio, buffer, bytesread);
-                printf("%s\n", ERR_error_string(ERR_get_error(), NULL));
-                // Look for blank line signifying end of headers
-                bytesread = fread(buffer, sizeof(char), buffer_size, file);
-            }
-        }
-
-        fclose(file);
-        write_page(abio,"../Media_files/index.html", 1);
-        sleep(1); */
     }
 
 /*    pthread_join(client_threads[num_clients - 1], NULL);
@@ -263,7 +186,7 @@ void *new_client_connection(void *ptr)
                     }
 
                     if (!valid)
-                    {   // If item is not present, display error
+                    {   // If item is not present, display error and notify the client
                         printf("Error: Requested item not found\n");
                         BIO_puts(client, "Error: Requested item not found\r\n");
                     } else
@@ -302,7 +225,9 @@ int connect(BIO *bio)
         return EXIT_FAILURE;
     }
 
-    // Set the SSL to non-blocking mode continuously attempt to setup the socket
+/*     Set the SSL to non-blocking mode continuously attempt to setup the socket.
+     This is done since the socket takes time to be released by the system after use.
+     Only an issue if the server is run several times in quick succession*/
     BIO_set_nbio_accept(bio, 0);
     while (BIO_do_accept(bio) <= 0)
     {   // Not yet accepted
@@ -324,7 +249,7 @@ int read_media()
     struct dirent *ent;
     directory = opendir("../Media_files");
     if (directory != NULL)
-    {   // Print all the files and directories within directory
+    {   // Read all the files and directories within directory
         while ((ent = readdir(directory)) != NULL)
         {
             strcpy(MediaItems[numMediaItems], ent->d_name);
@@ -338,18 +263,13 @@ int read_media()
     FILE *file;
     file = fopen("../Media_files/files_list.html", "w");
 
-    // Generate an html file showing all the items available on the server and send it to the client
+    // Generate an html file showing all the items available on the server and save the html file as files_list.html
 
     int i = 0;
     char temp[maxMediaNameSize];
-//    fputs("HTTP/1.1 200 OK\n"
-//          "Content-Type: text/html; charset=utf-8\n"
-//          "Connection: close\n"
-//          "Content-Length: 500\n",file);
-//    fputs("\r\n",file);
     fputs("<html>\r\n", file);
     for (i = 2; i < numMediaItems; i++)
-    {   // Build the html link command and send it to the client
+    {   // Build the html links to all the files
         strcpy(temp, "<p><a href=\"");
         strcat(temp, MediaItems[i]);
         strcat(temp, "\">");
