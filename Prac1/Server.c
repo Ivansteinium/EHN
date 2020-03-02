@@ -357,8 +357,8 @@ pthread_t *double_size(pthread_t *old_clients, int current_size)
 
 
 // Use sprintf to convert between integer and string
-char *itoa(char *dest, int i)
+char *itoa(char *result, int number)
 {
-    sprintf(dest, "%d", i);
-    return dest;
+    sprintf(result, "%d", number);
+    return result;
 }
