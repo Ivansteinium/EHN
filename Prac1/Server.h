@@ -26,8 +26,8 @@ int SERVER_RUN;
 struct server_args
 {   // This struct is passed as an argument to the server thread
     // to allow multiple arguments to be passed
-    BIO *acpt;
-    BIO *abio;
+    BIO *acpt; // The SSL reception buffer
+    BIO *abio; // The SSL object pointer
 };
 
 
