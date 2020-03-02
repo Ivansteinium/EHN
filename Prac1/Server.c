@@ -47,6 +47,7 @@ int main(int argc, char *argv[])
         return EXIT_FAILURE;
     }
 
+    // Set up server certificate and private key
     SSL_CTX_use_certificate_file(ctx, certificate_file, SSL_FILETYPE_PEM);
     SSL_CTX_use_PrivateKey_file(ctx, private_file, SSL_FILETYPE_PEM);
     read_media();
@@ -107,7 +108,7 @@ void *server_thread(void *ptr)
     BIO * acpt = sv_args->acpt;
     BIO *abio = sv_args->abio;
 
-    // Dynamic Threads
+    // Dynamic Threads for clients
     int max_clients = 4;
     int current_clients = 0;
     pthread_t *client_threads = (pthread_t *) malloc(max_clients * sizeof(pthread_t));
@@ -118,6 +119,17 @@ void *server_thread(void *ptr)
         This is done since the socket takes time to be released by the system after use.
         Only an issue if the server is run several times in quick succession */
     BIO_set_nbio_accept(acpt, 1);
+
+    //Die eerste call na do_accept stel die port op. So jy moet dit 2 keer doen die eerste keer om jou eerste client
+    // te accept. Dan kry jy nie die random handshake error op die eerste request nie
+    if (BIO_do_accept(acpt) <= 0)
+    {   // The setup operation was not successful
+        printf("Error setting up listening socket\n");
+        if(DEBUG)
+            printf("%s\n", ERR_error_string(ERR_get_error(), NULL));
+        BIO_free(acpt);
+        return EXIT_FAILURE;
+    }
 
     while (SERVER_RUN)
     {
