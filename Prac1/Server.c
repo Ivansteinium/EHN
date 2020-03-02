@@ -140,7 +140,11 @@ void *server_thread(void *ptr)
         abio = BIO_pop(acpt);
 
         if (abio == NULL)
+        {
+            if(DEBUG)
+                printf("Connection failed");
             continue; // Connect didn't happen, try again
+        }
 
         // Allocate the new client to a thread
 
