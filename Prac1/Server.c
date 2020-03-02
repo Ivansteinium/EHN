@@ -17,6 +17,7 @@ int main(int argc, char *argv[])
     // Setup certificate file paths
     if (argc < 3)
     {
+        printf("Certificate parameters not given, using default values...\n");
         strcpy(certificate_file,"../keys/webServCert.crt");
         strcpy(private_file,"../keys/webServ.key");
     } else
@@ -27,11 +28,6 @@ int main(int argc, char *argv[])
 
     SSL_CTX *ctx;
     SSL *ssl;
-
-    // Dynamic Threads
-    int max_clients = 4;
-    int current_clients = 0;
-    pthread_t *client_threads = (pthread_t *) malloc(max_clients * sizeof(pthread_t));
 
     // Initialize the server
     printf("Starting Server...\n\n");
@@ -74,26 +70,64 @@ int main(int argc, char *argv[])
     acpt = BIO_new_accept(itoa(temp, port_num));
 
     // Server initialization is complete
-    printf("Server Running\n\n");
+    printf("Server Running\n");
+    printf("Type 'EXIT' at any time to stop\n\n");
 
     BIO_set_accept_bios(acpt, abio);
 
-    // BIO wait and setup
-    if (connect(acpt) == EXIT_FAILURE)
-        return EXIT_FAILURE;
+    // Start the server thread
+    SERVER_RUN = 1;
+    pthread_t server;
+    struct server_args *sv_args = (struct server_args *) malloc(sizeof(struct server_args));
+    sv_args->acpt = acpt;
+    sv_args->abio = abio;
+    pthread_create(&server, NULL, server_thread, (void *) sv_args);
 
-    while (1)
-    {   // Set the SSL to non-blocking mode continuously attempt to setup the socket
-        BIO_set_nbio_accept(acpt, 0);
-        while (BIO_do_accept(acpt) <= 0)
-        {
-            printf("error accepting the socket\n");
-            printf("%s\n", ERR_error_string(ERR_get_error(), NULL));
-            BIO_reset(acpt);
-        }
+    int exit = 0;
+    char input[100];
+    while (!exit)
+    {
+        fgets(input, 100, stdin); // Wait for user input
+
+        if (!strcmp("EXIT\n", input))
+            exit = 1;
+        else
+            printf("Type 'EXIT' at any time to stop\n\n");
+    }
+
+    // Stop the server thread
+    SERVER_RUN = 0;
+    pthread_join(server, NULL);
+
+    return EXIT_SUCCESS;
+}
+
+
+// Create a thread to handle server requests so that main is not blocked
+void *server_thread(void *ptr)
+{
+    struct server_args *sv_args = (struct server_args *) ptr;
+    BIO * acpt = sv_args->acpt;
+    BIO *abio = sv_args->abio;
+
+    // Dynamic Threads
+    int max_clients = 4;
+    int current_clients = 0;
+    pthread_t *client_threads = (pthread_t *) malloc(max_clients * sizeof(pthread_t));
+
+    while (SERVER_RUN)
+    {
+    /*  Set the SSL to non-blocking mode and continuously attempt to setup the socket.
+        This is done since the socket takes time to be released by the system after use.
+        Only an issue if the server is run several times in quick succession */
+        BIO_set_nbio_accept(acpt, 1);
+        BIO_do_accept(acpt);
 
         // Get new client
         abio = BIO_pop(acpt);
+
+        if (abio == NULL)
+            continue; // Connect didn't happen, try again
 
         // Allocate the new client to a thread
 
@@ -107,32 +141,35 @@ int main(int argc, char *argv[])
         current_clients++;
 
         // Setup the argument information
-        struct pthread_args *args = (struct pthread_args *) malloc(sizeof(struct pthread_args));
-        args->abio = abio;
-        args->thread_number = current_clients - 1;
+        struct client_args *cl_args = (struct client_args *) malloc(sizeof(struct client_args));
+        cl_args->abio = abio;
+        cl_args->thread_number = current_clients - 1;
 
         // Create a new thread for the client
         pthread_create(&client_threads[current_clients - 1],
-                       NULL,
-                       new_client_connection,
-                       (void *) args);
+                NULL,
+                new_client_connection,
+                (void *) cl_args);
     }
 
-/*    pthread_join(client_threads[num_clients - 1], NULL);
-    sleep(1);
     BIO_flush(abio);
     BIO_free_all(acpt);
-    BIO_free_all(abio); */
+    BIO_free_all(abio);
+    free(sv_args);
+
+    return EXIT_SUCCESS;
 }
+
 
 // This thread is spawned every time a new connection request is received
 void *new_client_connection(void *ptr)
 {
     // Retrieve the SSL object and thread number from the argument
-    struct pthread_args *args = (struct pthread_args *) ptr;
-    BIO *client = args->abio;
+    struct client_args *cl_args = (struct client_args *) ptr;
+    BIO *client = cl_args->abio;
 
-    printf("Connection %d Opened\n", args->thread_number);
+    if (DEBUG)
+        printf("Connection %d Opened\n", cl_args->thread_number);
 
     // Perform the SSL handshake
     if (BIO_do_handshake(client) <= 0)
@@ -207,37 +244,10 @@ void *new_client_connection(void *ptr)
             break;
     }
 
-    printf("Connection %d Closed\n", args->thread_number);
-    free(args);
-    return EXIT_SUCCESS;
-}
+    if (DEBUG)
+        printf("Connection %d Closed\n", cl_args->thread_number);
 
-
-// Attempt to setup to a socket and then wait for the client to connect to it
-int connect(BIO *bio)
-{
-    // Setup the SSL socket in blocking mode
-    if (BIO_do_accept(bio) <= 0)
-    {   // The setup operation was not successful
-        printf("Error setting up listening socket\n");
-        printf("%s\n", ERR_error_string(ERR_get_error(), NULL));
-        BIO_free(bio);
-        return EXIT_FAILURE;
-    }
-
-/*     Set the SSL to non-blocking mode continuously attempt to setup the socket.
-     This is done since the socket takes time to be released by the system after use.
-     Only an issue if the server is run several times in quick succession*/
-    BIO_set_nbio_accept(bio, 0);
-    while (BIO_do_accept(bio) <= 0)
-    {   // Not yet accepted
-        printf("Error accepting the socket\n");
-        printf("%s\n", ERR_error_string(ERR_get_error(), NULL));
-        BIO_reset(bio);
-//        BIO_set_nbio_accept(bio, 0);
-        sleep(1);
-    }
-
+    free(cl_args);
     return EXIT_SUCCESS;
 }
 

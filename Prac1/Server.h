@@ -15,13 +15,21 @@
 
 #define maxMediaItems  100
 #define maxMediaNameSize  256
+#define DEBUG 0
 
 
 char MediaItems[maxMediaItems][maxMediaNameSize];
 int numMediaItems = 0;
+int SERVER_RUN;
+
+struct server_args
+{
+    BIO *acpt;
+    BIO *abio;
+};
 
 
-struct pthread_args
+struct client_args
 {   // This struct is passed as an argument to newly created threads
     // to allow multiple arguments to be passed
     BIO *abio; // The SSL object pointer
@@ -30,6 +38,9 @@ struct pthread_args
 
 
 int main(int argc, char *argv[]);
+
+
+void *server_thread(void *ptr);
 
 
 void *new_client_connection(void *ptr);
@@ -42,9 +53,6 @@ int write_page(BIO *bio, const char *page, const char *filename);
 
 
 int read_media();
-
-
-int connect(BIO *bio);
 
 
 char *itoa(char *dest, int i);

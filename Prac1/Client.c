@@ -9,6 +9,7 @@ int main(int argc, char * argv[])
     char buffer[513]; // has to be 1 bigger than send buffer size for \0
     char filename[MAX_REQ_LEN - 16];
     char request[MAX_REQ_LEN];
+    char *CAfile;
     int isHTML = 0;
     SSL_CTX *ctx;
     SSL *ssl;
@@ -21,18 +22,15 @@ int main(int argc, char * argv[])
     // Setup certificate file paths
     if (argc < 2)
     {
-        if (!SSL_CTX_load_verify_locations(ctx, "../keys/cert.crt", NULL))
-        {
-            printf("Failed to load verify location\n");
-            return EXIT_FAILURE;
-        }
+        printf("Certificate parameters not given, using default values...\n");
+        CAfile = "../keys/cert.crt";
     } else
+        CAfile = argv[1];
+
+    if (!SSL_CTX_load_verify_locations(ctx, CAfile, NULL))
     {
-        if (!SSL_CTX_load_verify_locations(ctx, argv[1], NULL))
-        {
-            printf("Failed to load verify location\n");
-            return EXIT_FAILURE;
-        }
+        printf("Failed to load verify location\n");
+        return EXIT_FAILURE;
     }
 
     // Setup a new SSL connection
@@ -47,9 +45,6 @@ int main(int argc, char * argv[])
 
     // Disable retries
     SSL_set_mode(ssl, SSL_MODE_AUTO_RETRY);
-
-    // We might want to do other things with ssl here
-    // TODO: R: soos wat? Ivan het n template gebruik met hierdie alarming comments in, kan dit probably net delete
 
     // Attempt to connect to the server
     printf("Attempting to connect to server...\n\n");
