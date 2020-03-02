@@ -14,6 +14,9 @@ int main(int argc, char * argv[])
     SSL_CTX *ctx;
     SSL *ssl;
 
+    // Greeting
+    printf("EHN 410 Group 12 Practical 1: Client\n\n");
+
     OpenSSL_add_all_algorithms();
     SSL_load_error_strings();
     SSL_library_init();

@@ -14,6 +14,9 @@ int main(int argc, char *argv[])
     char certificate_file[200];
     char private_file[200];
 
+    // Greeting
+    printf("EHN 410 Group 12 Practical 1: Server\n\n");
+
     // Setup certificate file paths
     if (argc < 3)
     {
@@ -113,15 +116,13 @@ void *server_thread(void *ptr)
     int current_clients = 0;
     pthread_t *client_threads = (pthread_t *) malloc(max_clients * sizeof(pthread_t));
 
-    BIO_set_accept_bios(acpt, abio);
-
     /*  Set the SSL to non-blocking mode and continuously attempt to setup the socket.
         This is done since the socket takes time to be released by the system after use.
         Only an issue if the server is run several times in quick succession */
+    BIO_set_accept_bios(acpt, abio);
     BIO_set_nbio_accept(acpt, 1);
 
-    //Die eerste call na do_accept stel die port op. So jy moet dit 2 keer doen die eerste keer om jou eerste client
-    // te accept. Dan kry jy nie die random handshake error op die eerste request nie
+    // The first call to BIO_do_accept() sets up the port to allow for connections
     if (BIO_do_accept(acpt) <= 0)
     {   // The setup operation was not successful
         printf("Error setting up listening socket\n");
@@ -289,7 +290,7 @@ int read_media()
     // Generate an html file showing all the items available on the server and save the html file as files_list.html
 
     int i = 0;
-    char temp[maxMediaNameSize];
+    char temp[256];
     fputs("<html>\r\n", file);
     for (i = 2; i < numMediaItems; i++)
     {   // Build the html links to all the files

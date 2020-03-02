@@ -12,30 +12,32 @@
 #include <dirent.h>
 #include <string.h>
 
-
-#define maxMediaItems  100
-#define maxMediaNameSize  256
+/// Enable (1) or disable (0) client thread debugging.
 #define DEBUG 0
 
 
-char MediaItems[maxMediaItems][maxMediaNameSize];
+char MediaItems[100][256];
 int numMediaItems = 0;
 int SERVER_RUN;
 
 
+/// This struct is passed as an argument to the server thread to allow multiple arguments to be passed.
 struct server_args
-{   // This struct is passed as an argument to the server thread
-    // to allow multiple arguments to be passed
-    BIO *acpt; // The SSL reception buffer
-    BIO *abio; // The SSL object pointer
+{
+    /// The SSL reception buffer
+    BIO *acpt;
+    /// The SSL object pointer
+    BIO *abio;
 };
 
 
+/// This struct is passed as an argument to newly created client threads to allow multiple arguments to be passed.
 struct client_args
-{   // This struct is passed as an argument to newly created client threads
-    // to allow multiple arguments to be passed
-    BIO *abio; // The SSL object pointer
-    int thread_number; // The current thread number
+{
+    /// The SSL object pointer
+    BIO *abio;
+    /// The current thread number
+    int thread_number;
 };
 
 

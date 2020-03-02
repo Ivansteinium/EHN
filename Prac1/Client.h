@@ -10,7 +10,7 @@
 #include <unistd.h>
 #include <string.h>
 
-
+/// The maximum length of a request (characters).
 #define MAX_REQ_LEN 255
 
 /// Sets up the client SSL connection, connects to the server and then displays or downloads requested files from the server
