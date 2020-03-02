@@ -12,6 +12,8 @@
 
 /// The maximum length of a request (characters).
 #define MAX_REQ_LEN 255
+/// Enable (1) or disable (0) client debugging.
+#define DEBUG 0
 
 /// Sets up the client SSL connection, connects to the server and then displays or downloads requested files from the server
 /// \param argc The number of arguments passes to the function.

@@ -12,12 +12,14 @@
 #include <dirent.h>
 #include <string.h>
 
-/// Enable (1) or disable (0) client thread debugging.
+/// Enable (1) or disable (0) server debugging.
 #define DEBUG 0
 
-
+/// An array of c-strings to store the names of the files that can be downloaded
 char MediaItems[100][256];
+/// The number of files that can be downloaded
 int numMediaItems = 0;
+/// Controls the execution of the server thread
 int SERVER_RUN;
 
 

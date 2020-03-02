@@ -17,6 +17,9 @@ int main(int argc, char *argv[])
     // Greeting
     printf("EHN 410 Group 12 Practical 1: Server\n\n");
 
+    if (DEBUG)
+        printf("Server debugging enabled\n\n");
+
     // Setup certificate file paths
     if (argc < 3)
     {
@@ -126,10 +129,10 @@ void *server_thread(void *ptr)
     if (BIO_do_accept(acpt) <= 0)
     {   // The setup operation was not successful
         printf("Error setting up listening socket\n");
-        if(DEBUG)
+        if (DEBUG)
             printf("%s\n", ERR_error_string(ERR_get_error(), NULL));
         BIO_free(acpt);
-        return (void*)EXIT_FAILURE;
+        return (void *) EXIT_FAILURE;
     }
 
     while (SERVER_RUN)
@@ -140,11 +143,7 @@ void *server_thread(void *ptr)
         abio = BIO_pop(acpt);
 
         if (abio == NULL)
-        {
-            if(DEBUG)
-                printf("Connection failed");
-            continue; // Connect didn't happen, try again
-        }
+            continue; // Connect didn't happen yet, try again
 
         // Allocate the new client to a thread
 
@@ -175,7 +174,7 @@ void *server_thread(void *ptr)
     free(sv_args);
     free(client_threads);
 
-    return (void*)EXIT_SUCCESS;
+    return (void *) EXIT_SUCCESS;
 }
 
 
@@ -193,8 +192,9 @@ void *new_client_connection(void *ptr)
     if (BIO_do_handshake(client) <= 0)
     {   // The handshake was not successful
         printf("Handshake Failed\n");
-        printf("%s\n", ERR_error_string(ERR_get_error(), NULL));
-        return (void*)EXIT_FAILURE;
+        if (DEBUG)
+            printf("%s\n", ERR_error_string(ERR_get_error(), NULL));
+        return (void *) EXIT_FAILURE;
     }
 
     char tempbuf[256];
@@ -348,7 +348,8 @@ int write_page(BIO *bio, const char *page, const char *filename)
         if (BIO_write(bio, buf, bytesread) <= 0)
         {   // The SSL object did not accept the data
             printf("Write failed\n");
-            printf("%s\n", ERR_error_string(ERR_get_error(), NULL));
+            if (DEBUG)
+                printf("%s\n", ERR_error_string(ERR_get_error(), NULL));
             break;
         }
         bytesread = fread(buf, sizeof(char), 512, file);

@@ -17,6 +17,9 @@ int main(int argc, char * argv[])
     // Greeting
     printf("EHN 410 Group 12 Practical 1: Client\n\n");
 
+    if (DEBUG)
+        printf("Client debugging enabled\n\n");
+
     OpenSSL_add_all_algorithms();
     SSL_load_error_strings();
     SSL_library_init();
@@ -56,7 +59,8 @@ int main(int argc, char * argv[])
     if (BIO_do_connect(sbio) <= 0)
     {   // Connection to the server was not successful
         printf("Error connecting to server:\n");
-        printf("%s\n", ERR_error_string(ERR_get_error(), NULL));
+        if (DEBUG)
+            printf("%s\n", ERR_error_string(ERR_get_error(), NULL));
         return EXIT_FAILURE;
     }
 
@@ -100,7 +104,8 @@ int main(int argc, char * argv[])
         if (BIO_do_connect(sbio) <= 0)
         {   // Connection to the server was not successful
             printf("Error connecting to server:\n");
-            printf("%s\n", ERR_error_string(ERR_get_error(), NULL));
+            if (DEBUG)
+                printf("%s\n", ERR_error_string(ERR_get_error(), NULL));
             break;
         }
 
@@ -108,7 +113,8 @@ int main(int argc, char * argv[])
         if (BIO_do_handshake(sbio) <= 0)
         {   // The handshake was not successful
             printf("Handshake Failed\n");
-            printf("%s\n", ERR_error_string(ERR_get_error(), NULL));
+            if (DEBUG)
+                printf("%s\n", ERR_error_string(ERR_get_error(), NULL));
             break;
         }
 
