@@ -69,12 +69,6 @@ int main(int argc, char *argv[])
     char temp[10];
     acpt = BIO_new_accept(itoa(temp, port_num));
 
-    // Server initialization is complete
-    printf("Server Running\n");
-    printf("Type 'EXIT' at any time to stop\n\n");
-
-    BIO_set_accept_bios(acpt, abio);
-
     // Start the server thread
     SERVER_RUN = 1;
     pthread_t server;
@@ -83,16 +77,19 @@ int main(int argc, char *argv[])
     sv_args->abio = abio;
     pthread_create(&server, NULL, server_thread, (void *) sv_args);
 
+    // Server initialization is complete
+    printf("Server Running\n");
+
+    // Wait fot the user to stop the program
     int exit = 0;
     char input[100];
     while (!exit)
     {
+        printf("Type 'EXIT' at any time to stop\n\n");
         fgets(input, 100, stdin); // Wait for user input
 
         if (!strcmp("EXIT\n", input))
             exit = 1;
-        else
-            printf("Type 'EXIT' at any time to stop\n\n");
     }
 
     // Stop the server thread
@@ -115,12 +112,15 @@ void *server_thread(void *ptr)
     int current_clients = 0;
     pthread_t *client_threads = (pthread_t *) malloc(max_clients * sizeof(pthread_t));
 
-    while (SERVER_RUN)
-    {
+    BIO_set_accept_bios(acpt, abio);
+
     /*  Set the SSL to non-blocking mode and continuously attempt to setup the socket.
         This is done since the socket takes time to be released by the system after use.
         Only an issue if the server is run several times in quick succession */
-        BIO_set_nbio_accept(acpt, 1);
+    BIO_set_nbio_accept(acpt, 1);
+
+    while (SERVER_RUN)
+    {
         BIO_do_accept(acpt);
 
         // Get new client
@@ -156,6 +156,7 @@ void *server_thread(void *ptr)
     BIO_free_all(acpt);
     BIO_free_all(abio);
     free(sv_args);
+    free(client_threads);
 
     return EXIT_SUCCESS;
 }
