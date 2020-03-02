@@ -129,7 +129,7 @@ void *server_thread(void *ptr)
         if(DEBUG)
             printf("%s\n", ERR_error_string(ERR_get_error(), NULL));
         BIO_free(acpt);
-        return EXIT_FAILURE;
+        return (void*)EXIT_FAILURE;
     }
 
     while (SERVER_RUN)
@@ -175,7 +175,7 @@ void *server_thread(void *ptr)
     free(sv_args);
     free(client_threads);
 
-    return EXIT_SUCCESS;
+    return (void*)EXIT_SUCCESS;
 }
 
 
@@ -194,7 +194,7 @@ void *new_client_connection(void *ptr)
     {   // The handshake was not successful
         printf("Handshake Failed\n");
         printf("%s\n", ERR_error_string(ERR_get_error(), NULL));
-        return EXIT_FAILURE;
+        return (void*)EXIT_FAILURE;
     }
 
     char tempbuf[256];
