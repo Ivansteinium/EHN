@@ -44,20 +44,20 @@ struct client_args
 
 
 /// The main function sets up all the SSL functions, Certificates and starts the server.
-/// \param argc The number of arguments passes to the function.
-/// \param argv The values of the passes arguments as c-strings.
+/// \param argc The number of arguments passed to the function.
+/// \param argv The values of the passed arguments as c-strings.
 /// \return Successful or failed execution.
 int main(int argc, char *argv[]);
 
 
 /// This function is created as a new thread and handles all client requests.
-/// \param ptr The server_args struct is passes as a void pointer.
+/// \param ptr The server_args struct is passed as a void pointer.
 /// \return Successful or failed execution.
 void *server_thread(void *ptr);
 
 
 /// This function is created as a new thread for every client that makes a request to the server.
-/// \param ptr The client_args struct is passes as a void pointer.
+/// \param ptr The client_args struct is passed as a void pointer.
 /// \return Successful or failed execution.
 void *new_client_connection(void *ptr);
 
