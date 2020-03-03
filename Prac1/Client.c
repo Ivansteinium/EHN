@@ -144,15 +144,15 @@ int main(int argc, char * argv[])
             } else
                 fileExists = 1;
 
+            messagepos = strstr(buffer, "\n\n");
+            if (messagepos != NULL)
+                messagepos += 2;
+            fwrite(messagepos, sizeof(char), bytesread - (messagepos - buffer), file);
+            bytesread = BIO_read(sbio, buffer, sizeof(buffer));
+
             while (bytesread > 0)
             {   // While there are bytes to read, read them and write them to the file
-                messagepos = strstr(buffer, "\n\n");
-                if (messagepos != NULL)
-                {
-                    messagepos += 2;
-                    fwrite(messagepos, sizeof(char), bytesread - (messagepos - buffer), file);
-                } else
-                    fwrite(buffer, sizeof(char), bytesread, file);
+                fwrite(buffer, sizeof(char), bytesread, file);
                 bytesread = BIO_read(sbio, buffer, sizeof(buffer));
             }
 
