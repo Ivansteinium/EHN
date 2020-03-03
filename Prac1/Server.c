@@ -328,7 +328,7 @@ int write_page(BIO *bio, const char *page, const char *filename)
         sprintf(html_reply, "HTTP/1.1 200 OK\n"
                             "Content-Type: text/html; charset=utf-8\n"
                             "Connection: close\n"
-                            "Content-Length: 500\n\r\n");
+                            "Content-Length: 1000\n\r\n");
     }
 
 
