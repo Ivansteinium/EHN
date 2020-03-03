@@ -103,7 +103,7 @@ int main(int argc, char * argv[])
         // Attempt to connect to the Server
         if (BIO_do_connect(sbio) <= 0)
         {   // Connection to the server was not successful
-            printf("Error connecting to server:\n");
+            printf("Error connecting to server\n");
             if (DEBUG)
                 printf("%s\n", ERR_error_string(ERR_get_error(), NULL));
             break;
