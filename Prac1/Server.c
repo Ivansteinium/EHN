@@ -201,6 +201,8 @@ void *new_client_connection(void *ptr)
     char *startpos;
     char *endpos;
     char filename[256];
+    char *spacepos;
+    char *temp;
 
     while (1)  // Service the client's requests
     {
@@ -219,21 +221,40 @@ void *new_client_connection(void *ptr)
                 // Get the requested item from the string
                 strncpy(filename, startpos, endpos - startpos);
 
+                // Look if spaces are present in the requested file
+                spacepos = strstr(filename, "%20");
+                if (spacepos)
+                {   // %20 is present in the name, replace with spaces
+                    int i = 0;
+                    temp = filename;
+                    while (spacepos)
+                    {
+                        while (*temp != *spacepos) // Write characters til %20
+                            filename[i++] = *(temp++);
+                        filename[i++] = ' '; // Write a space rather than %20
+                        temp++; temp++; temp++; // Skip over the %20
+                        spacepos = strstr(temp, "%20"); // Find the next occurrence
+                    }
+
+                    while (*temp != '\0')
+                        filename[i++] = *(temp++);
+                    filename[i++] = '\0';
+                }
+
                 if (strcmp(filename, "/") == 0)  // Write the home page
                     write_page(client, "../Media_files/index.html", "html");
                 else
                 {   // Not home page
                     // Delete leading "/"
-                    startpos += 1;
-                    strncpy(filename, startpos, endpos - startpos);
-                    filename[endpos - startpos] = '\0';
+                    temp = filename;
+                    temp++;
 
                     // Search for file and send it if present
                     int i = 0;
                     int valid = 0;
                     for (i = 0; i < numMediaItems + 1; i++)
                     {
-                        if (strcmp(filename, MediaItems[i]) == 0)
+                        if (strcmp(temp, MediaItems[i]) == 0)
                         {
                             valid = 1;
                             break;
@@ -247,9 +268,9 @@ void *new_client_connection(void *ptr)
                     } else
                     {   // Send file
                         char sendname[256];
-                        sprintf(sendname, "%s%s", "../Media_files/", filename);
+                        sprintf(sendname, "%s%s", "../Media_files/", temp);
                         if (strstr(tempbuf, "html") == NULL)
-                            write_page(client, sendname, filename); // General file
+                            write_page(client, sendname, temp); // General file
                         else
                             write_page(client, sendname, "html"); // HTML file
                     }

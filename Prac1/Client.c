@@ -149,7 +149,7 @@ int main(int argc, char * argv[])
                 messagepos = strstr(buffer, "\n\n");
                 if (messagepos != NULL)
                 {
-                    messagepos +=2;
+                    messagepos += 2;
                     fwrite(messagepos, sizeof(char), bytesread - (messagepos - buffer), file);
                 } else
                     fwrite(buffer, sizeof(char), bytesread, file);
@@ -162,7 +162,7 @@ int main(int argc, char * argv[])
             if (fileExists)
                 printf("File download completed: %s \n", filename);
             else
-            {   // Server returened error
+            {   // Server returned error
                 printf("Error: Requested item not found\n");
                 remove(local_filename); // Delete the newly created file
             }
