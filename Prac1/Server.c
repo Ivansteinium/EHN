@@ -26,8 +26,7 @@ int main(int argc, char *argv[])
     strcpy(private_file,"../keys/webServ.key");
     //Search for and apply the settings from command line arguments
     if (argc < 2)
-        printf("Certificate parameters not given, using default values...\n");
-    else
+        printf("Setting parameters not given, using default values...\n");
     {
         int x = 0;
         for (x = 1; x < argc; x++)
