@@ -14,7 +14,6 @@ int main(int argc, char * argv[])
     SSL_CTX *ctx;
     SSL *ssl;
     char serverAdd[255];
-    strcpy(serverAdd,"0.0.0.0:5000");
 
     // Greeting
     printf("EHN 410 Group 12 Practical 1: Client\n\n");
@@ -29,12 +28,12 @@ int main(int argc, char * argv[])
 
     // Setup certificate file paths
     strcpy(CAfile,"../keys/cert.crt");
+    strcpy(serverAdd,"0.0.0.0:5000");
     if (argc < 2)
     {
-        printf("Certificate parameters not given, using default values...\n");
+        printf("Settings not given, using default values...\n");
     } else
     {
-//        CAfile = argv[1];
         int x =0;
         for(x=1;x<argc;x++)
         {
