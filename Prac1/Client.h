@@ -1,6 +1,10 @@
 #ifndef EHN_PRAC1_CLIENT_H
 #define EHN_PRAC1_CLIENT_H
 
+/// \defgroup clientgroup Client
+/// This module contains the full client program, which allows the user to connect to the specified server, request
+/// and download files, and display web pages in the terminal
+/// @{
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -26,5 +30,5 @@ int main(int argc, char * argv[]);
 /// \param length The length up to which the buffer must be cleared.
 void clear_buffer(char * buffer, int length);
 
-
+/// @}
 #endif //EHN_PRAC1_CLIENT_H
