@@ -26,12 +26,11 @@ int main(int argc, char *argv[])
     strcpy(private_file,"../keys/webServ.key");
     //Search for and apply the settings from command line arguments
     if (argc < 2)
-    {
         printf("Certificate parameters not given, using default values...\n");
-    } else
+    else
     {
-        int x =0;
-        for(x=1;x<argc;x++)
+        int x = 0;
+        for (x = 1; x < argc; x++)
         {
             char * endpos = strstr(argv[x],"=")+1;
             if(strstr(argv[x],"cert=") != NULL)
@@ -98,7 +97,7 @@ int main(int argc, char *argv[])
     pthread_create(&server, NULL, server_thread, (void *) sv_args);
 
     // Server initialization is complete
-    printf("Server Running\n");
+    printf("Server Running on port %d\n", port_num);
 
     // Wait fot the user to stop the program
     int exit = 0;

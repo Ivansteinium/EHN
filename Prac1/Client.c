@@ -32,12 +32,11 @@ int main(int argc, char * argv[])
     strcpy(serverAdd,"0.0.0.0:5000");
     //Search for and apply the settings from command line arguments
     if (argc < 2)
-    {
         printf("Settings not given, using default values...\n");
-    } else
+    else
     {
-        int x =0;
-        for(x=1;x<argc;x++)
+        int x = 0;
+        for (x = 1; x < argc; x++)
         {
             char * endpos = strstr(argv[x],"=")+1;
             if(strstr(argv[x],"CA=") != NULL)
@@ -70,7 +69,7 @@ int main(int argc, char * argv[])
     SSL_set_mode(ssl, SSL_MODE_AUTO_RETRY);
 
     // Attempt to connect to the server
-    printf("Attempting to connect to server...\n\n");
+    printf("Attempting to connect to server at %s\n\n", serverAdd);
     BIO_set_conn_hostname(sbio, serverAdd); // Set the address and port of the server
     out = BIO_new_fp(stdout, BIO_NOCLOSE);
     if (BIO_do_connect(sbio) <= 0)
