@@ -20,9 +20,11 @@ int main(int argc, char *argv[])
     if (DEBUG)
         printf("Server debugging enabled\n\n");
 
+    // Setup certificate file paths
+    // load the default values
     strcpy(certificate_file,"../keys/webServCert.crt");
     strcpy(private_file,"../keys/webServ.key");
-    // Setup certificate file paths
+    //Search for and apply the settings from command line arguments
     if (argc < 2)
     {
         printf("Certificate parameters not given, using default values...\n");

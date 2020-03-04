@@ -27,8 +27,10 @@ int main(int argc, char * argv[])
     ctx = SSL_CTX_new(SSLv23_client_method());
 
     // Setup certificate file paths
+    //load the default values of the settings
     strcpy(CAfile,"../keys/cert.crt");
     strcpy(serverAdd,"0.0.0.0:5000");
+    //Search for and apply the settings from command line arguments
     if (argc < 2)
     {
         printf("Settings not given, using default values...\n");
