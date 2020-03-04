@@ -20,16 +20,27 @@ int main(int argc, char *argv[])
     if (DEBUG)
         printf("Server debugging enabled\n\n");
 
+    strcpy(certificate_file,"../keys/webServCert.crt");
+    strcpy(private_file,"../keys/webServ.key");
     // Setup certificate file paths
-    if (argc < 3)
+    if (argc < 2)
     {
         printf("Certificate parameters not given, using default values...\n");
-        strcpy(certificate_file,"../keys/webServCert.crt");
-        strcpy(private_file,"../keys/webServ.key");
     } else
     {
-        strcpy(certificate_file,argv[1]);
-        strcpy(private_file,argv[2]);
+        int x =0;
+        for(x=1;x<argc;x++)
+        {
+            char * endpos = strstr(argv[x],"=")+1;
+            if(strstr(argv[x],"cert=") != NULL)
+                strcpy(certificate_file,endpos);
+            else if(strstr(argv[x],"key=") != NULL)
+                strcpy(private_file,endpos);
+            else if(strstr(argv[x],"port=") != NULL)
+                port_num = atoi(endpos);
+            else
+                printf("Invalid parameter: %s\n", argv[x]);
+        }
     }
 
     SSL_CTX *ctx;

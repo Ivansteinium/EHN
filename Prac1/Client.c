@@ -9,10 +9,12 @@ int main(int argc, char * argv[])
     char buffer[513]; // has to be 1 bigger than send buffer size for \0
     char filename[MAX_REQ_LEN - 16];
     char request[MAX_REQ_LEN];
-    char *CAfile;
+    char CAfile[255];
     int isHTML = 0;
     SSL_CTX *ctx;
     SSL *ssl;
+    char serverAdd[255];
+    strcpy(serverAdd,"0.0.0.0:5000");
 
     // Greeting
     printf("EHN 410 Group 12 Practical 1: Client\n\n");
@@ -26,12 +28,26 @@ int main(int argc, char * argv[])
     ctx = SSL_CTX_new(SSLv23_client_method());
 
     // Setup certificate file paths
+    strcpy(CAfile,"../keys/cert.crt");
     if (argc < 2)
     {
         printf("Certificate parameters not given, using default values...\n");
-        CAfile = "../keys/cert.crt";
     } else
-        CAfile = argv[1];
+    {
+//        CAfile = argv[1];
+        int x =0;
+        for(x=1;x<argc;x++)
+        {
+            char * endpos = strstr(argv[x],"=")+1;
+            if(strstr(argv[x],"CA=") != NULL)
+                strcpy(CAfile,endpos);
+            else if(strstr(argv[x],"address=") != NULL)
+                strcpy(serverAdd,endpos);
+            else
+                printf("Invalid parameter: %s\n", argv[x]);
+        }
+
+    }
 
     if (!SSL_CTX_load_verify_locations(ctx, CAfile, NULL))
     {
@@ -54,11 +70,11 @@ int main(int argc, char * argv[])
 
     // Attempt to connect to the server
     printf("Attempting to connect to server...\n\n");
-    BIO_set_conn_hostname(sbio, "0.0.0.0:5000"); // Set the address and port of the server
+    BIO_set_conn_hostname(sbio, serverAdd); // Set the address and port of the server
     out = BIO_new_fp(stdout, BIO_NOCLOSE);
     if (BIO_do_connect(sbio) <= 0)
     {   // Connection to the server was not successful
-        printf("Error connecting to server:\n");
+        printf("Error connecting to server\n");
         if (DEBUG)
             printf("%s\n", ERR_error_string(ERR_get_error(), NULL));
         return EXIT_FAILURE;
