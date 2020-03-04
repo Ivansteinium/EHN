@@ -22,8 +22,8 @@
 	port specifies on what port the server should be run
 	
 	If a setting is not set, the following defaults apply:
-		cert="../keys/webServCert.crt"
-		key="../keys/webServ.key"
+		cert=../keys/webServCert.crt
+		key=../keys/webServ.key
 		port=5000
 
 	The user can type EXIT at any time to stop the server and close the program.
@@ -33,7 +33,7 @@
 
 3) To run the client
 
-	Please ensure that the server is running on the local machine before running the client, otherwise the client will simply say Connection refused and exit.
+	Please ensure that the server is running on the local machine before running the client, otherwise the client will not be able to connect to the server and must be re-started.
 	
 	from the main project directory:
 	make runClient 
@@ -48,7 +48,7 @@
 	address specifies the ip address and port of the server to connect to in the format ip_address:port
 	
 	If a setting is not set, the following defaults apply:
-		CA="../keys/cert.crt"
+		CA=../keys/cert.crt
 		address=0.0.0.0:5000
 
 4) Using the client
