@@ -44,7 +44,21 @@ int main(int argc, char * argv[])
             else if(strstr(argv[x],"address=") != NULL)
                 strcpy(serverAdd,endpos);
             else
+            {
                 printf("Invalid parameter: %s\n", argv[x]);
+                printf("Usage:\n"
+                       "./Client Argument1 Argument2 ...\n"
+                       "\t\n"
+                       "\tThe arguments are structured as follows: setting=value\n"
+                       "\tThe available settings are: CA and address\n"
+                       "\t\n"
+                       "\tCA specifies the path to the certificate of the CA that should be used to verify the server \n"
+                       "\taddress specifies the ip address and port of the server to connect to in the format ip_address:port\n"
+                       "\t\n"
+                       "\tIf a setting is not set, the following defaults apply:\n"
+                       "\t\tCA=../keys/cert.crt\n"
+                       "\t\taddress=0.0.0.0:5000\n\n");
+            }
         }
 
     }

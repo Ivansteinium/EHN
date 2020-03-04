@@ -39,7 +39,24 @@ int main(int argc, char *argv[])
             else if(strstr(argv[x],"port=") != NULL)
                 port_num = atoi(endpos);
             else
+            {
                 printf("Invalid parameter: %s\n", argv[x]);
+                printf("Usage:\n"
+                       "./Server Argument1 Argument2 ...\n"
+                       "\n"
+                       "\tThe arguments are structured as follows: setting=value\n"
+                       "\tThe available settings are: cert, key and port\n"
+                       "\t\n"
+                       "\tcert specifies the path to the certificate of the server \n"
+                       "\tkey specifies the path to the private key of the server\n"
+                       "\tport specifies on what port the server should be run\n"
+                       "\t\n"
+                       "\tIf a setting is not set, the following defaults apply:\n"
+                       "\t\tcert=../keys/webServCert.crt\n"
+                       "\t\tkey=../keys/webServ.key\n"
+                       "\t\tport=5000\n\n");
+            }
+
         }
     }
 
