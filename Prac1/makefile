@@ -1,9 +1,9 @@
 main: Server.c Server.h Client.h Client.c Compiled/Client Compiled/Server
 	
-Compiled/Server:
+Compiled/Server: Server.c Server.h
 	gcc Server.c -o Compiled/Server -L/usr/local/ssl -lssl -lcrypto -pthread
 	
-Compiled/Client:
+Compiled/Client: Client.c Client.h
 	gcc Client.c -o Compiled/Client -L/usr/local/ssl -lssl -lcrypto
 	
 runServer: Compiled/Server
