@@ -19,6 +19,8 @@
 char *pad_bits(char *block, int desired_length);
 
 /// Convert char to block of hex
-//void blockify(char *in_message, char ***state_output, int size);
-void blockify16(char *in_message, char state_output[4][4][2], int size);
+void blockify16(char *in_message, char state_output[4][4][3], int size);
+
+/// Output blocks
+void print_block_16(char state_output[4][4][3]);
 #endif //EHN_PRAC1_ENCRYPTION_H
