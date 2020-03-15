@@ -117,10 +117,6 @@
 \begin{document}
 
 % Titlepage & ToC
-\hypersetup{pageanchor=false,
-             bookmarksnumbered=true,
-             pdfencoding=unicode
-            }
 \pagenumbering{alph}
 \begin{titlepage}
 \vspace*{7cm}
@@ -135,14 +131,18 @@
 \tableofcontents
 \clearemptydoublepage
 \pagenumbering{arabic}
-\hypersetup{pageanchor=true}
 
 %--- Begin generated contents ---
-\chapter{Class Index}
+\chapter{Module Index}
+\input{modules}
+\chapter{Data Structure Index}
 \input{annotated}
 \chapter{File Index}
 \input{files}
-\chapter{Class Documentation}
+\chapter{Module Documentation}
+\input{group__clientgroup}
+\include{group__servergroup}
+\chapter{Data Structure Documentation}
 \input{structclient__args}
 \input{structserver__args}
 \chapter{File Documentation}

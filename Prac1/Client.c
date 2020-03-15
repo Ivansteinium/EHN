@@ -9,10 +9,11 @@ int main(int argc, char * argv[])
     char buffer[513]; // has to be 1 bigger than send buffer size for \0
     char filename[MAX_REQ_LEN - 16];
     char request[MAX_REQ_LEN];
-    char *CAfile;
+    char CAfile[255];
     int isHTML = 0;
     SSL_CTX *ctx;
     SSL *ssl;
+    char serverAdd[255];
 
     // Greeting
     printf("EHN 410 Group 12 Practical 1: Client\n\n");
@@ -26,12 +27,41 @@ int main(int argc, char * argv[])
     ctx = SSL_CTX_new(SSLv23_client_method());
 
     // Setup certificate file paths
+    //load the default values of the settings
+    strcpy(CAfile,"../keys/cert.crt");
+    strcpy(serverAdd,"0.0.0.0:5000");
+    //Search for and apply the settings from command line arguments
     if (argc < 2)
+        printf("Settings not given, using default values...\n");
+    else
     {
-        printf("Certificate parameters not given, using default values...\n");
-        CAfile = "../keys/cert.crt";
-    } else
-        CAfile = argv[1];
+        int x = 0;
+        for (x = 1; x < argc; x++)
+        {
+            char * endpos = strstr(argv[x],"=")+1;
+            if(strstr(argv[x],"CA=") != NULL)
+                strcpy(CAfile,endpos);
+            else if(strstr(argv[x],"address=") != NULL)
+                strcpy(serverAdd,endpos);
+            else
+            {
+                printf("Invalid parameter: %s\n", argv[x]);
+                printf("Usage:\n"
+                       "./Client Argument1 Argument2 ...\n"
+                       "\t\n"
+                       "\tThe arguments are structured as follows: setting=value\n"
+                       "\tThe available settings are: CA and address\n"
+                       "\t\n"
+                       "\tCA specifies the path to the certificate of the CA that should be used to verify the server \n"
+                       "\taddress specifies the ip address and port of the server to connect to in the format ip_address:port\n"
+                       "\t\n"
+                       "\tIf a setting is not set, the following defaults apply:\n"
+                       "\t\tCA=../keys/cert.crt\n"
+                       "\t\taddress=0.0.0.0:5000\n\n");
+            }
+        }
+
+    }
 
     if (!SSL_CTX_load_verify_locations(ctx, CAfile, NULL))
     {
@@ -53,12 +83,12 @@ int main(int argc, char * argv[])
     SSL_set_mode(ssl, SSL_MODE_AUTO_RETRY);
 
     // Attempt to connect to the server
-    printf("Attempting to connect to server...\n\n");
-    BIO_set_conn_hostname(sbio, "0.0.0.0:5000"); // Set the address and port of the server
+    printf("Attempting to connect to server at %s\n\n", serverAdd);
+    BIO_set_conn_hostname(sbio, serverAdd); // Set the address and port of the server
     out = BIO_new_fp(stdout, BIO_NOCLOSE);
     if (BIO_do_connect(sbio) <= 0)
     {   // Connection to the server was not successful
-        printf("Error connecting to server:\n");
+        printf("Error connecting to server\n");
         if (DEBUG)
             printf("%s\n", ERR_error_string(ERR_get_error(), NULL));
         return EXIT_FAILURE;
@@ -103,7 +133,7 @@ int main(int argc, char * argv[])
         // Attempt to connect to the Server
         if (BIO_do_connect(sbio) <= 0)
         {   // Connection to the server was not successful
-            printf("Error connecting to server:\n");
+            printf("Error connecting to server\n");
             if (DEBUG)
                 printf("%s\n", ERR_error_string(ERR_get_error(), NULL));
             break;
@@ -144,15 +174,15 @@ int main(int argc, char * argv[])
             } else
                 fileExists = 1;
 
+            messagepos = strstr(buffer, "\n\n");
+            if (messagepos != NULL)
+                messagepos += 2;
+            fwrite(messagepos, sizeof(char), bytesread - (messagepos - buffer), file);
+            bytesread = BIO_read(sbio, buffer, sizeof(buffer));
+
             while (bytesread > 0)
             {   // While there are bytes to read, read them and write them to the file
-                messagepos = strstr(buffer, "\n\n");
-                if (messagepos != NULL)
-                {
-                    messagepos +=2;
-                    fwrite(messagepos, sizeof(char), bytesread - (messagepos - buffer), file);
-                } else
-                    fwrite(buffer, sizeof(char), bytesread, file);
+                fwrite(buffer, sizeof(char), bytesread, file);
                 bytesread = BIO_read(sbio, buffer, sizeof(buffer));
             }
 
@@ -162,7 +192,7 @@ int main(int argc, char * argv[])
             if (fileExists)
                 printf("File download completed: %s \n", filename);
             else
-            {   // Server returened error
+            {   // Server returned error
                 printf("Error: Requested item not found\n");
                 remove(local_filename); // Delete the newly created file
             }

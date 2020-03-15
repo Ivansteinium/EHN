@@ -1,6 +1,11 @@
 #ifndef EHN_PRAC1_SERVER_H
 #define EHN_PRAC1_SERVER_H
 
+/// \defgroup servergroup Server
+/// This module contains the entire server program. The server starts an SSL server with the specified key and
+/// certificate files and listens for client connections. It also indexes all files stored in the Media_files folder
+/// and presents the list of items to the client to allow the client to download the files.
+/// @{
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -88,5 +93,5 @@ int read_media();
 /// \return The same c-string used for the output.
 char *itoa(char *result, int number);
 
-
+/// @}
 #endif //EHN_PRAC1_SERVER_H

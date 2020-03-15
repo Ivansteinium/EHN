@@ -21,15 +21,43 @@ int main(int argc, char *argv[])
         printf("Server debugging enabled\n\n");
 
     // Setup certificate file paths
-    if (argc < 3)
+    // load the default values
+    strcpy(certificate_file,"../keys/webServCert.crt");
+    strcpy(private_file,"../keys/webServ.key");
+    //Search for and apply the settings from command line arguments
+    if (argc < 2)
+        printf("Setting parameters not given, using default values...\n");
     {
-        printf("Certificate parameters not given, using default values...\n");
-        strcpy(certificate_file,"../keys/webServCert.crt");
-        strcpy(private_file,"../keys/webServ.key");
-    } else
-    {
-        strcpy(certificate_file,argv[1]);
-        strcpy(private_file,argv[2]);
+        int x = 0;
+        for (x = 1; x < argc; x++)
+        {
+            char * endpos = strstr(argv[x],"=")+1;
+            if(strstr(argv[x],"cert=") != NULL)
+                strcpy(certificate_file,endpos);
+            else if(strstr(argv[x],"key=") != NULL)
+                strcpy(private_file,endpos);
+            else if(strstr(argv[x],"port=") != NULL)
+                port_num = atoi(endpos);
+            else
+            {
+                printf("Invalid parameter: %s\n", argv[x]);
+                printf("Usage:\n"
+                       "./Server Argument1 Argument2 ...\n"
+                       "\n"
+                       "\tThe arguments are structured as follows: setting=value\n"
+                       "\tThe available settings are: cert, key and port\n"
+                       "\t\n"
+                       "\tcert specifies the path to the certificate of the server \n"
+                       "\tkey specifies the path to the private key of the server\n"
+                       "\tport specifies on what port the server should be run\n"
+                       "\t\n"
+                       "\tIf a setting is not set, the following defaults apply:\n"
+                       "\t\tcert=../keys/webServCert.crt\n"
+                       "\t\tkey=../keys/webServ.key\n"
+                       "\t\tport=5000\n\n");
+            }
+
+        }
     }
 
     SSL_CTX *ctx;
@@ -85,7 +113,7 @@ int main(int argc, char *argv[])
     pthread_create(&server, NULL, server_thread, (void *) sv_args);
 
     // Server initialization is complete
-    printf("Server Running\n");
+    printf("Server Running on port %d\n", port_num);
 
     // Wait fot the user to stop the program
     int exit = 0;
@@ -201,6 +229,8 @@ void *new_client_connection(void *ptr)
     char *startpos;
     char *endpos;
     char filename[256];
+    char *spacepos;
+    char *temp;
 
     while (1)  // Service the client's requests
     {
@@ -219,21 +249,40 @@ void *new_client_connection(void *ptr)
                 // Get the requested item from the string
                 strncpy(filename, startpos, endpos - startpos);
 
+                // Look if spaces are present in the requested file
+                spacepos = strstr(filename, "%20");
+                if (spacepos)
+                {   // %20 is present in the name, replace with spaces
+                    int i = 0;
+                    temp = filename;
+                    while (spacepos)
+                    {
+                        while (*temp != *spacepos) // Write characters til %20
+                            filename[i++] = *(temp++);
+                        filename[i++] = ' '; // Write a space rather than %20
+                        temp++; temp++; temp++; // Skip over the %20
+                        spacepos = strstr(temp, "%20"); // Find the next occurrence
+                    }
+
+                    while (*temp != '\0')
+                        filename[i++] = *(temp++);
+                    filename[i++] = '\0';
+                }
+
                 if (strcmp(filename, "/") == 0)  // Write the home page
                     write_page(client, "../Media_files/index.html", "html");
                 else
                 {   // Not home page
                     // Delete leading "/"
-                    startpos += 1;
-                    strncpy(filename, startpos, endpos - startpos);
-                    filename[endpos - startpos] = '\0';
+                    temp = filename;
+                    temp++;
 
                     // Search for file and send it if present
                     int i = 0;
                     int valid = 0;
                     for (i = 0; i < numMediaItems + 1; i++)
                     {
-                        if (strcmp(filename, MediaItems[i]) == 0)
+                        if (strcmp(temp, MediaItems[i]) == 0)
                         {
                             valid = 1;
                             break;
@@ -247,9 +296,9 @@ void *new_client_connection(void *ptr)
                     } else
                     {   // Send file
                         char sendname[256];
-                        sprintf(sendname, "%s%s", "../Media_files/", filename);
+                        sprintf(sendname, "%s%s", "../Media_files/", temp);
                         if (strstr(tempbuf, "html") == NULL)
-                            write_page(client, sendname, filename); // General file
+                            write_page(client, sendname, temp); // General file
                         else
                             write_page(client, sendname, "html"); // HTML file
                     }
