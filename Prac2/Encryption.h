@@ -15,7 +15,7 @@
 #define MAX_REQ_LEN 256
 
 
-char *s_box[32][8] = {
+char s_box[32][8][3] = {
         {"63","7C","77","7B","F2","6B","6F","C5"},
         {"30","01","67","2B","FE","D7","AB","76"},
         {"CA","82","C9","7D","FA","59","47","F0"},
@@ -51,7 +51,7 @@ char *s_box[32][8] = {
 };
 
 
-char *s_inv[32][8]={
+char s_inv[32][8][3]={
         {"52","09","6A","D5","30","36","A5","38"},
         {"BF","40","A3","9E","81","F3","D7","FB"},
         {"7C","E3","39","82","9B","2F","FF","87"},
@@ -97,8 +97,12 @@ char *s_inv[32][8]={
 char *pad_bits(char *block, int desired_length);
 
 /// Convert char to block of hex
-void blockify16(char *in_message, char state_output[4][4][3], int size);
+void blockify_16(char *in_message, char state_output[4][4][3], int size);
 
 /// Output blocks
 void print_block_16(char state_output[4][4][3]);
+
+/// Rotate 32bits
+void word_rotate_32(char word[4][3]);
+
 #endif //EHN_PRAC1_ENCRYPTION_H
