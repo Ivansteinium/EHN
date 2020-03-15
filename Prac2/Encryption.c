@@ -91,4 +91,5 @@ void print_block_16(char state_output[4][4][3]){
         }
         printf("\n");
     }
+    printf("\n");
 }
