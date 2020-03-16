@@ -94,5 +94,16 @@ void print_block_16(int state_output[4][4]);
 /// Shift last item to front (rotate 32bits)
 void word_rotate_32(int word[4]);
 
+/// Divide value up into MSB and LSB Nibble and return s_box value
+int s_box_transform(int input);
+
+/// Exponentiation of 2, double previous except 0x80 and max value of 0xFF
+int r_xpon_2(int prev);
+
+/// Core key operation transform of previous 4 bytes.
+void key_scheduler(int temp[4], int rcon);
+
+/// Main key expansion funciton
+void key_expansion(int aes_key_176[176], int user_key_16[16]);
 
 #endif //EHN_PRAC1_ENCRYPTION_H
