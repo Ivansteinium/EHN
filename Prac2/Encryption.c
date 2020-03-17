@@ -21,6 +21,18 @@ int main(int argc, char *argv[])
     int key[16] = {0x74, 0x65, 0x73, 0x74, 0x20, 0x66, 0x75, 0x6E, 0x63, 0x74, 0x69, 0x64, 0x6E, 0x61, 0x6C, 0x69};
     int key_example[16] = {0x0f, 0x15, 0x71, 0xc9, 0x47, 0xd9, 0xe8, 0x59, 0x0c, 0xb7, 0xad, 0x00, 0xaf, 0x7f, 0x67, 0x98};
     int aes_key[176];
+
+    int test_cols[4][4] = {
+            {0x74, 0x20, 0x61, 0x73},
+            {0x68, 0x69, 0x20, 0x74},
+            {0x69, 0x73, 0x74, 0x2e},
+            {0x73, 0x20, 0x65, 0x2e}
+    };
+
+    aes_mix_cols(test_cols);
+
+
+
     key_expansion(aes_key, key);
 
     //word_rotate_32(test);
@@ -45,6 +57,9 @@ int main(int argc, char *argv[])
         message_pos += 16;
         print_block_16(state_array[current_block]);
     }
+
+    aes_128(state_array[0], aes_key);
+    print_block_16(state_array);
 
 /*    if(message_len%16 != 0){
 
@@ -135,10 +150,10 @@ void key_scheduler(int temp[4], int rcon){
     word_rotate_32(temp);
     for (byte_pos = 0; byte_pos < 4; byte_pos++) {
         temp[byte_pos] = s_box_transform(temp[byte_pos]);
-        printf("%02X", temp[byte_pos]);
-        printf(" ");
+        //printf("%02X", temp[byte_pos]);
+        //printf(" ");
     }
-    printf("\n");
+    //printf("\n");
     temp[0] = temp[0]^rcon;
 }
 
@@ -187,4 +202,121 @@ void key_expansion(int aes_key_176[176], int user_key_16[16]){
     }
 
 
+}
+
+
+void aes_shift_rows(int state_output[4][4]){
+    int row;
+    int num_rotations;
+    for (row = 1; row < 4; row++) {
+        for (num_rotations = 0; num_rotations < row; num_rotations++) {
+            word_rotate_32(state_output[row]);
+        }
+    }
+}
+
+
+int matrix_dot(int prime_val, int col_val){
+    int flag = 0;
+    if (prime_val == 0x03){
+        int left, right;
+        left = matrix_dot(0x02, col_val);
+        right = matrix_dot(0x01, col_val);
+        return left^right;
+    }
+    else if (prime_val == 0x02){
+        if ((col_val & 0b10000000) == 0b10000000){
+            flag = 1;
+        }
+        col_val = (col_val << 1) & 0b011111111;
+        if (flag){
+            return col_val ^ 0b00011011;
+        }
+        return col_val;
+
+    }
+    else{
+        return col_val;
+    }
+}
+
+
+void aes_mix_cols(int state_output[4][4]){
+    int row, col, out;
+    int new_state[4][4];
+    int multiply[4];
+    for (out = 0; out < 4; ++out) {
+        for (row = 0; row < 4; row++) {
+            for (col = 0; col < 4; col++) {
+                multiply[col] = matrix_dot(prime_matrix[row][col], state_output[col][out]);
+            }
+            new_state[row][out] = multiply[0] ^ multiply[1] ^ multiply[2] ^ multiply[3];
+        }
+    }
+
+
+    for (row = 0; row < 4; row++) {
+        for (col = 0; col < 4; col++) {
+            state_output[row][col] = new_state[row][col];
+        }
+    }
+}
+
+
+void aes_128(int state_output[4][4], int key[176]){
+    int row, col;
+    int round;
+    int key_index = 0;
+    // Initial round
+    for (col = 0; col < 4; col++) {
+        for (row = 0; row < 4; row++) {
+            state_output[row][col] = state_output[row][col] ^ key[row+(col*4) + key_index];
+        }
+    }
+    // Update key position
+    key_index = key_index + 16;
+
+    // Encryption Rounds Nr - 1
+    for (round = 0; round < 9; round++) {
+
+        // Sub bytes
+        for (col = 0; col < 4; col++) {
+            for (row = 0; row < 4; row++) {
+                state_output[row][col] = s_box_transform(state_output[row][col]);
+            }
+        }
+
+        // Shift rows
+        aes_shift_rows(state_output);
+
+        // Mix columns
+        aes_mix_cols(state_output);
+
+        // Add round key
+        for (col = 0; col < 4; col++) {
+            for (row = 0; row < 4; row++) {
+                state_output[row][col] = state_output[row][col] ^ key[row+(col*4) + key_index];
+            }
+        }
+        // Update key position
+        key_index = key_index + 16;
+    }
+
+    // Final round
+    // Sub bytes
+    for (col = 0; col < 4; col++) {
+        for (row = 0; row < 4; row++) {
+            state_output[row][col] = s_box_transform(state_output[row][col]);
+        }
+    }
+
+    // Shift rows
+    aes_shift_rows(state_output);
+
+    // Add round key
+    for (col = 0; col < 4; col++) {
+        for (row = 0; row < 4; row++) {
+            state_output[row][col] = state_output[row][col] ^ key[row+(col*4) + key_index];
+        }
+    }
 }

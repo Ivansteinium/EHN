@@ -82,6 +82,13 @@ int s_inv[32][8] = {{0x52, 0x09, 0x6A, 0xD5, 0x30, 0x36, 0xA5, 0x38},
                     {0x17, 0x2B, 0x04, 0x7E, 0xBA, 0x77, 0xD6, 0x26},
                     {0xE1, 0x69, 0x14, 0x63, 0x55, 0x21, 0x0C, 0x7D}};
 
+int prime_matrix[4][4] = {
+        {0x02, 0x03, 0x01, 0x01},
+        {0x01, 0x02, 0x03, 0x01},
+        {0x01, 0x01, 0x02, 0x03},
+        {0x03, 0x01, 0x01, 0x02}
+};
+
 
 /// Convert integer array to block of hex
 void blockify_16(char *in_message, int state_output[4][4], int size);
@@ -100,10 +107,22 @@ int s_box_transform(int input);
 /// Exponentiation of 2, double previous except 0x80 and max value of 0xFF
 int r_xpon_2(int prev);
 
-/// Core key operation transform of previous 4 bytes.
+/// Core key operation transform of previous 4 bytes
 void key_scheduler(int temp[4], int rcon);
 
 /// Main key expansion funciton
 void key_expansion(int aes_key_176[176], int user_key_16[16]);
+
+/// Shift rows the row index amount of times
+void aes_shift_rows(int state_output[4][4]);
+
+/// Recursive multiplication of the column value and prime matrix
+int matrix_dot(int prime_val, int col_val);
+
+/// Easy matrix dot and XOR
+void aes_mix_cols(int state_output[4][4]);
+
+/// The aes128 implementation
+void aes_128(int state_output[4][4], int key[176]);
 
 #endif //EHN_PRAC1_ENCRYPTION_H
