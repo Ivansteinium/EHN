@@ -139,18 +139,18 @@ void decrypt_aes_128(int state_output[4][4], int key[176]);
 
 
 /// The Cipher Block Chaining encryption
-void cbc_encrypt(int state_output_blocks[][4][4], int num_blocks, int IV[16], int key[176]);
+void cbc_encrypt(int state_output_blocks[][4][4], int num_blocks, int IV[16], int key[176], int encryption);
 
 /// The Cipher Block Chaining decryption
-void cbc_decrypt(int state_output_blocks[][4][4], int num_blocks, int IV[16], int key[176]);
+void cbc_decrypt(int state_output_blocks[][4][4], int num_blocks, int IV[16], int key[176], int encryption);
 
 
 /// Helper for shifting buffer contents in CFB
 void shift_bytes(int input[16]);
 
-void cfb_encrypt(int stream_input[][8], int num_blocks, int IV[16], int key[176]);
+void cfb_encrypt(int stream_input[][8], int num_blocks, int IV[16], int key[176], int encryption);
 
-void cfb_decrypt(int stream_input[][8], int num_blocks, int IV[16], int key[176]);
+void cfb_decrypt(int stream_input[][8], int num_blocks, int IV[16], int key[176], int encryption);
 
 //void word_rotate_192(int word[6], int inv);
 //void key_scheduler_192(int temp[6], int rcon);
@@ -161,6 +161,13 @@ void key_expansion_192(int aes_key_208[208], int user_key_24[24]);
 //void word_rotate_256(int word[8], int inv);
 //void key_scheduler_256(int temp[8], int rcon);
 void key_expansion_256(int aes_key_240[240], int user_key_32[32]);
+
+
+
+void aes_192(int state_output[4][4], int key[208]);
+void decrypt_aes_192(int state_output[4][4], int key[208]);
+void aes_256(int state_output[4][4], int key[240]);
+void decrypt_aes_256(int state_output[4][4], int key[240]);
 
 
 #endif //EHN_PRAC1_ENCRYPTION_H
