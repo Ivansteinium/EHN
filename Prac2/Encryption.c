@@ -534,8 +534,8 @@ void cfb_decrypt(int stream_input[][8], int num_blocks, int IV[16], int key[176]
         // XOR chain with plaintext
         for (col = 0; col < 2; col++) {
             for (row = 0; row < 4; row++) {
-                stream_input[block_pos][row + (col*4)] = block[row][col] ^ stream_input[block_pos][row + (col*4)];
                 IV[row + (col*4) + 8] = stream_input[block_pos][row + (col*4)];
+                stream_input[block_pos][row + (col*4)] = block[row][col] ^ stream_input[block_pos][row + (col*4)];
             }
         }
     }
