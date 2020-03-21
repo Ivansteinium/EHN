@@ -97,9 +97,11 @@ int inv_prime_matrix[4][4] = {
 };
 
 
-/// Convert integer array to block of hex
+/// Convert char array to block of hex
 void blockify_16(char *in_message, int state_output[4][4], int size);
 
+/// Convert integer array to block of hex
+void hex_blockify_16(int in_message[16], int state_output[4][4]);
 
 /// Output blocks to terminal
 void print_block_16(int state_output[4][4]);
@@ -132,6 +134,8 @@ void aes_mix_cols(int state_output[4][4], int inv);
 /// The aes128 implementation
 void aes_128(int state_output[4][4], int key[176]);
 
+/// Decrypting aes128
+void decrypt_aes_128(int state_output[4][4], int key[176]);
 
 
 /// The Cipher Block Chaining encryption
@@ -139,5 +143,13 @@ void cbc_encrypt(int state_output_blocks[][4][4], int num_blocks, int IV[16], in
 
 /// The Cipher Block Chaining decryption
 void cbc_decrypt(int state_output_blocks[][4][4], int num_blocks, int IV[16], int key[176]);
+
+
+/// Helper for shifting buffer contents in CFB
+void shift_bytes(int input[16]);
+
+void cfb_encrypt(int stream_input[][8], int num_blocks, int IV[16], int key[176]);
+
+void cfb_decrypt(int stream_input[][8], int num_blocks, int IV[16], int key[176]);
 
 #endif //EHN_PRAC1_ENCRYPTION_H

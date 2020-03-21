@@ -63,6 +63,7 @@ int main(int argc, char *argv[])
     }
 
     aes_128(state_array[0], aes_key);
+    decrypt_aes_128(state_array[0], aes_key);
     print_block_16(state_array);
 
 /*    if(message_len%16 != 0){
@@ -100,6 +101,16 @@ void blockify_16(char *in_message, int state_output[4][4], int start_pos)
     }
 }
 
+void hex_blockify_16(int in_message[16], int state_output[4][4]){
+    int row, col;
+    for(col = 0; col < 4; col++)
+    {
+        for(row = 0; row < 4; row++)
+        {
+            state_output[row][col] = in_message[(4*col)+row];
+        }
+    }
+}
 
 void print_block_16(int state_output[4][4])
 {
@@ -358,6 +369,69 @@ void aes_128(int state_output[4][4], int key[176]){
 }
 
 
+void decrypt_aes_128(int state_output[4][4], int key[176]){
+    int row, col;
+    int round;
+    int key_index = 160;
+    // Initial round
+    for (col = 0; col < 4; col++) {
+        for (row = 0; row < 4; row++) {
+            state_output[row][col] = state_output[row][col] ^ key[row+(col*4) + key_index];
+        }
+    }
+    // Update key position
+    key_index = key_index - 16;
+
+    // Encryption Rounds Nr - 1
+    for (round = 0; round < 9; round++) {
+
+        // Inverse sub bytes
+        for (col = 0; col < 4; col++) {
+            for (row = 0; row < 4; row++) {
+                state_output[row][col] = s_box_transform(state_output[row][col], 1);
+            }
+        }
+
+        // Inverse shift rows
+        aes_shift_rows(state_output, 1);
+
+        // Inverse mix columns
+        aes_mix_cols(state_output, 1);
+
+        // Add round key
+        for (col = 0; col < 4; col++) {
+            for (row = 0; row < 4; row++) {
+                state_output[row][col] = state_output[row][col] ^ key[row+(col*4) + key_index];
+            }
+        }
+        // Update key position
+        key_index = key_index - 16;
+    }
+
+    // Final round
+    // Inverse sub bytes
+    for (col = 0; col < 4; col++) {
+        for (row = 0; row < 4; row++) {
+            state_output[row][col] = s_box_transform(state_output[row][col], 1);
+        }
+    }
+
+    // Inverse shift rows
+    aes_shift_rows(state_output, 1);
+
+    // Add round key
+    for (col = 0; col < 4; col++) {
+        for (row = 0; row < 4; row++) {
+            state_output[row][col] = state_output[row][col] ^ key[row+(col*4) + key_index];
+        }
+    }
+}
+
+
+
+
+
+
 
 void cbc_encrypt(int state_output_blocks[][4][4], int num_blocks, int IV[16], int key[176]){
     int row, col;
@@ -377,6 +451,91 @@ void cbc_encrypt(int state_output_blocks[][4][4], int num_blocks, int IV[16], in
         for (col = 0; col < 4; col++) {
             for (row = 0; row < 4; row++) {
                 IV[row+(col*4)] = state_output_blocks[block_pos][row][col];
+            }
+        }
+    }
+}
+
+
+void cbc_decrypt(int state_output_blocks[][4][4], int num_blocks, int IV[16], int key[176]){
+    int row, col;
+    int block_pos, chain_pos;
+    int chain[16];
+    for (block_pos = 0; block_pos < num_blocks; block_pos++) {
+        // Update chain with cipher text values
+        for (col = 0; col < 4; col++) {
+            for (row = 0; row < 4; row++) {
+                chain[row+(col*4)] = state_output_blocks[block_pos][row][col];
+            }
+        }
+
+        // Decrypt
+        decrypt_aes_128(state_output_blocks[block_pos], key);
+
+        // XOR IV with decrypted text
+        for (col = 0; col < 4; col++) {
+            for (row = 0; row < 4; row++) {
+                state_output_blocks[block_pos][row][col] = state_output_blocks[block_pos][row][col] ^ IV[row+(col*4)];
+            }
+        }
+
+        // Update IV with previous cipher text values
+        for (chain_pos = 0; chain_pos < 16; chain_pos++) {
+            IV[chain_pos] = chain[chain_pos];
+        }
+    }
+}
+
+void shift_bytes(int input[16]){
+    int i;
+    for (i = 0; i < 8; i++) {
+        input[i] = input[i+8];
+    }
+}
+
+void cfb_encrypt(int stream_input[][8], int num_blocks, int IV[16], int key[176]){
+    int row, col;
+    int block_pos;
+    int block[4][4];
+
+    for (block_pos = 0; block_pos < num_blocks; block_pos++) {
+        hex_blockify_16(IV, block);
+
+        // Encrypt
+        aes_128(block, key);
+
+        // Move bytes
+        shift_bytes(IV);
+
+        // XOR chain with plaintext
+        for (col = 0; col < 2; col++) {
+            for (row = 0; row < 4; row++) {
+                stream_input[block_pos][row + (col*4)] = block[row][col] ^ stream_input[block_pos][row + (col*4)];
+                IV[row + (col*4) + 8] = stream_input[block_pos][row + (col*4)];
+            }
+        }
+    }
+}
+
+void cfb_decrypt(int stream_input[][8], int num_blocks, int IV[16], int key[176]){
+    int row, col;
+    int block_pos;
+    int block[4][4];
+
+    for (block_pos = 0; block_pos < num_blocks; block_pos++) {
+        hex_blockify_16(IV, block);
+
+        // Decrypt
+        decrypt_aes_128(block, key);
+
+        // Move bytes
+        shift_bytes(IV);
+
+        // XOR chain with plaintext
+        for (col = 0; col < 2; col++) {
+            for (row = 0; row < 4; row++) {
+                stream_input[block_pos][row + (col*4)] = block[row][col] ^ stream_input[block_pos][row + (col*4)];
+                IV[row + (col*4) + 8] = stream_input[block_pos][row + (col*4)];
             }
         }
     }
