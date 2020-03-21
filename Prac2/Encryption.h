@@ -152,4 +152,15 @@ void cfb_encrypt(int stream_input[][8], int num_blocks, int IV[16], int key[176]
 
 void cfb_decrypt(int stream_input[][8], int num_blocks, int IV[16], int key[176]);
 
+//void word_rotate_192(int word[6], int inv);
+//void key_scheduler_192(int temp[6], int rcon);
+
+
+void key_expansion_192(int aes_key_208[208], int user_key_24[24]);
+
+//void word_rotate_256(int word[8], int inv);
+//void key_scheduler_256(int temp[8], int rcon);
+void key_expansion_256(int aes_key_240[240], int user_key_32[32]);
+
+
 #endif //EHN_PRAC1_ENCRYPTION_H

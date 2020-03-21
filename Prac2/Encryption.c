@@ -19,6 +19,13 @@ int main(int argc, char *argv[])
     char message[MAX_REQ_LEN];
     int test[4] = {0x3A, 0x65, 0x71, 0x1B};
     int key[16] = {0x74, 0x65, 0x73, 0x74, 0x20, 0x66, 0x75, 0x6E, 0x63, 0x74, 0x69, 0x64, 0x6E, 0x61, 0x6C, 0x69};
+    int key_24[24] = {0x74, 0x65, 0x73, 0x74, 0x20, 0x66, 0x75, 0x6E, 0x63, 0x74,0x69, 0x64,
+                      0x6E, 0x61, 0x6C, 0x69, 0x74, 0x65, 0x73, 0x74, 0x20, 0x66, 0x75, 0x6E};
+    int key_36[36] = {0x74, 0x65, 0x73, 0x74, 0x20, 0x66, 0x75, 0x6E, 0x63, 0x74,0x69, 0x64,
+                      0x6E, 0x61, 0x6C, 0x69, 0x74, 0x65, 0x73, 0x74, 0x20, 0x66, 0x75, 0x6E,
+                      0x6E, 0x61, 0x6C, 0x69, 0x74, 0x65, 0x73, 0x74, 0x20, 0x66, 0x75, 0x6E};
+    int aes256_key[240];
+    int aes192_key[208];
     int key_example[16] = {0x0f, 0x15, 0x71, 0xc9, 0x47, 0xd9, 0xe8, 0x59, 0x0c, 0xb7, 0xad, 0x00, 0xaf, 0x7f, 0x67, 0x98};
     int aes_key[176];
 
@@ -34,6 +41,9 @@ int main(int argc, char *argv[])
 
 
     key_expansion(aes_key, key);
+    key_expansion_192(aes192_key, key_24);
+    key_expansion_256(aes256_key, key_36);
+
 
     word_rotate_32(test, 0);
     word_rotate_32(test, 1);
@@ -222,7 +232,7 @@ void key_expansion(int aes_key_176[176], int user_key_16[16]){
             aes_key_176[byte_pos+16+(16*expanded_pos)] = temp[byte_pos];               //Expand key
         }
 
-        for (int sub_pos = 0; sub_pos < 3; sub_pos++) {
+        for (sub_pos = 0; sub_pos < 3; sub_pos++) {
             for (byte_pos = 0; byte_pos < 4; byte_pos++) {
                 temp[byte_pos] = temp[byte_pos] ^ aes_key_176[byte_pos+4+(16*expanded_pos)+(4*sub_pos)]; //Bitwise XOR with 16bytes before
                 aes_key_176[byte_pos+4+16+(16*expanded_pos)+(4*sub_pos)] = temp[byte_pos];               //Expand key
@@ -538,5 +548,187 @@ void cfb_decrypt(int stream_input[][8], int num_blocks, int IV[16], int key[176]
                 stream_input[block_pos][row + (col*4)] = block[row][col] ^ stream_input[block_pos][row + (col*4)];
             }
         }
+    }
+}
+
+//void word_rotate_192(int word[6], int inv)
+//{
+//    if(inv){
+//        // Shift last item to front
+//        int temp = word[0];
+//        word[0] = word[5];
+//        word[5] = word[4];
+//        word[4] = word[3];
+//        word[3] = word[2];
+//        word[2] = word[1];
+//        word[1] = temp;
+//    }
+//    else{
+//        // Shift first item to back
+//        int temp = word[5];
+//        word[5] = word[0];
+//        word[0] = word[1];
+//        word[1] = word[2];
+//        word[2] = word[3];
+//        word[3] = word[4];
+//        word[4] = temp;
+//    }
+//}
+//
+//void key_scheduler_192(int temp[6], int rcon){
+//    int byte_pos;
+//    word_rotate_192(temp, 0);
+//    for (byte_pos = 0; byte_pos < 6; byte_pos++) {
+//        temp[byte_pos] = s_box_transform(temp[byte_pos], 0);
+//        //printf("%02X", temp[byte_pos]);
+//        //printf(" ");
+//    }
+//    //printf("\n");
+//    temp[0] = temp[0]^rcon;
+//}
+
+
+void key_expansion_192(int aes_key_208[208], int user_key_24[24]){
+    int key_pos;
+    int sub_pos;
+    int byte_pos;
+    int expanded_pos;
+    int temp[4];
+    int temp_key[216];
+    int set_pos;
+    int rcon;
+    int prev_rcon = 1;
+
+    //Set first 24 bytes user key
+    for (key_pos = 0; key_pos < 24; key_pos++) {
+        temp_key[key_pos] = user_key_24[key_pos];
+        if (key_pos > 19){
+            temp[key_pos-20] = user_key_24[key_pos]; //Bits 20-23 into temp
+        }
+    }
+
+//    key_scheduler(temp, rcon);
+//    rcon++;
+//
+//    for (byte_pos = 0; byte_pos < 4; byte_pos++) {
+//        temp[byte_pos] = temp[byte_pos] ^ aes_key_176[byte_pos]; //Bitwise XOR with 16bytes before
+//        aes_key_176[byte_pos+16] = temp[byte_pos];               //Expand key
+//    }
+
+
+    for (expanded_pos = 0; expanded_pos < 8; expanded_pos++) {
+        rcon = r_xpon_2(prev_rcon);
+        key_scheduler(temp, prev_rcon);
+        prev_rcon = rcon;
+
+
+        for (byte_pos = 0; byte_pos < 4; byte_pos++) {
+            temp[byte_pos] = temp[byte_pos] ^ temp_key[byte_pos+(24*expanded_pos)]; //Bitwise XOR with 24bytes before
+            temp_key[byte_pos+24+(24*expanded_pos)] = temp[byte_pos];               //Expand key
+        }
+
+        for (sub_pos = 0; sub_pos < 5; sub_pos++) {
+            for (byte_pos = 0; byte_pos < 4; byte_pos++) {
+                temp[byte_pos] = temp[byte_pos] ^ temp_key[byte_pos+4+(24*expanded_pos)+(4*sub_pos)]; //Bitwise XOR with 16bytes before
+                temp_key[byte_pos+4+24+(24*expanded_pos)+(4*sub_pos)] = temp[byte_pos];               //Expand key
+            }
+        }
+    }
+
+    for (set_pos = 0; set_pos < 208; set_pos++) {
+        aes_key_208[set_pos] = temp_key[set_pos];
+    }
+}
+
+
+//void word_rotate_256(int word[6], int inv)
+//{
+//    if(inv){
+//        // Shift last item to front
+//        int temp = word[0];
+//        word[0] = word[7];
+//        word[7] = word[6];
+//        word[6] = word[5];
+//        word[5] = word[4];
+//        word[4] = word[3];
+//        word[3] = word[2];
+//        word[2] = word[1];
+//        word[1] = temp;
+//    }
+//    else{
+//        // Shift first item to back
+//        int temp = word[7];
+//        word[7] = word[0];
+//        word[0] = word[1];
+//        word[1] = word[2];
+//        word[2] = word[3];
+//        word[3] = word[4];
+//        word[4] = word[3];
+//        word[5] = word[4];
+//        word[6] = temp;
+//    }
+//}
+//
+//void key_scheduler_256(int temp[8], int rcon){
+//    int byte_pos;
+//    word_rotate_256(temp, 0);
+//    for (byte_pos = 0; byte_pos < 8; byte_pos++) {
+//        temp[byte_pos] = s_box_transform(temp[byte_pos], 0);
+//        //printf("%02X", temp[byte_pos]);
+//        //printf(" ");
+//    }
+//    //printf("\n");
+//    temp[0] = temp[0]^rcon;
+//}
+
+void key_expansion_256(int aes_key_240[240], int user_key_32[32]){
+    int key_pos;
+    int sub_pos;
+    int byte_pos;
+    int expanded_pos;
+    int temp[4];
+    int temp_key[256] = {};
+    int set_pos;
+    int rcon;
+    int prev_rcon = 1;
+
+    //Set first 32 bytes user key
+    for (key_pos = 0; key_pos < 32; key_pos++) {
+        temp_key[key_pos] = user_key_32[key_pos];
+        if (key_pos > 27){
+            temp[key_pos-28] = user_key_32[key_pos]; //Bits 28-31 into temp
+        }
+    }
+
+//    key_scheduler(temp, rcon);
+//    rcon++;
+//
+//    for (byte_pos = 0; byte_pos < 4; byte_pos++) {
+//        temp[byte_pos] = temp[byte_pos] ^ aes_key_176[byte_pos]; //Bitwise XOR with 16bytes before
+//        aes_key_176[byte_pos+16] = temp[byte_pos];               //Expand key
+//    }
+
+
+    for (expanded_pos = 0; expanded_pos < 7; expanded_pos++) {
+        rcon = r_xpon_2(prev_rcon);
+        key_scheduler(temp, prev_rcon);
+        prev_rcon = rcon;
+
+        printf("before\n");
+        for (byte_pos = 0; byte_pos < 4; byte_pos++) {
+            temp[byte_pos] = temp[byte_pos] ^ temp_key[byte_pos+(32*expanded_pos)]; //Bitwise XOR with 24bytes before
+            temp_key[byte_pos+32+(32*expanded_pos)] = temp[byte_pos];               //Expand key
+        }
+
+        for (sub_pos = 0; sub_pos < 7; sub_pos++) {
+            for (byte_pos = 0; byte_pos < 4; byte_pos++) {
+                temp[byte_pos] = temp[byte_pos] ^ temp_key[byte_pos+4+(32*expanded_pos)+(4*sub_pos)]; //Bitwise XOR with 16bytes before
+                temp_key[byte_pos+4+32+(32*expanded_pos)+(4*sub_pos)] = temp[byte_pos];               //Expand key
+            }
+        }
+    }
+
+    for (set_pos = 0; set_pos < 240; set_pos++) {
+        aes_key_240[set_pos] = temp_key[set_pos];
     }
 }
