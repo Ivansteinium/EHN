@@ -89,6 +89,13 @@ int prime_matrix[4][4] = {
         {0x03, 0x01, 0x01, 0x02}
 };
 
+int inv_prime_matrix[4][4] = {
+        {14, 11, 13, 9 },
+        {9 , 14, 11, 13},
+        {13, 9 , 14, 11},
+        {11, 13, 9 , 14}
+};
+
 
 /// Convert integer array to block of hex
 void blockify_16(char *in_message, int state_output[4][4], int size);
@@ -99,10 +106,10 @@ void print_block_16(int state_output[4][4]);
 
 
 /// Shift last item to front (rotate 32bits)
-void word_rotate_32(int word[4]);
+void word_rotate_32(int word[4], int inv);
 
 /// Divide value up into MSB and LSB Nibble and return s_box value
-int s_box_transform(int input);
+int s_box_transform(int input, int inv);
 
 /// Exponentiation of 2, double previous except 0x80 and max value of 0xFF
 int r_xpon_2(int prev);
@@ -114,15 +121,23 @@ void key_scheduler(int temp[4], int rcon);
 void key_expansion(int aes_key_176[176], int user_key_16[16]);
 
 /// Shift rows the row index amount of times
-void aes_shift_rows(int state_output[4][4]);
+void aes_shift_rows(int state_output[4][4], int inv);
 
 /// Recursive multiplication of the column value and prime matrix
 int matrix_dot(int prime_val, int col_val);
 
 /// Easy matrix dot and XOR
-void aes_mix_cols(int state_output[4][4]);
+void aes_mix_cols(int state_output[4][4], int inv);
 
 /// The aes128 implementation
 void aes_128(int state_output[4][4], int key[176]);
+
+
+
+/// The Cipher Block Chaining encryption
+void cbc_encrypt(int state_output_blocks[][4][4], int num_blocks, int IV[16], int key[176]);
+
+/// The Cipher Block Chaining decryption
+void cbc_decrypt(int state_output_blocks[][4][4], int num_blocks, int IV[16], int key[176]);
 
 #endif //EHN_PRAC1_ENCRYPTION_H
