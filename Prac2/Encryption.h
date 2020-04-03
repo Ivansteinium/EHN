@@ -48,7 +48,6 @@ int s_box[32][8] = {{0x63, 0x7C, 0x77, 0x7B, 0xF2, 0x6B, 0x6F, 0xC5},
                     {0x8C, 0xA1, 0x89, 0x0D, 0xBF, 0xE6, 0x42, 0x68},
                     {0x41, 0x99, 0x2D, 0x0F, 0xB0, 0x54, 0xBB, 0x16}};
 
-
 int s_inv[32][8] = {{0x52, 0x09, 0x6A, 0xD5, 0x30, 0x36, 0xA5, 0x38},
                     {0xBF, 0x40, 0xA3, 0x9E, 0x81, 0xF3, 0xD7, 0xFB},
                     {0x7C, 0xE3, 0x39, 0x82, 0x9B, 0x2F, 0xFF, 0x87},
@@ -82,26 +81,24 @@ int s_inv[32][8] = {{0x52, 0x09, 0x6A, 0xD5, 0x30, 0x36, 0xA5, 0x38},
                     {0x17, 0x2B, 0x04, 0x7E, 0xBA, 0x77, 0xD6, 0x26},
                     {0xE1, 0x69, 0x14, 0x63, 0x55, 0x21, 0x0C, 0x7D}};
 
-int prime_matrix[4][4] = {
-        {0x02, 0x03, 0x01, 0x01},
-        {0x01, 0x02, 0x03, 0x01},
-        {0x01, 0x01, 0x02, 0x03},
-        {0x03, 0x01, 0x01, 0x02}
-};
+int prime_matrix[4][4] = {{0x02, 0x03, 0x01, 0x01},
+                          {0x01, 0x02, 0x03, 0x01},
+                          {0x01, 0x01, 0x02, 0x03},
+                          {0x03, 0x01, 0x01, 0x02}};
 
-int inv_prime_matrix[4][4] = {
-        {14, 11, 13, 9 },
-        {9 , 14, 11, 13},
-        {13, 9 , 14, 11},
-        {11, 13, 9 , 14}
-};
+int inv_prime_matrix[4][4] = {{14, 11, 13, 9},
+                              {9,  14, 11, 13},
+                              {13, 9,  14, 11},
+                              {11, 13, 9,  14}};
 
 
 /// Convert char array to block of hex
 void blockify_16(char *in_message, int state_output[4][4], int size);
 
+
 /// Convert integer array to block of hex
 void hex_blockify_16(int in_message[16], int state_output[4][4]);
+
 
 /// Output blocks to terminal
 void print_block_16(int state_output[4][4]);
@@ -110,29 +107,38 @@ void print_block_16(int state_output[4][4]);
 /// Shift last item to front (rotate 32bits)
 void word_rotate_32(int word[4], int inv);
 
+
 /// Divide value up into MSB and LSB Nibble and return s_box value
 int s_box_transform(int input, int inv);
+
 
 /// Exponentiation of 2, double previous except 0x80 and max value of 0xFF
 int r_xpon_2(int prev);
 
+
 /// Core key operation transform of previous 4 bytes
 void key_scheduler(int temp[4], int rcon);
+
 
 /// Main key expansion funciton
 void key_expansion(int aes_key_176[176], int user_key_16[16]);
 
+
 /// Shift rows the row index amount of times
 void aes_shift_rows(int state_output[4][4], int inv);
+
 
 /// Recursive multiplication of the column value and prime matrix
 int matrix_dot(int prime_val, int col_val);
 
+
 /// Easy matrix dot and XOR
 void aes_mix_cols(int state_output[4][4], int inv);
 
+
 /// The aes128 implementation
 void aes_128(int state_output[4][4], int key[176]);
+
 
 /// Decrypting aes128
 void decrypt_aes_128(int state_output[4][4], int key[176]);
@@ -141,6 +147,7 @@ void decrypt_aes_128(int state_output[4][4], int key[176]);
 /// The Cipher Block Chaining encryption
 void cbc_encrypt(int state_output_blocks[][4][4], int num_blocks, int IV[16], int key[176], int encryption);
 
+
 /// The Cipher Block Chaining decryption
 void cbc_decrypt(int state_output_blocks[][4][4], int num_blocks, int IV[16], int key[176], int encryption);
 
@@ -148,25 +155,40 @@ void cbc_decrypt(int state_output_blocks[][4][4], int num_blocks, int IV[16], in
 /// Helper for shifting buffer contents in CFB
 void shift_bytes(int input[16]);
 
+
 void cfb_encrypt(int stream_input[][8], int num_blocks, int IV[16], int key[176], int encryption);
+
 
 void cfb_decrypt(int stream_input[][8], int num_blocks, int IV[16], int key[176], int encryption);
 
+
 //void word_rotate_192(int word[6], int inv);
+
+
 //void key_scheduler_192(int temp[6], int rcon);
 
 
 void key_expansion_192(int aes_key_208[208], int user_key_24[24]);
 
+
 //void word_rotate_256(int word[8], int inv);
+
+
 //void key_scheduler_256(int temp[8], int rcon);
+
+
 void key_expansion_256(int aes_key_240[240], int user_key_32[32]);
 
 
-
 void aes_192(int state_output[4][4], int key[208]);
+
+
 void decrypt_aes_192(int state_output[4][4], int key[208]);
+
+
 void aes_256(int state_output[4][4], int key[240]);
+
+
 void decrypt_aes_256(int state_output[4][4], int key[240]);
 
 
