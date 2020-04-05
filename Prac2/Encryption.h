@@ -1,7 +1,3 @@
-//
-// Created by ivan on 2020/03/15.
-//
-
 #ifndef EHN_PRAC1_ENCRYPTION_H
 #define EHN_PRAC1_ENCRYPTION_H
 
@@ -9,10 +5,30 @@
 #include <stdlib.h>
 #include <unistd.h>
 #include <string.h>
+#include <stdbool.h>
 
 
-/// The maximum length of message to encrypt.
 #define MAX_REQ_LEN 256
+
+// AES constants
+#define AES128 0
+#define AES192 1
+#define AES256 2
+#define AES128_ROUNDS 10
+#define AES192_ROUNDS 12
+#define AES256_ROUNDS 14
+#define AES128_KEY_SIZE 176
+#define AES192_KEY_SIZE 208
+#define AES256_KEY_SIZE 240
+#define AES128_USER_KEY_SIZE 16
+#define AES192_USER_KEY_SIZE 24
+#define AES256_USER_KEY_SIZE 32
+#define AES128_EXPANSION 10
+#define AES192_EXPANSION 8
+#define AES256_EXPANSION 7
+#define AES128_SUB_EXPANSION 3
+#define AES192_SUB_EXPANSION 5
+#define AES256_SUB_EXPANSION 7
 
 
 int s_box[32][8] = {{0x63, 0x7C, 0x77, 0x7B, 0xF2, 0x6B, 0x6F, 0xC5},
@@ -92,40 +108,40 @@ int inv_prime_matrix[4][4] = {{14, 11, 13, 9},
                               {11, 13, 9,  14}};
 
 
-/// Convert char array to block of hex
-void blockify_16(char *in_message, int state_output[4][4], int size);
+/// Convert char array to 4x4 block of hex
+void char_blockify_16(char *in_message, int state_output[4][4], int size);
 
 
-/// Convert integer array to block of hex
+/// Convert integer array to 4x4 block of hex
 void hex_blockify_16(int in_message[16], int state_output[4][4]);
 
 
-/// Output blocks to terminal
+/// Output blocks to terminal as 4x4 block of hex
 void print_block_16(int state_output[4][4]);
 
 
-/// Shift last item to front (rotate 32bits)
-void word_rotate_32(int word[4], int inv);
+/// Shift last item to front
+void word_rotate_32(int word[4], bool inverse);
 
 
 /// Divide value up into MSB and LSB Nibble and return s_box value
-int s_box_transform(int input, int inv);
+int s_box_transform(int input, bool inverse);
 
 
 /// Exponentiation of 2, double previous except 0x80 and max value of 0xFF
-int r_xpon_2(int prev);
+int r_xpon_2(int previous);
 
 
 /// Core key operation transform of previous 4 bytes
 void key_scheduler(int temp[4], int rcon);
 
 
-/// Main key expansion funciton
-void key_expansion(int aes_key_176[176], int user_key_16[16]);
+/// Main key expansion function
+void key_expansion(int mode, int *aes_key, int *user_key);
 
 
 /// Shift rows the row index amount of times
-void aes_shift_rows(int state_output[4][4], int inv);
+void AES_shift_rows(int state_output[4][4], bool inverse);
 
 
 /// Recursive multiplication of the column value and prime matrix
@@ -133,63 +149,47 @@ int matrix_dot(int prime_val, int col_val);
 
 
 /// Easy matrix dot and XOR
-void aes_mix_cols(int state_output[4][4], int inv);
+void AES_mix_cols(int state_output[4][4], bool inverse);
 
 
-/// The aes128 implementation
-void aes_128(int state_output[4][4], int key[176]);
+/// The AES encryption algorithm
+void AES_encrypt(int mode, int state_output[4][4], int *key);
 
 
-/// Decrypting aes128
-void decrypt_aes_128(int state_output[4][4], int key[176]);
+/// The AES decryption algorithm
+void AES_decrypt(int mode, int state_output[4][4], int *key);
 
 
 /// The Cipher Block Chaining encryption
-void cbc_encrypt(int state_output_blocks[][4][4], int num_blocks, int IV[16], int key[176], int encryption);
+void CBC_encrypt(int mode, int state_output_blocks[][4][4], int num_blocks, int IV[16], int *key);
 
 
 /// The Cipher Block Chaining decryption
-void cbc_decrypt(int state_output_blocks[][4][4], int num_blocks, int IV[16], int key[176], int encryption);
+void CBC_decrypt(int mode, int state_output_blocks[][4][4], int num_blocks, int IV[16], int *key);
 
 
 /// Helper for shifting buffer contents in CFB
 void shift_bytes(int input[16]);
 
 
-void cfb_encrypt(int stream_input[][8], int num_blocks, int IV[16], int key[176], int encryption);
+/// The Cipher Feedback encryption
+void CFB_encrypt(int mode, int stream_input[][8], int num_blocks, int IV[16], int *key);
 
 
-void cfb_decrypt(int stream_input[][8], int num_blocks, int IV[16], int key[176], int encryption);
+/// The Cipher Feedback decryption
+void CFB_decrypt(int mode, int stream_input[][8], int num_blocks, int IV[16], int *key);
 
 
-//void word_rotate_192(int word[6], int inv);
+//void word_rotate_192(int word[6], bool inverse);
 
 
 //void key_scheduler_192(int temp[6], int rcon);
 
 
-void key_expansion_192(int aes_key_208[208], int user_key_24[24]);
-
-
-//void word_rotate_256(int word[8], int inv);
+//void word_rotate_256(int word[8], bool inverse);
 
 
 //void key_scheduler_256(int temp[8], int rcon);
-
-
-void key_expansion_256(int aes_key_240[240], int user_key_32[32]);
-
-
-void aes_192(int state_output[4][4], int key[208]);
-
-
-void decrypt_aes_192(int state_output[4][4], int key[208]);
-
-
-void aes_256(int state_output[4][4], int key[240]);
-
-
-void decrypt_aes_256(int state_output[4][4], int key[240]);
 
 
 #endif //EHN_PRAC1_ENCRYPTION_H
