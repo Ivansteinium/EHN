@@ -12,13 +12,13 @@ int main(int argc, char *argv[])
     int state_array[MAX_REQ_LEN / 16][4][4];
     char message[MAX_REQ_LEN];
 
-    int AES128_user_key[AES128_USER_KEY_SIZE] = {0x74, 0x65, 0x73, 0x74, 0x20, 0x66, 0x75, 0x6E, 0x63, 0x74, 0x69, 0x64,
+    int AES128_user_key[AES128_USER_KEY_SIZE] = {0x74, 0x65, 0x73, 0x74, 0x20, 0x66, 0x75, 0x6E, 0x63, 0x74, 0x69, 0x6F,
                                                  0x6E, 0x61, 0x6C, 0x69};
-    int AES192_user_key[AES192_USER_KEY_SIZE] = {0x74, 0x65, 0x73, 0x74, 0x20, 0x66, 0x75, 0x6E, 0x63, 0x74, 0x69, 0x64,
+    int AES192_user_key[AES192_USER_KEY_SIZE] = {0x74, 0x65, 0x73, 0x74, 0x20, 0x66, 0x75, 0x6E, 0x63, 0x74, 0x69, 0x6F,
                                                  0x6E, 0x61, 0x6C, 0x69, 0x74, 0x65, 0x73, 0x74, 0x20, 0x66, 0x75, 0x6E};
-    int AES256_user_key[AES256_USER_KEY_SIZE] = {0x74, 0x65, 0x73, 0x74, 0x20, 0x66, 0x75, 0x6E, 0x63, 0x74, 0x69, 0x64,
+    int AES256_user_key[AES256_USER_KEY_SIZE] = {0x74, 0x65, 0x73, 0x74, 0x20, 0x66, 0x75, 0x6E, 0x63, 0x74, 0x69, 0x6F,
                                                  0x6E, 0x61, 0x6C, 0x69, 0x74, 0x65, 0x73, 0x74, 0x20, 0x66, 0x75, 0x6E,
-                                                 0x6E, 0x61, 0x6C, 0x69, 0x74, 0x65, 0x73, 0x74};
+                                                 0x63, 0x74, 0x69, 0x6F, 0x6E, 0x61, 0x6C, 0x69};
     int AES128_expanded_key[AES128_KEY_SIZE];
     int AES192_expanded_key[AES192_KEY_SIZE];
     int AES256_expanded_key[AES256_KEY_SIZE];
@@ -26,22 +26,28 @@ int main(int argc, char *argv[])
     //    **** TESTING PURPOSES **** /*
     // TODO: remove when no longer needed
     int test[4] = {0x3A, 0x65, 0x71, 0x1B};
-    int key_example[16] = {0x0f, 0x15, 0x71, 0xc9, 0x47, 0xd9, 0xe8, 0x59, 0x0c, 0xb7, 0xad, 0x00,
-                           0xaf, 0x7f, 0x67, 0x98};
+    int key_example[16] = {0x0f, 0x15, 0x71, 0xc9, 0x47, 0xd9, 0xe8, 0x59, 0x0c, 0xb7, 0xad, 0x00, 0xaf, 0x7f, 0x67, 0x98};
     int test_cols[4][4] = {{0x74, 0x20, 0x61, 0x73},
                            {0x68, 0x69, 0x20, 0x74},
                            {0x69, 0x73, 0x74, 0x2e},
                            {0x73, 0x20, 0x65, 0x2e}};
 
     AES_mix_cols(test_cols, false);
+    print_block(test_cols);
     AES_mix_cols(test_cols, true);
 
+    AES_shift_rows(test_cols, false);
+    AES_shift_rows(test_cols, true);
+
     AES_key_expansion(AES128, AES128_expanded_key, AES128_user_key);
+//    for (i = 0; i < 176; i++)
+//    {
+//        printf("%02X ", AES128_expanded_key[i]);
+//        if ((i + 1) % 16 == 0)
+//            printf("\n");
+//    }
     AES_key_expansion(AES192, AES192_expanded_key, AES192_user_key);
     AES_key_expansion(AES256, AES256_expanded_key, AES256_user_key);
-
-    AES_word_rotate_32(test, false);
-    AES_word_rotate_32(test, true);
 
     int a = AES_s_box_transform(0x3a, false);
     a = AES_s_box_transform(a, true);
@@ -73,8 +79,8 @@ int main(int argc, char *argv[])
     // TODO: fix
     printf("Before\n");
     print_block(state_array[0]);
-    AES_encrypt(AES256, state_array[0], AES256_expanded_key);
-    AES_decrypt(AES256, state_array[0], AES256_expanded_key);
+    AES_encrypt(AES128, state_array[0], AES128_expanded_key);
+    AES_decrypt(AES128, state_array[0], AES128_expanded_key);
     printf("After (should be same as before)\n");
     print_block(state_array[0]);
     // */ **** TESTING PURPOSES ****
@@ -124,19 +130,18 @@ void print_block(int state_output[4][4])
 
 
 // Shift last item in an array to the front
-void AES_word_rotate_32(int word[4], bool inverse)
+void AES_word_rotate_32(int word[4], bool inverse) // Checked
 {
-    int temp;
     if (inverse)
     {   // Shift last item to front
-        temp = word[0];
+        int temp = word[0];
         word[0] = word[3];
         word[3] = word[2];
         word[2] = word[1];
         word[1] = temp;
     } else
     {   // Shift first item to back
-        temp = word[3];
+        int temp = word[3];
         word[3] = word[0];
         word[0] = word[1];
         word[1] = word[2];
@@ -148,21 +153,12 @@ void AES_word_rotate_32(int word[4], bool inverse)
 // Divide value up into its MSB and LSB Nibble and return the s_box value
 int AES_s_box_transform(int input, bool inverse)
 {
-    int MSB = (input >> 4) * 2;
-    int LSB = input & 0b00001111;
-
-    if (LSB > 0x7)
-    {
-        MSB++;
-        LSB -= 8;
-    }
-    
-    return s_box[inverse][MSB][LSB];
+    return s_box[inverse][input >> 4][input & 0b00001111];
 }
 
 
 // Exponentiation of 2, double the previous value except when 0x80 and max value of 0xFF
-int AES_exp_2(int previous)
+int AES_exp_2(int previous) // Checked
 {
     if (previous == 0x80)
         return 0x1B;
@@ -174,23 +170,18 @@ int AES_exp_2(int previous)
 
 
 // Core key operation, transform of previous 4 bytes
-void AES_key_scheduler(int temp[4], int rcon)
+void AES_key_scheduler(int temp[4], int rcon) // Checked
 {
     int byte_pos;
     AES_word_rotate_32(temp, false);
     for (byte_pos = 0; byte_pos < 4; byte_pos++)
-    {
         temp[byte_pos] = AES_s_box_transform(temp[byte_pos], false);
-//        printf("%02X", temp[byte_pos]);
-//        printf(" ");
-    }
-//    printf("\n");
     temp[0] ^= rcon;
 }
 
 
 // Main key expansion function
-void AES_key_expansion(int mode, int expanded_key[], int user_key[])
+void AES_key_expansion(int mode, int expanded_key[], int user_key[]) // Checked for 128
 {
     int user_key_size;
     int expansion;
@@ -214,11 +205,8 @@ void AES_key_expansion(int mode, int expanded_key[], int user_key[])
     } else
         return;
 
-    int sub_pos;
     int byte_pos;
     int temp[4];
-    int rcon;
-    int prev_rcon = 1;
 
     // Set first x bytes user key
     int key_pos;
@@ -227,7 +215,7 @@ void AES_key_expansion(int mode, int expanded_key[], int user_key[])
 
     // Last 4 bits into temp
     for (key_pos = 0; key_pos < 4; key_pos++)
-        temp[key_pos] = user_key[user_key_size - (4 - key_pos) - 1];
+        temp[key_pos] = user_key[user_key_size - (4 - key_pos)];
 
 //    key_scheduler(temp, rcon);
 //    rcon++;
@@ -239,11 +227,12 @@ void AES_key_expansion(int mode, int expanded_key[], int user_key[])
 //    }
 
     int expanded_pos;
+    int sub_pos;
+    int rcon  = 1;
     for (expanded_pos = 0; expanded_pos < expansion; expanded_pos++)
     {
-        rcon = AES_exp_2(prev_rcon);
-        AES_key_scheduler(temp, prev_rcon);
-        prev_rcon = rcon;
+        AES_key_scheduler(temp, rcon);
+        rcon = AES_exp_2(rcon);
 
         for (byte_pos = 0; byte_pos < 4; byte_pos++)
         {
@@ -264,7 +253,7 @@ void AES_key_expansion(int mode, int expanded_key[], int user_key[])
 
 
 // The AES row shifting function
-void AES_shift_rows(int state_output[4][4], bool inverse)
+void AES_shift_rows(int state_output[4][4], bool inverse) // Checked
 {
     int row;
     int num_rotations;
@@ -277,37 +266,33 @@ void AES_shift_rows(int state_output[4][4], bool inverse)
 
 
 // Recursive multiplication of the column value and prime matrix
-int AES_matrix_dot(int prime, int current) // TODO: revise
+int AES_matrix_dot(int prime, int current) // Checked
 {
-    bool flag = false;
-    if (prime == 0x03)
+    // Well done Ivan, die is net beautiful
+    if (prime == 2)
     {
-        int left = AES_matrix_dot(0x02, current);
-        int right = AES_matrix_dot(0x01, current);
-        return left ^ right;
-    } else if (prime == 0x02)
-    {
-        if ((current & 0b10000000) == 0b10000000)
-            flag = true;
         current = (current << 1) & 0b011111111;
-        if (flag)
+        if((current & 0b10000000) == 0b10000000)
             return current ^ 0b00011011;
-        return current;
-    } else if (prime == 9)
-        return AES_matrix_dot(0x02, AES_matrix_dot(0x02, AES_matrix_dot(0x02, current))) ^ current;
-    else if (prime == 11)
-        return AES_matrix_dot(0x02, AES_matrix_dot(0x02, AES_matrix_dot(0x02, current)) ^ current) ^ current;
-    else if (prime == 13)
-        return AES_matrix_dot(0x02, AES_matrix_dot(0x02, AES_matrix_dot(0x02, current) ^ current)) ^ current;
-    else if (prime == 14)
-        return AES_matrix_dot(0x02, AES_matrix_dot(0x02, AES_matrix_dot(0x02, current) ^ current) ^ current);
-    else
+        else
+            return current;
+    } else if (prime == 3) // 2 + 1 = 3
+        return AES_matrix_dot(2, current) ^ current;
+    else if (prime == 9) // 2 x 2 x 2 + 1 = 9
+        return AES_matrix_dot(2, AES_matrix_dot(2, AES_matrix_dot(2, current))) ^ current;
+    else if (prime == 11) // 2 x (2 x 2 + 1) + 1 = 11
+        return AES_matrix_dot(2, AES_matrix_dot(2, AES_matrix_dot(2, current)) ^ current) ^ current;
+    else if (prime == 13) // 2 x 2 x (2 + 1) + 1 = 13
+        return AES_matrix_dot(2, AES_matrix_dot(2, AES_matrix_dot(2, current) ^ current)) ^ current;
+    else if (prime == 14) // 2 x ((2 x (2 + 1) + 1) = 14
+        return AES_matrix_dot(2, AES_matrix_dot(2, AES_matrix_dot(2, current) ^ current) ^ current);
+    else // prime == 1
         return current;
 }
 
 
 // Perform the dot product of the block and the prime matrix
-void AES_mix_cols(int state_output[4][4], bool inverse) // TODO: revise
+void AES_mix_cols(int state_output[4][4], bool inverse) // TODO: not returning correct result
 {
     int row, col, out;
     int new_state[4][4];
@@ -331,7 +316,7 @@ void AES_mix_cols(int state_output[4][4], bool inverse) // TODO: revise
 
 
 // Perform one round of the AES algorithm
-void AES_round(int state_output[4][4], int expanded_key[], int key_index, bool mix_cols, bool inverse)
+void AES_round(int state_output[4][4], int expanded_key[], int key_index, bool mix_cols, bool inverse) // TODO: check
 {
     // Substitute bytes
     int row, col;
@@ -400,7 +385,7 @@ bool AES_encrypt(int mode, int state_output[4][4], int expanded_key[]) // TODO: 
 // The AES decryption algorithm
 bool AES_decrypt(int mode, int state_output[4][4], int expanded_key[]) // TODO: decrypt not yielding plaintext as expected
 {
-    int number_of_rounds;;
+    int number_of_rounds;
     int key_size;
 
     if (mode == AES128)
@@ -665,10 +650,9 @@ bool CFB_decrypt(int mode, int stream_input[][8], int num_blocks, int IV[16], in
 
 //void word_rotate_192(int word[6], bool inverse)
 //{
-//    int temp;
 //    if (inverse)
 //    {   // Shift last item to front
-//        temp = word[0];
+//        int temp = word[0];
 //        word[0] = word[5];
 //        word[5] = word[4];
 //        word[4] = word[3];
@@ -677,7 +661,7 @@ bool CFB_decrypt(int mode, int stream_input[][8], int num_blocks, int IV[16], in
 //        word[1] = temp;
 //    } else
 //    {   // Shift first item to back
-//        temp = word[5];
+//        int temp = word[5];
 //        word[5] = word[0];
 //        word[0] = word[1];
 //        word[1] = word[2];
@@ -703,10 +687,9 @@ bool CFB_decrypt(int mode, int stream_input[][8], int num_blocks, int IV[16], in
 //
 //void word_rotate_256(int word[6], bool inverse)
 //{
-//    int temp;
 //    if (inverse)
 //    {   // Shift last item to front
-//        temp = word[0];
+//        int temp = word[0];
 //        word[0] = word[7];
 //        word[7] = word[6];
 //        word[6] = word[5];
@@ -717,7 +700,7 @@ bool CFB_decrypt(int mode, int stream_input[][8], int num_blocks, int IV[16], in
 //        word[1] = temp;
 //    } else
 //    {   // Shift first item to back
-//        temp = word[7];
+//        int temp = word[7];
 //        word[7] = word[0];
 //        word[0] = word[1];
 //        word[1] = word[2];
@@ -742,4 +725,3 @@ bool CFB_decrypt(int mode, int stream_input[][8], int num_blocks, int IV[16], in
 //    //printf("\n");
 //    temp[0] ^= rcon;
 //}
-
