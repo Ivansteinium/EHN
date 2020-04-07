@@ -65,13 +65,13 @@ const int s_box[2][16][16] = {{{0x63, 0x7c, 0x77, 0x7b, 0xf2, 0x6b, 0x6f, 0xc5, 
                                {0x17, 0x2b, 0x04, 0x7e, 0xba, 0x77, 0xd6, 0x26, 0xe1, 0x69, 0x14, 0x63, 0x55, 0x21, 0x0c, 0x7d}}};
 
 const int prime_matrix[2][4][4] = {{{2, 3, 1, 1}, // Forward
-                                   {1, 2, 3, 1},
-                                   {1, 1, 2, 3},
-                                   {3, 1, 1, 2}},
-                                  {{14, 11, 13,  9}, // Inverse
-                                   { 9, 14, 11, 13},
-                                   {13,  9, 14, 11},
-                                   {11, 13,  9, 14}}};
+                                    {1, 2, 3, 1},
+                                    {1, 1, 2, 3},
+                                    {3, 1, 1, 2}},
+                                   {{14, 11, 13,  9}, // Inverse
+                                    { 9, 14, 11, 13},
+                                    {13,  9, 14, 11},
+                                    {11, 13,  9, 14}}};
 
 
 // TODO: update once done
@@ -159,12 +159,12 @@ void AES_shift_rows(int state_output[4][4], bool inverse);
 
 
 /**
- * Recursive multiplication of the column value and prime matrix.
- * @param prime The prime matrix value.
- * @param current The current value in the block.
+ * Dot product according to AES specifications.
+ * @param a The first value.
+ * @param b The second value.
  * @return The result of the dot product.
  */
-int AES_matrix_dot(int prime, int current);
+int AES_dot_product(int a, int b);
 
 
 /**

@@ -32,20 +32,30 @@ int main(int argc, char *argv[])
                            {0x69, 0x73, 0x74, 0x2e},
                            {0x73, 0x20, 0x65, 0x2e}};
 
+    print_block(test_cols);
     AES_mix_cols(test_cols, false);
-//    print_block(test_cols);
+    print_block(test_cols);
     AES_mix_cols(test_cols, true);
+    print_block(test_cols);
+
+    int x = AES_dot_product(0xFF, 0xFF);
+
+    x = 1;
+    for (i = 0; i < 20; i++)
+        printf("%02X ", x = AES_exp_2(x));
+    printf("\n\n");
 
     AES_shift_rows(test_cols, false);
     AES_shift_rows(test_cols, true);
 
     AES_key_expansion(AES128, AES128_expanded_key, AES128_user_key);
-//    for (i = 0; i < 176; i++)
-//    {
-//        printf("%02X ", AES128_expanded_key[i]);
-//        if ((i + 1) % 16 == 0)
-//            printf("\n");
-//    }
+    for (i = 0; i < 176; i++)
+    {
+        printf("%02X ", AES128_expanded_key[i]);
+        if ((i + 1) % 16 == 0)
+            printf("\n");
+    }
+    printf("\n");
     AES_key_expansion(AES192, AES192_expanded_key, AES192_user_key);
     AES_key_expansion(AES256, AES256_expanded_key, AES256_user_key);
 
@@ -151,7 +161,7 @@ void AES_word_rotate_32(int word[4], bool inverse) // Checked
 
 
 // Divide value up into its MSB and LSB Nibble and return the s_box value
-int AES_s_box_transform(int input, bool inverse)
+int AES_s_box_transform(int input, bool inverse) // Checked
 {
     return s_box[inverse][input >> 4][input & 0b00001111];
 }
@@ -265,35 +275,81 @@ void AES_shift_rows(int state_output[4][4], bool inverse) // Checked
 }
 
 
-// Recursive multiplication of the column value and prime matrix
-int AES_matrix_dot(int prime, int current) // Checked
+// Implementation according to AES reference manual
+int AES_dot_product(int a, int b) // Checked
 {
-    // Well done Ivan, die is net beautiful
-    if (prime == 2)
+    /*
+     * Represent both numbers as polynomials, i.e.
+     * 0b00000000 = 0
+     * 0b00000001 = 1
+     * 0b00000010 = x
+     * 0b00000100 = x^2
+     * ...
+     * 0b1...     = x^n
+     *
+     * XOR pairs to put together, i.e.
+     *
+     * 0b101110 = x^5 + x^3 + x^2 + x
+     */
+
+    int result = 0;
+    int position = 128;
+    int i;
+
+    // Expand polynomial
+    // polynomial a * polynomial b
+    for (i = 7; i >= 0; i--)
     {
-        bool flag = current > 127;
-        current = (current << 1) & 0b011111111;
-        if(flag)
-            return current ^ 0b00011011;
-        else
-            return current;
-    } else if (prime == 3) // 2 + 1 = 3
-        return AES_matrix_dot(2, current) ^ current;
-    else if (prime == 9) // 2 x 2 x 2 + 1 = 9
-        return AES_matrix_dot(2, AES_matrix_dot(2, AES_matrix_dot(2, current))) ^ current;
-    else if (prime == 11) // 2 x (2 x 2 + 1) + 1 = 11
-        return AES_matrix_dot(2, AES_matrix_dot(2, AES_matrix_dot(2, current)) ^ current) ^ current;
-    else if (prime == 13) // 2 x 2 x (2 + 1) + 1 = 13
-        return AES_matrix_dot(2, AES_matrix_dot(2, AES_matrix_dot(2, current) ^ current)) ^ current;
-    else if (prime == 14) // 2 x ((2 x (2 + 1) + 1) = 14
-        return AES_matrix_dot(2, AES_matrix_dot(2, AES_matrix_dot(2, current) ^ current) ^ current);
-    else // prime == 1
-        return current;
+        if ((a & position) == position)
+            result ^= b << i;
+        position = position >> 1;
+    }
+
+    if (result < 0xFF) // Already smaller, modulo is the result
+        return result;
+
+    // Calculate modulo
+    // Polynomial long division with irreducible polynomial x^8 + x^4 + x^3 + x + 1 => 0b100011011 = 0x11B
+    position = 65536;
+    for (i = 16; i > 7; i--)
+    {
+        if ((result & position) == position) // Match a multiple of the irreducible polynomial to the result
+            result ^= 0x11B << (i - 8); // Irreducible polynomial is already of order 8
+        position = position >> 1;
+    }
+
+    return result;
 }
 
 
+// Recursive multiplication of the column value and prime matrix
+//int AES_dot_product(int prime, int current) // Checked
+//{
+//    if (prime == 2)
+//    {
+//        bool flag = current > 127;
+//        current = (current << 1) & 0b011111111;
+//        if(flag)
+//            return current ^ 0b00011011;
+//        else
+//            return current;
+//    } else if (prime == 3) // 2 + 1 = 3
+//        return AES_dot_product(2, current) ^ current;
+//    else if (prime == 9) // 2 x 2 x 2 + 1 = 9
+//        return AES_dot_product(2, AES_dot_product(2, AES_dot_product(2, current))) ^ current;
+//    else if (prime == 11) // 2 x (2 x 2 + 1) + 1 = 11
+//        return AES_dot_product(2, AES_dot_product(2, AES_dot_product(2, current)) ^ current) ^ current;
+//    else if (prime == 13) // 2 x 2 x (2 + 1) + 1 = 13
+//        return AES_dot_product(2, AES_dot_product(2, AES_dot_product(2, current) ^ current)) ^ current;
+//    else if (prime == 14) // 2 x ((2 x (2 + 1) + 1) = 14
+//        return AES_dot_product(2, AES_dot_product(2, AES_dot_product(2, current) ^ current) ^ current);
+//    else // prime == 1
+//        return current;
+//}
+
+
 // Perform the dot product of the block and the prime matrix
-void AES_mix_cols(int state_output[4][4], bool inverse) // checked
+void AES_mix_cols(int state_output[4][4], bool inverse)  // Checked
 {
     int row, col, out;
     int new_state[4][4];
@@ -303,7 +359,7 @@ void AES_mix_cols(int state_output[4][4], bool inverse) // checked
         for (row = 0; row < 4; row++)
         {
             for (col = 0; col < 4; col++)
-                multiply[col] = AES_matrix_dot(prime_matrix[inverse][row][col], state_output[col][out]);
+                multiply[col] = AES_dot_product(prime_matrix[inverse][row][col], state_output[col][out]);
             new_state[row][out] = multiply[0] ^ multiply[1] ^ multiply[2] ^ multiply[3];
         }
     }
