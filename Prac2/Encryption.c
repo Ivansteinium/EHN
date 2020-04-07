@@ -33,7 +33,7 @@ int main(int argc, char *argv[])
                            {0x73, 0x20, 0x65, 0x2e}};
 
     AES_mix_cols(test_cols, false);
-    print_block(test_cols);
+//    print_block(test_cols);
     AES_mix_cols(test_cols, true);
 
     AES_shift_rows(test_cols, false);
@@ -271,8 +271,9 @@ int AES_matrix_dot(int prime, int current) // Checked
     // Well done Ivan, die is net beautiful
     if (prime == 2)
     {
+        bool flag = current > 127;
         current = (current << 1) & 0b011111111;
-        if((current & 0b10000000) == 0b10000000)
+        if(flag)
             return current ^ 0b00011011;
         else
             return current;
@@ -292,7 +293,7 @@ int AES_matrix_dot(int prime, int current) // Checked
 
 
 // Perform the dot product of the block and the prime matrix
-void AES_mix_cols(int state_output[4][4], bool inverse) // TODO: not returning correct result
+void AES_mix_cols(int state_output[4][4], bool inverse) // checked
 {
     int row, col, out;
     int new_state[4][4];
