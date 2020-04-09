@@ -78,21 +78,23 @@ int main(int argc, char *argv[])
     print_expanded_key(AES256, AES256_expanded_key);
 
     printf("----Testing S-transform----\n");
-    printf("S-transform of 3A = ");
-    x = AES_s_box_transform(0x3a, false);
-    printf("%02X\n", x);
-    printf("Inverse S-transform of %02X = ", x);
-    x = AES_s_box_transform(x, true);
-    printf("%02X\n\n", x);
-
-    printf("----Testing AES round----\n");
     printf("Original\n");
     print_block(test_cols);
-    AES_round(test_cols, AES128_expanded_key, 0, true, false);
-    printf("After one round\n");
+    AES_sub_bytes(test_cols, false);
+    printf("Sub bytes\n");
     print_block(test_cols);
-    AES_round(test_cols, AES128_expanded_key, 0, true, true);
-    printf("Inverse round\n");
+    AES_sub_bytes(test_cols, true);
+    printf("Inverse sub bytes should be same as original\n");
+    print_block(test_cols);
+
+    printf("----Testing add round key----\n");
+    printf("Original\n");
+    print_block(test_cols);
+    AES_add_round_key(test_cols, AES128_expanded_key, 0);
+    printf("Key added\n");
+    print_block(test_cols);
+    AES_add_round_key(test_cols, AES128_expanded_key, 0);
+    printf("Key added again should be same as original\n");
     print_block(test_cols);
 
 
@@ -106,7 +108,7 @@ int main(int argc, char *argv[])
     // To be encrypted
     for (i = 0; i < MAX_REQ_LEN; i++)
         message[i] = '\0';
-    strcpy(message, "test functionality");
+    strcpy(message, "this is a test..");
 //    fgets(message, MAX_REQ_LEN, stdin); // TODO: add this later
     message_len = strlen(message);
     num_blocks = message_len / 16;
@@ -127,11 +129,13 @@ int main(int argc, char *argv[])
 
     //    **** TESTING PURPOSES **** /*
     // TODO: fix
-    printf("Before\n");
+    printf("Original\n");
     print_block(state_array[0]);
     AES_encrypt(AES128, state_array[0], AES128_expanded_key);
+    printf("Encrypted\n");
+    print_block(state_array[0]);
     AES_decrypt(AES128, state_array[0], AES128_expanded_key);
-    printf("After (should be same as before)\n");
+    printf("Decrypted should be same as before\n");
     print_block(state_array[0]);
     // */ **** TESTING PURPOSES ****
 }
@@ -229,6 +233,17 @@ int AES_s_box_transform(int input, bool inverse) // Checked
 }
 
 
+// Core key operation, transform of previous 4 bytes
+void AES_key_scheduler(int temp[4], int rcon) // Checked
+{
+    int byte_pos;
+    AES_word_rotate_32(temp, false); // Rotate the word
+    for (byte_pos = 0; byte_pos < 4; byte_pos++) // Take the S-transform of the word
+        temp[byte_pos] = AES_s_box_transform(temp[byte_pos], false);
+    temp[0] ^= rcon; // Add the round constant
+}
+
+
 // Exponentiation of 2, double the previous value except when 0x80 and max value of 0xFF
 int AES_exp_2(int previous) // Checked
 {
@@ -238,17 +253,6 @@ int AES_exp_2(int previous) // Checked
         return 0xFF;
     else
         return previous * 2;
-}
-
-
-// Core key operation, transform of previous 4 bytes
-void AES_key_scheduler(int temp[4], int rcon) // Checked
-{
-    int byte_pos;
-    AES_word_rotate_32(temp, false); // Rotate the word
-    for (byte_pos = 0; byte_pos < 4; byte_pos++) // Take the S-transform of the word
-        temp[byte_pos] = AES_s_box_transform(temp[byte_pos], false);
-    temp[0] ^= rcon; // Add the round constant
 }
 
 
@@ -317,6 +321,18 @@ void AES_key_expansion(int mode, int expanded_key[], int user_key[]) // Checked 
 }
 
 
+// Substitute a block through the S-transform
+void AES_sub_bytes(int state_output[4][4], bool inverse) // Checked
+{
+    int row, col;
+    for (col = 0; col < 4; col++)
+    {
+        for (row = 0; row < 4; row++) // Perform S-transform on every byte
+            state_output[row][col] = AES_s_box_transform(state_output[row][col], inverse);
+    }
+}
+
+
 // The AES row shifting function
 void AES_shift_rows(int state_output[4][4], bool inverse) // Checked
 {
@@ -338,7 +354,7 @@ void AES_shift_rows(int state_output[4][4], bool inverse) // Checked
 }
 
 
-// Implementation according to AES reference manual
+// Finite field multiplication according to AES reference manual
 int AES_dot_product(int a, int b) // Checked
 {
     /*
@@ -356,7 +372,7 @@ int AES_dot_product(int a, int b) // Checked
      */
 
     int result = 0;
-    int position = 128; // = 2^7 = 0b10000000
+    int position = 128; // = 2^7 = 0b10000000 => x^7
     int i;
 
     // Expand polynomial
@@ -367,9 +383,9 @@ int AES_dot_product(int a, int b) // Checked
      */
     for (i = 7; i >= 0; i--)
     {
-        if ((a & position) == position)
-            result ^= b << i;
-        position = position >> 1;
+        if ((a & position) == position) // See if (a) has the power of x currently looked at
+            result ^= b << i; // Shift (b) left by the power of x currently looked at if present
+        position = position >> 1; // Make power of x one smaller
     }
 
     if (result < 0xFF) // Already smaller, modulo is the result
@@ -377,12 +393,12 @@ int AES_dot_product(int a, int b) // Checked
 
     // Calculate modulo
     // Polynomial long division with irreducible polynomial x^8 + x^4 + x^3 + x + 1 => 0b100011011
-    position = 65536; // = 2^16 = 0b1000000000000000
+    position = 65536; // = 2^16 = 0b1000000000000000 => x^16
     for (i = 16; i > 7; i--)
     {
         if ((result & position) == position) // Match a multiple of the irreducible polynomial to the result
             result ^= 0b100011011 << (i - 8); // Subtract the multiple if matched
-        position = position >> 1;
+        position = position >> 1; // Make power of x one smaller
     }
 
     return result; // Remainder after long division was done
@@ -441,30 +457,33 @@ void AES_mix_cols(int state_output[4][4], bool inverse)  // Checked
 }
 
 
-// Perform one round of the AES algorithm
-void AES_round(int state_output[4][4], int expanded_key[], int key_index, bool mix_cols, bool inverse) // TODO: check
+// XOR a block with the expanded key at a certain index
+void AES_add_round_key(int state_output[4][4], int expanded_key[], int key_index) // TODO: check
 {
-    // Substitute bytes
-    int row, col;
-    for (col = 0; col < 4; col++)
-    {
-        for (row = 0; row < 4; row++) // Perform S-transform on every byte
-            state_output[row][col] = AES_s_box_transform(state_output[row][col], inverse);
-    }
-
-    // Shift rows
-    AES_shift_rows(state_output, inverse);
-
-    // Mix columns
-    if (mix_cols) // Not in the final round of encryption
-        AES_mix_cols(state_output, inverse);
-
-    // Add round key
+    int col, row;
     for (col = 0; col < 4; col++)
     {
         for (row = 0; row < 4; row++)
             state_output[row][col] ^= expanded_key[row + (col * 4) + key_index];
     }
+}
+
+
+// Perform one round of the AES encryption algorithm
+void AES_encrypt_round(int state_output[4][4], int expanded_key[], int key_index, bool last_round) // TODO: check
+{
+    // Substitute bytes
+    AES_sub_bytes(state_output, false);
+
+    // Shift rows
+    AES_shift_rows(state_output, false);
+
+    // Mix columns
+    if (!last_round) // Not in the final round of encryption
+        AES_mix_cols(state_output, false);
+
+    // Add round key
+    AES_add_round_key(state_output, expanded_key, key_index);
 }
 
 
@@ -482,29 +501,43 @@ bool AES_encrypt(int mode, int state_output[4][4], int expanded_key[]) // TODO: 
     else
         return EXIT_FAILURE;
 
-    int row, col;
     int key_index = 0;
 
     // Initial round, add round key
-    for (col = 0; col < 4; col++)
-    {
-        for (row = 0; row < 4; row++)
-            state_output[row][col] ^= expanded_key[row + (col * 4) + key_index];
-    }
+    AES_add_round_key(state_output, expanded_key, key_index);
 
     // Perform the normal rounds
     int round;
     for (round = 0; round < number_of_rounds - 1; round++)
     {
         key_index += 16; // Update key position
-        AES_round(state_output, expanded_key, key_index, true, false); // Perform a normal AES round
+        AES_encrypt_round(state_output, expanded_key, key_index, false); // Perform a normal AES round
     }
 
     // Last round is a special case
     key_index += 16; // Update key position
-    AES_round(state_output, expanded_key, key_index, false, false); // Perform a last AES round
+    AES_encrypt_round(state_output, expanded_key, key_index, true); // Perform a last AES round
 
     return EXIT_SUCCESS;
+}
+
+
+// Perform one round of the AES encryption algorithm
+void AES_decrypt_round(int state_output[4][4], int expanded_key[], int key_index, bool last_round) // TODO: check
+{
+    // Inverse shift rows
+    AES_shift_rows(state_output, true);
+
+    // Inverse substitute bytes
+    AES_sub_bytes(state_output, true);
+
+    // Add round key
+    AES_add_round_key(state_output, expanded_key, key_index);
+
+    // Mix columns
+    if (!last_round) // Not in the final round of encryption
+        AES_mix_cols(state_output, true);
+
 }
 
 
@@ -529,27 +562,21 @@ bool AES_decrypt(int mode, int state_output[4][4], int expanded_key[]) // TODO: 
     } else
         return EXIT_FAILURE;
 
-    int row, col;
+    int key_index = key_size - 17; // Update key position
 
-    // First round is a special case
-    int key_index = key_size - 16; // Update key position
-    AES_round(state_output, expanded_key, key_index, false, true); // Perform a first AES round
+    // Initial round, add round key
+    AES_add_round_key(state_output, expanded_key, key_index);
 
     // Perform the normal rounds
     int round;
     for (round = 0; round < number_of_rounds - 1; round++)
     {
         key_index -= 16; // Update key position
-        AES_round(state_output, expanded_key, key_index, true, true); // Perform a normal AES round
+        AES_decrypt_round(state_output, expanded_key, key_index, false); // Perform a normal AES round
     }
 
-    // Last round, add round key
-    key_index -= 16; // Update key position
-    for (col = 0; col < 4; col++)
-    {
-        for (row = 0; row < 4; row++)
-            state_output[row][col] ^= expanded_key[row + (col * 4) + key_index];
-    }
+    // Last round is a special case
+    AES_decrypt_round(state_output, expanded_key, key_index, true); // Perform a first AES round
 
     return EXIT_SUCCESS;
 }

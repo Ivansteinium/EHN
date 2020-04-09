@@ -134,19 +134,19 @@ int AES_s_box_transform(int input, bool inverse);
 
 
 /**
- * Exponentiation of 2, double the previous value except when 0x80 and max value of 0xFF.
- * @param previous The value to be used exponentiated.
- * @return The exponentiated value.
- */
-int AES_exp_2(int previous);
-
-
-/**
  * Core key operation, transform of previous 4 bytes.
  * @param temp The bytes to be transformed, also the output.
  * @param rcon The round constant to be used.
  */
 void AES_key_scheduler(int temp[4], int rcon);
+
+
+/**
+ * Exponentiation of 2, double the previous value except when 0x80 and max value of 0xFF.
+ * @param previous The value to be used exponentiated.
+ * @return The exponentiated value.
+ */
+int AES_exp_2(int previous);
 
 
 /**
@@ -159,6 +159,14 @@ void AES_key_expansion(int mode, int expanded_key[], int user_key[]);
 
 
 /**
+ * Substitute a block through the S-transform.
+ * @param state_output The block to be transformed, also the output.
+ * @param inverse Perform the inverse transform if true.
+ */
+void AES_sub_bytes(int state_output[4][4], bool inverse);
+
+
+/**
  * The AES row shifting function.
  * @param state_output The block to be shifted, also the output.
  * @param inverse Perform the inverse shift if true.
@@ -167,7 +175,7 @@ void AES_shift_rows(int state_output[4][4], bool inverse);
 
 
 /**
- * Dot product according to AES specifications.
+ * Finite field multiplication according to AES specifications.
  * @param a The first value.
  * @param b The second value.
  * @return The result of the dot product.
@@ -184,14 +192,22 @@ void AES_mix_cols(int state_output[4][4], bool inverse);
 
 
 /**
- * Perform one round of the AES algorithm.
- * @param state_output The block to be processed, also the output.
- * @param expanded_key The expanded key to be used.
- * @param key_index The index in the key to be used.
- * @param mix_cols The AES_mix_cols operation is performed if true.
- * @param inverse The inverse operation is performed if true.
+ * XOR a block with the expanded key at a certain index
+ * @param state_output The block to which the round key should be added, also the output.
+ * @param expanded_key The expanded key to use.
+ * @param key_index The index in the key to start from.
  */
-void AES_round(int state_output[4][4], int expanded_key[], int key_index, bool mix_cols, bool inverse);
+void AES_add_round_key(int state_output[4][4], int expanded_key[], int key_index);
+
+
+ /**
+  * Perform one round of the AES encryption algorithm.
+  * @param state_output The block to be processed, also the output.
+  * @param expanded_key The expanded key to be used.
+  * @param key_index The index in the key to be used.
+  * @param last_round The mixing of the columns is not performed if true.
+  */
+void AES_encrypt_round(int state_output[4][4], int expanded_key[], int key_index, bool last_round);
 
 
 /**
@@ -202,6 +218,16 @@ void AES_round(int state_output[4][4], int expanded_key[], int key_index, bool m
  * @return Successful execution.
  */
 bool AES_encrypt(int mode, int state_output[4][4], int expanded_key[]);
+
+
+/**
+ * Perform one round of the AES decryption algorithm.
+ * @param state_output The block to be processed, also the output.
+ * @param expanded_key The expanded key to be used.
+ * @param key_index The index in the key to be used.
+ * @param last_round The mixing of the columns is not performed if true.
+ */
+void AES_decrypt_round(int state_output[4][4], int expanded_key[], int key_index, bool last_round);
 
 
 /**
