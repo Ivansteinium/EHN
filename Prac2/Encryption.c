@@ -115,6 +115,11 @@ int main(int argc, char *argv[])
     if (message_len % 16 != 0)
         num_blocks++;
 
+    // Generate expanded keys
+    AES_key_expansion(AES128, AES128_expanded_key, AES128_user_key);
+    AES_key_expansion(AES192, AES192_expanded_key, AES192_user_key);
+    AES_key_expansion(AES256, AES256_expanded_key, AES256_user_key);
+
     // Process all the blocks from the message
     for (current_block = 0; current_block < num_blocks; current_block++)
     {
@@ -124,11 +129,7 @@ int main(int argc, char *argv[])
         print_block(state_array[current_block]);
     }
 
-    // Generate expanded key
-    AES_key_expansion(AES128, AES128_expanded_key, AES128_user_key);
-
     //    **** TESTING PURPOSES **** /*
-    // TODO: fix
     printf("Original\n");
     print_block(state_array[0]);
     AES_encrypt(AES128, state_array[0], AES128_expanded_key);
@@ -161,7 +162,7 @@ void hex_blockify(int message[16], int state_output[4][4])
     for (col = 0; col < 4; col++)
     {
         for (row = 0; row < 4; row++)
-            state_output[row][col] = message[(4 * col) + row];
+            state_output[row][col] = message[row + (4 * col)];
     }
 }
 
@@ -257,7 +258,7 @@ int AES_exp_2(int previous) // Checked
 
 
 // Main key expansion function
-void AES_key_expansion(int mode, int expanded_key[], int user_key[]) // Checked for 128
+void AES_key_expansion(int mode, int expanded_key[], int user_key[]) // Checked
 {
     int user_key_size;
     int expansion;
@@ -458,7 +459,7 @@ void AES_mix_cols(int state_output[4][4], bool inverse)  // Checked
 
 
 // XOR a block with the expanded key at a certain index
-void AES_add_round_key(int state_output[4][4], int expanded_key[], int key_index) // TODO: check
+void AES_add_round_key(int state_output[4][4], int expanded_key[], int key_index) // Checked
 {
     int col, row;
     for (col = 0; col < 4; col++)
@@ -470,7 +471,7 @@ void AES_add_round_key(int state_output[4][4], int expanded_key[], int key_index
 
 
 // Perform one round of the AES encryption algorithm
-void AES_encrypt_round(int state_output[4][4], int expanded_key[], int key_index, bool last_round) // TODO: check
+void AES_encrypt_round(int state_output[4][4], int expanded_key[], int key_index, bool last_round) // Checked
 {
     // Substitute bytes
     AES_sub_bytes(state_output, false);
@@ -488,7 +489,7 @@ void AES_encrypt_round(int state_output[4][4], int expanded_key[], int key_index
 
 
 // The AES encryption algorithm
-bool AES_encrypt(int mode, int state_output[4][4], int expanded_key[]) // TODO: compare with known result
+bool AES_encrypt(int mode, int state_output[4][4], int expanded_key[]) // Checked
 {
     int number_of_rounds;
 
@@ -523,7 +524,7 @@ bool AES_encrypt(int mode, int state_output[4][4], int expanded_key[]) // TODO: 
 
 
 // Perform one round of the AES encryption algorithm
-void AES_decrypt_round(int state_output[4][4], int expanded_key[], int key_index, bool last_round) // TODO: check
+void AES_decrypt_round(int state_output[4][4], int expanded_key[], int key_index, bool last_round) // Checked
 {
     // Inverse shift rows
     AES_shift_rows(state_output, true);
@@ -542,7 +543,7 @@ void AES_decrypt_round(int state_output[4][4], int expanded_key[], int key_index
 
 
 // The AES decryption algorithm
-bool AES_decrypt(int mode, int state_output[4][4], int expanded_key[]) // TODO: decrypt not yielding plaintext as expected
+bool AES_decrypt(int mode, int state_output[4][4], int expanded_key[]) // Checked
 {
     int number_of_rounds;
     int key_size;
@@ -562,7 +563,7 @@ bool AES_decrypt(int mode, int state_output[4][4], int expanded_key[]) // TODO: 
     } else
         return EXIT_FAILURE;
 
-    int key_index = key_size - 17; // Update key position
+    int key_index = key_size - 16; // Update key position
 
     // Initial round, add round key
     AES_add_round_key(state_output, expanded_key, key_index);
@@ -576,6 +577,7 @@ bool AES_decrypt(int mode, int state_output[4][4], int expanded_key[]) // TODO: 
     }
 
     // Last round is a special case
+    key_index -= 16; // Update key position
     AES_decrypt_round(state_output, expanded_key, key_index, true); // Perform a first AES round
 
     return EXIT_SUCCESS;

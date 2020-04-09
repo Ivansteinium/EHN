@@ -7,7 +7,7 @@
 #include <string.h>
 #include <stdbool.h>
 
-#define DEBUG 1
+#define DEBUG 0
 #define MAX_REQ_LEN 256
 
 // AES constants
