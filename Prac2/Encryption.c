@@ -23,45 +23,82 @@ int main(int argc, char *argv[])
     int AES192_expanded_key[AES192_KEY_SIZE];
     int AES256_expanded_key[AES256_KEY_SIZE];
 
+#if DEBUG // TODO: remove when no longer needed
     //    **** TESTING PURPOSES **** /*
-    // TODO: remove when no longer needed
-    int test[4] = {0x3A, 0x65, 0x71, 0x1B};
-    int key_example[16] = {0x0f, 0x15, 0x71, 0xc9, 0x47, 0xd9, 0xe8, 0x59, 0x0c, 0xb7, 0xad, 0x00, 0xaf, 0x7f, 0x67, 0x98};
+//    int test[4] = {0x3A, 0x65, 0x71, 0x1B};
+//    int key_example[16] = {0x0f, 0x15, 0x71, 0xc9, 0x47, 0xd9, 0xe8, 0x59, 0x0c, 0xb7, 0xad, 0x00, 0xaf, 0x7f, 0x67, 0x98};
     int test_cols[4][4] = {{0x74, 0x20, 0x61, 0x73},
                            {0x68, 0x69, 0x20, 0x74},
                            {0x69, 0x73, 0x74, 0x2e},
                            {0x73, 0x20, 0x65, 0x2e}};
 
+    printf("----Testing mix cols----\n");
+    printf("Original\n");
     print_block(test_cols);
     AES_mix_cols(test_cols, false);
+    printf("Mix cols\n");
     print_block(test_cols);
     AES_mix_cols(test_cols, true);
+    printf("Inverse mix cols should be same as original\n");
     print_block(test_cols);
 
-    int x = AES_dot_product(0xFF, 0xFF);
+    printf("----Testing dot product----\n");
+    printf("57 dot 83 = ");
+    int x = AES_dot_product(0x57, 0x83);
+    printf("%02X\n", x);
+    printf("83 dot 57 = ");
+    x = AES_dot_product(0x83, 0x57);
+    printf("%02X\n\n", x);
 
+    printf("----Testing exponentiation starting from 1----\n01 ");
     x = 1;
     for (i = 0; i < 20; i++)
         printf("%02X ", x = AES_exp_2(x));
     printf("\n\n");
 
+    printf("----Testing shift rows----\n");
+    printf("Original\n");
+    print_block(test_cols);
     AES_shift_rows(test_cols, false);
+    printf("Shift rows\n");
+    print_block(test_cols);
     AES_shift_rows(test_cols, true);
+    printf("Inverse shift rows should be same as original\n");
+    print_block(test_cols);
 
+    printf("----Testing key expansion----\n");
+    printf("AES128 expanded key\n");
     AES_key_expansion(AES128, AES128_expanded_key, AES128_user_key);
-    for (i = 0; i < 176; i++)
-    {
-        printf("%02X ", AES128_expanded_key[i]);
-        if ((i + 1) % 16 == 0)
-            printf("\n");
-    }
-    printf("\n");
+    print_expanded_key(AES128, AES128_expanded_key);
+    printf("AES192 expanded key\n");
     AES_key_expansion(AES192, AES192_expanded_key, AES192_user_key);
+    print_expanded_key(AES192, AES192_expanded_key);
+    printf("AES256 expanded key\n");
     AES_key_expansion(AES256, AES256_expanded_key, AES256_user_key);
+    print_expanded_key(AES256, AES256_expanded_key);
 
-    int a = AES_s_box_transform(0x3a, false);
-    a = AES_s_box_transform(a, true);
+    printf("----Testing S-transform----\n");
+    printf("S-transform of 3A = ");
+    x = AES_s_box_transform(0x3a, false);
+    printf("%02X\n", x);
+    printf("Inverse S-transform of %02X = ", x);
+    x = AES_s_box_transform(x, true);
+    printf("%02X\n\n", x);
+
+    printf("----Testing AES round----\n");
+    printf("Original\n");
+    print_block(test_cols);
+    AES_round(test_cols, AES128_expanded_key, 0, true, false);
+    printf("After one round\n");
+    print_block(test_cols);
+    AES_round(test_cols, AES128_expanded_key, 0, true, true);
+    printf("Inverse round\n");
+    print_block(test_cols);
+
+
+    printf("\n\n");
     // */ **** TESTING PURPOSES ****
+#endif
 
     // Greeting
     printf("EHN 410 Group 12 Practical 2\n\n");
@@ -84,6 +121,9 @@ int main(int argc, char *argv[])
         printf("Block %d\n", current_block);
         print_block(state_array[current_block]);
     }
+
+    // Generate expanded key
+    AES_key_expansion(AES128, AES128_expanded_key, AES128_user_key);
 
     //    **** TESTING PURPOSES **** /*
     // TODO: fix
@@ -129,11 +169,33 @@ void print_block(int state_output[4][4])
     for (row = 0; row < 4; row++)
     {
         for (col = 0; col < 4; col++)
-        {
-            printf("%02X", state_output[row][col]);
-            printf(" ");
-        }
+            printf("%02X ", state_output[row][col]);
         printf("\n");
+    }
+    printf("\n");
+}
+
+
+// Output the expanded key in rows of 16
+void print_expanded_key(int mode, int expanded_key[])
+{
+    int key_size;
+
+    if (mode == AES128)
+        key_size = AES128_KEY_SIZE;
+    else if (mode == AES192)
+        key_size = AES192_KEY_SIZE;
+    else if (mode == AES256)
+        key_size = AES256_KEY_SIZE;
+    else
+        return;
+
+    int i;
+    for (i = 0; i < key_size; i++)
+    {
+        printf("%02X ", expanded_key[i]);
+        if ((i + 1) % 16 == 0)
+            printf("\n");
     }
     printf("\n");
 }
@@ -162,8 +224,8 @@ void AES_word_rotate_32(int word[4], bool inverse) // Checked
 
 // Divide value up into its MSB and LSB Nibble and return the s_box value
 int AES_s_box_transform(int input, bool inverse) // Checked
-{
-    return s_box[inverse][input >> 4][input & 0b00001111];
+{   //            0 or 1     MSB             LSB
+    return S_BOX[inverse][input >> 4][input & 0b00001111];
 }
 
 
@@ -183,10 +245,10 @@ int AES_exp_2(int previous) // Checked
 void AES_key_scheduler(int temp[4], int rcon) // Checked
 {
     int byte_pos;
-    AES_word_rotate_32(temp, false);
-    for (byte_pos = 0; byte_pos < 4; byte_pos++)
+    AES_word_rotate_32(temp, false); // Rotate the word
+    for (byte_pos = 0; byte_pos < 4; byte_pos++) // Take the S-transform of the word
         temp[byte_pos] = AES_s_box_transform(temp[byte_pos], false);
-    temp[0] ^= rcon;
+    temp[0] ^= rcon; // Add the round constant
 }
 
 
@@ -227,15 +289,7 @@ void AES_key_expansion(int mode, int expanded_key[], int user_key[]) // Checked 
     for (key_pos = 0; key_pos < 4; key_pos++)
         temp[key_pos] = user_key[user_key_size - (4 - key_pos)];
 
-//    key_scheduler(temp, rcon);
-//    rcon++;
-//
-//    for (byte_pos = 0; byte_pos < 4; byte_pos++)
-//    {
-//        temp[byte_pos] ^= aes_key[byte_pos]; // Bitwise XOR with x bytes before
-//        aes_key[byte_pos+16] = temp[byte_pos]; // Expand key
-//    }
-
+    // Fill the expanded key until the required length is reached
     int expanded_pos;
     int sub_pos;
     int rcon  = 1;
@@ -250,6 +304,7 @@ void AES_key_expansion(int mode, int expanded_key[], int user_key[]) // Checked 
             expanded_key[byte_pos + user_key_size + (user_key_size * expanded_pos)] = temp[byte_pos]; // Expand key
         }
 
+        // Perform the sub-expansion
         for (sub_pos = 0; sub_pos < sub_expansion; sub_pos++)
         {
             for (byte_pos = 0; byte_pos < 4; byte_pos++)
@@ -265,6 +320,14 @@ void AES_key_expansion(int mode, int expanded_key[], int user_key[]) // Checked 
 // The AES row shifting function
 void AES_shift_rows(int state_output[4][4], bool inverse) // Checked
 {
+    /*
+     * Rotate each word by the number of times equal to its index, i.e.
+     * Row 0 stays the same
+     * Row 1 is shifted once
+     * Row 2 is shifted twice
+     * Row 3 is shifted three times
+     */
+
     int row;
     int num_rotations;
     for (row = 1; row < 4; row++)
@@ -293,11 +356,15 @@ int AES_dot_product(int a, int b) // Checked
      */
 
     int result = 0;
-    int position = 128;
+    int position = 128; // = 2^7 = 0b10000000
     int i;
 
     // Expand polynomial
-    // polynomial a * polynomial b
+    /*
+     * (polynomial a) * (polynomial b)
+     * Multiplying a polynomial by x^n is equal to a n left shift
+     * XOR the resulting polynomials together
+     */
     for (i = 7; i >= 0; i--)
     {
         if ((a & position) == position)
@@ -309,16 +376,16 @@ int AES_dot_product(int a, int b) // Checked
         return result;
 
     // Calculate modulo
-    // Polynomial long division with irreducible polynomial x^8 + x^4 + x^3 + x + 1 => 0b100011011 = 0x11B
-    position = 65536;
+    // Polynomial long division with irreducible polynomial x^8 + x^4 + x^3 + x + 1 => 0b100011011
+    position = 65536; // = 2^16 = 0b1000000000000000
     for (i = 16; i > 7; i--)
     {
         if ((result & position) == position) // Match a multiple of the irreducible polynomial to the result
-            result ^= 0x11B << (i - 8); // Irreducible polynomial is already of order 8
+            result ^= 0b100011011 << (i - 8); // Subtract the multiple if matched
         position = position >> 1;
     }
 
-    return result;
+    return result; // Remainder after long division was done
 }
 
 
@@ -351,6 +418,7 @@ int AES_dot_product(int a, int b) // Checked
 // Perform the dot product of the block and the prime matrix
 void AES_mix_cols(int state_output[4][4], bool inverse)  // Checked
 {
+    // Matrix dot operation with the prime matrix
     int row, col, out;
     int new_state[4][4];
     int multiply[4];
@@ -359,11 +427,12 @@ void AES_mix_cols(int state_output[4][4], bool inverse)  // Checked
         for (row = 0; row < 4; row++)
         {
             for (col = 0; col < 4; col++)
-                multiply[col] = AES_dot_product(prime_matrix[inverse][row][col], state_output[col][out]);
-            new_state[row][out] = multiply[0] ^ multiply[1] ^ multiply[2] ^ multiply[3];
+                multiply[col] = AES_dot_product(PRIME_MATRIX[inverse][row][col], state_output[col][out]); // Calculate sub dot products
+            new_state[row][out] = multiply[0] ^ multiply[1] ^ multiply[2] ^ multiply[3]; // Add sub dot products together
         }
     }
 
+    // Copy the result over the input as output
     for (row = 0; row < 4; row++)
     {
         for (col = 0; col < 4; col++)
@@ -379,7 +448,7 @@ void AES_round(int state_output[4][4], int expanded_key[], int key_index, bool m
     int row, col;
     for (col = 0; col < 4; col++)
     {
-        for (row = 0; row < 4; row++)
+        for (row = 0; row < 4; row++) // Perform S-transform on every byte
             state_output[row][col] = AES_s_box_transform(state_output[row][col], inverse);
     }
 
@@ -387,7 +456,7 @@ void AES_round(int state_output[4][4], int expanded_key[], int key_index, bool m
     AES_shift_rows(state_output, inverse);
 
     // Mix columns
-    if (mix_cols)
+    if (mix_cols) // Not in the final round of encryption
         AES_mix_cols(state_output, inverse);
 
     // Add round key
