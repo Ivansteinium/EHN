@@ -102,6 +102,14 @@ void hex_blockify(int message[16], int state_output[4][4]);
 
 
 /**
+ * Output a word to the terminal.
+ * @param word The word to be printed.
+ * @param length The length of the word.
+ */
+void print_word(int word[], int length);
+
+
+/**
  * Output a 4x4 block to the terminal as a block of hex.
  * @param state_output The block to be printed.
  */
@@ -117,11 +125,13 @@ void print_expanded_key(int mode, int expanded_key[]);
 
 
 /**
- * Shift last item in an array to the front.
+ * Shift last items in an array to the front or vice-versa.
  * @param word The array to be rotated.
+ * @param length The length of the word.
+ * @param rotations The number of rotations to perform.
  * @param inverse Rotate in the opposite direction if true.
  */
-void AES_word_rotate_32(int word[4], bool inverse);
+void AES_word_rotate(int word[], int length, int rotations, bool inverse);
 
 
 /**
@@ -200,16 +210,6 @@ void AES_mix_cols(int state_output[4][4], bool inverse);
 void AES_add_round_key(int state_output[4][4], int expanded_key[], int key_index);
 
 
- /**
-  * Perform one round of the AES encryption algorithm.
-  * @param state_output The block to be processed, also the output.
-  * @param expanded_key The expanded key to be used.
-  * @param key_index The index in the key to be used.
-  * @param last_round The mixing of the columns is not performed if true.
-  */
-void AES_encrypt_round(int state_output[4][4], int expanded_key[], int key_index, bool last_round);
-
-
 /**
  * The AES encryption algorithm.
  * @param mode Use the macros AES128, AES192 or AES256 to select which mode to use.
@@ -218,16 +218,6 @@ void AES_encrypt_round(int state_output[4][4], int expanded_key[], int key_index
  * @return Successful execution.
  */
 bool AES_encrypt(int mode, int state_output[4][4], int expanded_key[]);
-
-
-/**
- * Perform one round of the AES decryption algorithm.
- * @param state_output The block to be processed, also the output.
- * @param expanded_key The expanded key to be used.
- * @param key_index The index in the key to be used.
- * @param last_round The mixing of the columns is not performed if true.
- */
-void AES_decrypt_round(int state_output[4][4], int expanded_key[], int key_index, bool last_round);
 
 
 /**
@@ -288,13 +278,7 @@ bool CFB_encrypt(int mode, int stream_input[][8], int num_blocks, int IV[16], in
 bool CFB_decrypt(int mode, int stream_input[][8], int num_blocks, int IV[16], int user_key[]);
 
 
-//void word_rotate_192(int word[6], bool inverse);
-
-
 //void key_scheduler_192(int temp[6], int rcon);
-
-
-//void word_rotate_256(int word[8], bool inverse);
 
 
 //void key_scheduler_256(int temp[8], int rcon);

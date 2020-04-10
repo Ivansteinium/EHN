@@ -25,46 +25,57 @@ int main(int argc, char *argv[])
 
 #if DEBUG // TODO: remove when no longer needed
     //    **** TESTING PURPOSES **** /*
-//    int test[4] = {0x3A, 0x65, 0x71, 0x1B};
+    int test_word[4] = {0x3A, 0x65, 0x71, 0x1B};
 //    int key_example[16] = {0x0f, 0x15, 0x71, 0xc9, 0x47, 0xd9, 0xe8, 0x59, 0x0c, 0xb7, 0xad, 0x00, 0xaf, 0x7f, 0x67, 0x98};
     int test_cols[4][4] = {{0x74, 0x20, 0x61, 0x73},
                            {0x68, 0x69, 0x20, 0x74},
                            {0x69, 0x73, 0x74, 0x2e},
                            {0x73, 0x20, 0x65, 0x2e}};
+    int x;
 
-    printf("----Testing mix cols----\n");
+    printf("----Testing word rotate----\n");
     printf("Original\n");
-    print_block(test_cols);
-    AES_mix_cols(test_cols, false);
-    printf("Mix cols\n");
-    print_block(test_cols);
-    AES_mix_cols(test_cols, true);
-    printf("Inverse mix cols should be same as original\n");
-    print_block(test_cols);
+    print_word(test_word, 4);
+    AES_word_rotate(test_word, 4, 1, false);
+    printf("One rotation\n");
+    print_word(test_word, 4);
+    AES_word_rotate(test_word, 4, 1, true);
+    printf("One inverse rotation\n");
+    print_word(test_word, 4);
+    AES_word_rotate(test_word, 4, 3, false);
+    printf("Three rotations\n");
+    print_word(test_word, 4);
+    AES_word_rotate(test_word, 4, 3, true);
+    printf("Three inverse rotations\n");
+    print_word(test_word, 4);
+    printf("\n");
 
-    printf("----Testing dot product----\n");
-    printf("57 dot 83 = ");
-    int x = AES_dot_product(0x57, 0x83);
-    printf("%02X\n", x);
-    printf("83 dot 57 = ");
-    x = AES_dot_product(0x83, 0x57);
-    printf("%02X\n\n", x);
+    printf("----Testing S-transform----\n");
+    printf("Original\n3A\n");
+    x = AES_s_box_transform(0x3A, false);
+    printf("S-transformed\n%02X\n", x);
+    x = AES_s_box_transform(x, true);
+    printf("Inverse s-transformed\n%02X\n", x);
+    printf("\n");
+
+    printf("----Testing key scheduler----\n");
+    printf("Original\n");
+    print_word(test_word, 4);
+    AES_key_scheduler(test_word, 1);
+    printf("Key scheduled with rcon = 1\n");
+    print_word(test_word, 4);
+    printf("\n");
+
+    test_word[0] = 0x3A;
+    test_word[1] = 0x65;
+    test_word[2] = 0x71;
+    test_word[3] = 0x1B;
 
     printf("----Testing exponentiation starting from 1----\n01 ");
     x = 1;
     for (i = 0; i < 20; i++)
         printf("%02X ", x = AES_exp_2(x));
     printf("\n\n");
-
-    printf("----Testing shift rows----\n");
-    printf("Original\n");
-    print_block(test_cols);
-    AES_shift_rows(test_cols, false);
-    printf("Shift rows\n");
-    print_block(test_cols);
-    AES_shift_rows(test_cols, true);
-    printf("Inverse shift rows should be same as original\n");
-    print_block(test_cols);
 
     printf("----Testing key expansion----\n");
     printf("AES128 expanded key\n");
@@ -77,7 +88,7 @@ int main(int argc, char *argv[])
     AES_key_expansion(AES256, AES256_expanded_key, AES256_user_key);
     print_expanded_key(AES256, AES256_expanded_key);
 
-    printf("----Testing S-transform----\n");
+    printf("----Testing substitute bytes----\n");
     printf("Original\n");
     print_block(test_cols);
     AES_sub_bytes(test_cols, false);
@@ -85,6 +96,34 @@ int main(int argc, char *argv[])
     print_block(test_cols);
     AES_sub_bytes(test_cols, true);
     printf("Inverse sub bytes should be same as original\n");
+    print_block(test_cols);
+
+    printf("----Testing shift rows----\n");
+    printf("Original\n");
+    print_block(test_cols);
+    AES_shift_rows(test_cols, false);
+    printf("Shift rows\n");
+    print_block(test_cols);
+    AES_shift_rows(test_cols, true);
+    printf("Inverse shift rows should be same as original\n");
+    print_block(test_cols);
+
+    printf("----Testing dot product----\n");
+    printf("57 dot 83 = ");
+    x = AES_dot_product(0x57, 0x83);
+    printf("%02X\n", x);
+    printf("83 dot 57 = ");
+    x = AES_dot_product(0x83, 0x57);
+    printf("%02X\n\n", x);
+
+    printf("----Testing mix cols----\n");
+    printf("Original\n");
+    print_block(test_cols);
+    AES_mix_cols(test_cols, false);
+    printf("Mix cols\n");
+    print_block(test_cols);
+    AES_mix_cols(test_cols, true);
+    printf("Inverse mix cols should be same as original\n");
     print_block(test_cols);
 
     printf("----Testing add round key----\n");
@@ -96,7 +135,6 @@ int main(int argc, char *argv[])
     AES_add_round_key(test_cols, AES128_expanded_key, 0);
     printf("Key added again should be same as original\n");
     print_block(test_cols);
-
 
     printf("\n\n");
     // */ **** TESTING PURPOSES ****
@@ -167,16 +205,22 @@ void hex_blockify(int message[16], int state_output[4][4])
 }
 
 
+// Output a word to the terminal
+void print_word(int word[], int length)
+{
+    int i;
+    for (i = 0; i < length; i++)
+        printf("%02X ", word[i]);
+    printf("\n");
+}
+
+
 // Output a 4x4 block to the terminal as a block of hex
 void print_block(int state_output[4][4])
 {
     int row, col;
     for (row = 0; row < 4; row++)
-    {
-        for (col = 0; col < 4; col++)
-            printf("%02X ", state_output[row][col]);
-        printf("\n");
-    }
+        print_word(state_output[row], 4);
     printf("\n");
 }
 
@@ -196,40 +240,44 @@ void print_expanded_key(int mode, int expanded_key[])
         return;
 
     int i;
-    for (i = 0; i < key_size; i++)
-    {
-        printf("%02X ", expanded_key[i]);
-        if ((i + 1) % 16 == 0)
-            printf("\n");
-    }
+    for (i = 0; i < key_size; i += 16)
+        print_word(expanded_key + i, 16);
     printf("\n");
 }
 
 
-// Shift last item in an array to the front
-void AES_word_rotate_32(int word[4], bool inverse) // Checked
+// Shift last items in an array to the front or vice-versa
+void AES_word_rotate(int word[], int length, int rotations, bool inverse)
 {
+    int temp[length];
+    int pivot = length - rotations;
+
+    int i;
+    for (i = 0; i < length; i++)
+        temp[i] = word[i];
+
     if (inverse)
-    {   // Shift last item to front
-        int temp = word[0];
-        word[0] = word[3];
-        word[3] = word[2];
-        word[2] = word[1];
-        word[1] = temp;
+    {
+        for(i = pivot; i < length; i++)
+            word[i - pivot] = temp[i];
+
+        for(i = 0; i < pivot; i++)
+            word[i + rotations] = temp[i];
+
     } else
-    {   // Shift first item to back
-        int temp = word[3];
-        word[3] = word[0];
-        word[0] = word[1];
-        word[1] = word[2];
-        word[2] = temp;
+    {
+        for(i = 0; i < pivot; i++)
+            word[i] = temp[i + rotations];
+
+        for(i = pivot; i < length; i++)
+            word[i] = temp[i - pivot];
     }
 }
 
 
 // Divide value up into its MSB and LSB Nibble and return the s_box value
 int AES_s_box_transform(int input, bool inverse) // Checked
-{   //            0 or 1     MSB             LSB
+{   //           0 or 1      MSB             LSB
     return S_BOX[inverse][input >> 4][input & 0b00001111];
 }
 
@@ -238,7 +286,7 @@ int AES_s_box_transform(int input, bool inverse) // Checked
 void AES_key_scheduler(int temp[4], int rcon) // Checked
 {
     int byte_pos;
-    AES_word_rotate_32(temp, false); // Rotate the word
+    AES_word_rotate(temp, 4, 1, false); // Rotate the word
     for (byte_pos = 0; byte_pos < 4; byte_pos++) // Take the S-transform of the word
         temp[byte_pos] = AES_s_box_transform(temp[byte_pos], false);
     temp[0] ^= rcon; // Add the round constant
@@ -285,7 +333,7 @@ void AES_key_expansion(int mode, int expanded_key[], int user_key[]) // Checked
     int byte_pos;
     int temp[4];
 
-    // Set first x bytes user key
+    // Set first x bytes as the user key
     int key_pos;
     for (key_pos = 0; key_pos < user_key_size; key_pos++)
         expanded_key[key_pos] = user_key[key_pos];
@@ -346,12 +394,8 @@ void AES_shift_rows(int state_output[4][4], bool inverse) // Checked
      */
 
     int row;
-    int num_rotations;
     for (row = 1; row < 4; row++)
-    {
-        for (num_rotations = 0; num_rotations < row; num_rotations++)
-            AES_word_rotate_32(state_output[row], inverse);
-    }
+        AES_word_rotate(state_output[row], 4, row, inverse);
 }
 
 
@@ -443,8 +487,8 @@ void AES_mix_cols(int state_output[4][4], bool inverse)  // Checked
     {
         for (row = 0; row < 4; row++)
         {
-            for (col = 0; col < 4; col++)
-                multiply[col] = AES_dot_product(PRIME_MATRIX[inverse][row][col], state_output[col][out]); // Calculate sub dot products
+            for (col = 0; col < 4; col++) // Calculate sub dot products
+                multiply[col] = AES_dot_product(PRIME_MATRIX[inverse][row][col], state_output[col][out]);
             new_state[row][out] = multiply[0] ^ multiply[1] ^ multiply[2] ^ multiply[3]; // Add sub dot products together
         }
     }
@@ -464,27 +508,9 @@ void AES_add_round_key(int state_output[4][4], int expanded_key[], int key_index
     int col, row;
     for (col = 0; col < 4; col++)
     {
-        for (row = 0; row < 4; row++)
+        for (row = 0; row < 4; row++) // Do column wise XOR with the matching index of the key
             state_output[row][col] ^= expanded_key[row + (col * 4) + key_index];
     }
-}
-
-
-// Perform one round of the AES encryption algorithm
-void AES_encrypt_round(int state_output[4][4], int expanded_key[], int key_index, bool last_round) // Checked
-{
-    // Substitute bytes
-    AES_sub_bytes(state_output, false);
-
-    // Shift rows
-    AES_shift_rows(state_output, false);
-
-    // Mix columns
-    if (!last_round) // Not in the final round of encryption
-        AES_mix_cols(state_output, false);
-
-    // Add round key
-    AES_add_round_key(state_output, expanded_key, key_index);
 }
 
 
@@ -502,7 +528,7 @@ bool AES_encrypt(int mode, int state_output[4][4], int expanded_key[]) // Checke
     else
         return EXIT_FAILURE;
 
-    int key_index = 0;
+    int key_index = 0; // Start at the front of the key and work forwards
 
     // Initial round, add round key
     AES_add_round_key(state_output, expanded_key, key_index);
@@ -511,34 +537,21 @@ bool AES_encrypt(int mode, int state_output[4][4], int expanded_key[]) // Checke
     int round;
     for (round = 0; round < number_of_rounds - 1; round++)
     {
-        key_index += 16; // Update key position
-        AES_encrypt_round(state_output, expanded_key, key_index, false); // Perform a normal AES round
+        key_index += 16; // Move to next section
+        AES_sub_bytes(state_output, false); // Substitute bytes
+        AES_shift_rows(state_output, false); // Shift rows
+        AES_mix_cols(state_output, false); // Mix columns
+        AES_add_round_key(state_output, expanded_key, key_index); // Add round key
     }
 
     // Last round is a special case
-    key_index += 16; // Update key position
-    AES_encrypt_round(state_output, expanded_key, key_index, true); // Perform a last AES round
+    key_index += 16; // Move to next section
+    AES_sub_bytes(state_output, false); // Substitute bytes
+    AES_shift_rows(state_output, false); // Shift rows
+    AES_add_round_key(state_output, expanded_key, key_index); // Add round key
+    // No mix columns
 
     return EXIT_SUCCESS;
-}
-
-
-// Perform one round of the AES encryption algorithm
-void AES_decrypt_round(int state_output[4][4], int expanded_key[], int key_index, bool last_round) // Checked
-{
-    // Inverse shift rows
-    AES_shift_rows(state_output, true);
-
-    // Inverse substitute bytes
-    AES_sub_bytes(state_output, true);
-
-    // Add round key
-    AES_add_round_key(state_output, expanded_key, key_index);
-
-    // Mix columns
-    if (!last_round) // Not in the final round of encryption
-        AES_mix_cols(state_output, true);
-
 }
 
 
@@ -563,7 +576,7 @@ bool AES_decrypt(int mode, int state_output[4][4], int expanded_key[]) // Checke
     } else
         return EXIT_FAILURE;
 
-    int key_index = key_size - 16; // Update key position
+    int key_index = key_size - 16; // Start from the back of the key and work backwards
 
     // Initial round, add round key
     AES_add_round_key(state_output, expanded_key, key_index);
@@ -572,13 +585,19 @@ bool AES_decrypt(int mode, int state_output[4][4], int expanded_key[]) // Checke
     int round;
     for (round = 0; round < number_of_rounds - 1; round++)
     {
-        key_index -= 16; // Update key position
-        AES_decrypt_round(state_output, expanded_key, key_index, false); // Perform a normal AES round
+        key_index -= 16; // Move to previous section
+        AES_shift_rows(state_output, true); // Inverse shift rows
+        AES_sub_bytes(state_output, true); // Inverse substitute bytes
+        AES_add_round_key(state_output, expanded_key, key_index); // Add round key
+        AES_mix_cols(state_output, true); // Inverse mix columns
     }
 
     // Last round is a special case
-    key_index -= 16; // Update key position
-    AES_decrypt_round(state_output, expanded_key, key_index, true); // Perform a first AES round
+    key_index -= 16; // Move to previous section
+    AES_shift_rows(state_output, true); // Inverse shift rows
+    AES_sub_bytes(state_output, true); // Inverse substitute bytes
+    AES_add_round_key(state_output, expanded_key, key_index); // Add round key
+    // No mix columns
 
     return EXIT_SUCCESS;
 }
@@ -803,29 +822,7 @@ bool CFB_decrypt(int mode, int stream_input[][8], int num_blocks, int IV[16], in
     return EXIT_SUCCESS;
 }
 
-//void word_rotate_192(int word[6], bool inverse)
-//{
-//    if (inverse)
-//    {   // Shift last item to front
-//        int temp = word[0];
-//        word[0] = word[5];
-//        word[5] = word[4];
-//        word[4] = word[3];
-//        word[3] = word[2];
-//        word[2] = word[1];
-//        word[1] = temp;
-//    } else
-//    {   // Shift first item to back
-//        int temp = word[5];
-//        word[5] = word[0];
-//        word[0] = word[1];
-//        word[1] = word[2];
-//        word[2] = word[3];
-//        word[3] = word[4];
-//        word[4] = temp;
-//    }
-//}
-//
+
 //void key_scheduler_192(int temp[6], int rcon)
 // {
 //    int byte_pos;
@@ -838,33 +835,6 @@ bool CFB_decrypt(int mode, int stream_input[][8], int num_blocks, int IV[16], in
 //    }
 //    //printf("\n");
 //    temp[0] = temp[0]^rcon;
-//}
-//
-//void word_rotate_256(int word[6], bool inverse)
-//{
-//    if (inverse)
-//    {   // Shift last item to front
-//        int temp = word[0];
-//        word[0] = word[7];
-//        word[7] = word[6];
-//        word[6] = word[5];
-//        word[5] = word[4];
-//        word[4] = word[3];
-//        word[3] = word[2];
-//        word[2] = word[1];
-//        word[1] = temp;
-//    } else
-//    {   // Shift first item to back
-//        int temp = word[7];
-//        word[7] = word[0];
-//        word[0] = word[1];
-//        word[1] = word[2];
-//        word[2] = word[3];
-//        word[3] = word[4];
-//        word[4] = word[3];
-//        word[5] = word[4];
-//        word[6] = temp;
-//    }
 //}
 //
 //void key_scheduler_256(int temp[8], int rcon)
