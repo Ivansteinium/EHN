@@ -6,7 +6,6 @@ int main(int argc, char *argv[])
     int i;
     int message_len;
     int num_blocks;
-//    int padding_pos;
     int current_block = 0;
     int message_pos = 0;
     int state_array[MAX_REQ_LEN / 16][4][4];
@@ -19,53 +18,61 @@ int main(int argc, char *argv[])
     int AES256_user_key[AES256_USER_KEY_SIZE] = {0x74, 0x65, 0x73, 0x74, 0x20, 0x66, 0x75, 0x6E, 0x63, 0x74, 0x69, 0x6F,
                                                  0x6E, 0x61, 0x6C, 0x69, 0x74, 0x65, 0x73, 0x74, 0x20, 0x66, 0x75, 0x6E,
                                                  0x63, 0x74, 0x69, 0x6F, 0x6E, 0x61, 0x6C, 0x69};
-    int AES128_expanded_key[AES128_KEY_SIZE];
-    int AES192_expanded_key[AES192_KEY_SIZE];
-    int AES256_expanded_key[AES256_KEY_SIZE];
+    int IV[16] = {0x74, 0x65, 0x73, 0x74, 0x20, 0x66, 0x75, 0x6E, 0x63, 0x74, 0x69, 0x6F, 0x6E, 0x61, 0x6C, 0x69};
+
 
 #if DEBUG // TODO: remove when no longer needed
     //    **** TESTING PURPOSES **** /*
+    int AES128_expanded_key[AES128_KEY_SIZE];
+    int AES192_expanded_key[AES192_KEY_SIZE];
+    int AES256_expanded_key[AES256_KEY_SIZE];
     int test_word[4] = {0x3A, 0x65, 0x71, 0x1B};
-//    int key_example[16] = {0x0f, 0x15, 0x71, 0xc9, 0x47, 0xd9, 0xe8, 0x59, 0x0c, 0xb7, 0xad, 0x00, 0xaf, 0x7f, 0x67, 0x98};
+    int x;
     int test_cols[4][4] = {{0x74, 0x20, 0x61, 0x73},
                            {0x68, 0x69, 0x20, 0x74},
                            {0x69, 0x73, 0x74, 0x2e},
                            {0x73, 0x20, 0x65, 0x2e}};
-    int x;
 
     printf("----Testing word rotate----\n");
     printf("Original\n");
     print_word(test_word, 4);
     AES_word_rotate(test_word, 4, 1, false);
-    printf("One rotation\n");
+    printf("\nOne rotation\n");
     print_word(test_word, 4);
     AES_word_rotate(test_word, 4, 1, true);
-    printf("One inverse rotation\n");
+    printf("\nOne inverse rotation\n");
+    print_word(test_word, 4);
+    AES_word_rotate(test_word, 4, 2, false);
+    printf("\nTwo rotations\n");
+    print_word(test_word, 4);
+    AES_word_rotate(test_word, 4, 2, true);
+    printf("\nTwo inverse rotations\n");
     print_word(test_word, 4);
     AES_word_rotate(test_word, 4, 3, false);
-    printf("Three rotations\n");
+    printf("\nThree rotations\n");
     print_word(test_word, 4);
     AES_word_rotate(test_word, 4, 3, true);
-    printf("Three inverse rotations\n");
+    printf("\nThree inverse rotations\n");
     print_word(test_word, 4);
-    printf("\n");
+    printf("\n\n");
 
     printf("----Testing S-transform----\n");
     printf("Original\n3A\n");
     x = AES_s_box_transform(0x3A, false);
-    printf("S-transformed\n%02X\n", x);
+    printf("\nS-transformed\n%02X\n", x);
     x = AES_s_box_transform(x, true);
-    printf("Inverse s-transformed\n%02X\n", x);
-    printf("\n");
+    printf("\nInverse s-transformed\n%02X\n", x);
+    printf("\n\n");
 
     printf("----Testing key scheduler----\n");
     printf("Original\n");
     print_word(test_word, 4);
     AES_key_scheduler(test_word, 1);
-    printf("Key scheduled with rcon = 1\n");
+    printf("\nKey scheduled with rcon = 1\n");
     print_word(test_word, 4);
-    printf("\n");
+    printf("\n\n");
 
+    // Test cols changed by key scheduler
     test_word[0] = 0x3A;
     test_word[1] = 0x65;
     test_word[2] = 0x71;
@@ -75,7 +82,7 @@ int main(int argc, char *argv[])
     x = 1;
     for (i = 0; i < 20; i++)
         printf("%02X ", x = AES_exp_2(x));
-    printf("\n\n");
+    printf("\n\n\n");
 
     printf("----Testing key expansion----\n");
     printf("AES128 expanded key\n");
@@ -87,6 +94,7 @@ int main(int argc, char *argv[])
     printf("AES256 expanded key\n");
     AES_key_expansion(AES256, AES256_expanded_key, AES256_user_key);
     print_expanded_key(AES256, AES256_expanded_key);
+    printf("\n");
 
     printf("----Testing substitute bytes----\n");
     printf("Original\n");
@@ -97,6 +105,7 @@ int main(int argc, char *argv[])
     AES_sub_bytes(test_cols, true);
     printf("Inverse sub bytes should be same as original\n");
     print_block(test_cols);
+    printf("\n");
 
     printf("----Testing shift rows----\n");
     printf("Original\n");
@@ -107,6 +116,7 @@ int main(int argc, char *argv[])
     AES_shift_rows(test_cols, true);
     printf("Inverse shift rows should be same as original\n");
     print_block(test_cols);
+    printf("\n");
 
     printf("----Testing dot product----\n");
     printf("57 dot 83 = ");
@@ -114,7 +124,7 @@ int main(int argc, char *argv[])
     printf("%02X\n", x);
     printf("83 dot 57 = ");
     x = AES_dot_product(0x83, 0x57);
-    printf("%02X\n\n", x);
+    printf("%02X\n\n\n", x);
 
     printf("----Testing mix cols----\n");
     printf("Original\n");
@@ -125,6 +135,7 @@ int main(int argc, char *argv[])
     AES_mix_cols(test_cols, true);
     printf("Inverse mix cols should be same as original\n");
     print_block(test_cols);
+    printf("\n");
 
     printf("----Testing add round key----\n");
     printf("Original\n");
@@ -135,10 +146,44 @@ int main(int argc, char *argv[])
     AES_add_round_key(test_cols, AES128_expanded_key, 0);
     printf("Key added again should be same as original\n");
     print_block(test_cols);
+    printf("\n");
 
-    printf("\n\n");
+    printf("----Testing AES128----\n");
+    printf("Original\n");
+    print_block(test_cols);
+    AES_encrypt(AES128, test_cols, AES128_expanded_key);
+    printf("Encrypted\n");
+    print_block(test_cols);
+    AES_decrypt(AES128, test_cols, AES128_expanded_key);
+    printf("Decrypted should be same as before\n");
+    print_block(test_cols);
+    printf("\n");
+
+    printf("----Testing AES192----\n");
+    printf("Original\n");
+    print_block(test_cols);
+    AES_encrypt(AES192, test_cols, AES192_expanded_key);
+    printf("Encrypted\n");
+    print_block(test_cols);
+    AES_decrypt(AES192, test_cols, AES192_expanded_key);
+    printf("Decrypted should be same as before\n");
+    print_block(test_cols);
+    printf("\n");
+
+    printf("----Testing AES256----\n");
+    printf("Original\n");
+    print_block(test_cols);
+    AES_encrypt(AES256, test_cols, AES256_expanded_key);
+    printf("Encrypted\n");
+    print_block(test_cols);
+    AES_decrypt(AES256, test_cols, AES256_expanded_key);
+    printf("Decrypted should be same as before\n");
+    print_block(test_cols);
+
+    printf("\n\n\n");
     // */ **** TESTING PURPOSES ****
 #endif
+
 
     // Greeting
     printf("EHN 410 Group 12 Practical 2\n\n");
@@ -146,19 +191,18 @@ int main(int argc, char *argv[])
     // To be encrypted
     for (i = 0; i < MAX_REQ_LEN; i++)
         message[i] = '\0';
-    strcpy(message, "this is a test..");
+    strcpy(message, "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Praesent sagittis, est sit amet dignissim pretium, justo nulla gravida arcu, et facilisis nisl enim vitae massa. Nulla ac rutrum nisl, et consequat risus. Mauris non arcu vel libero semper.");
 //    fgets(message, MAX_REQ_LEN, stdin); // TODO: add this later
+    // TODO: ask for CBC or CFB mode
+
+    // Determine the number of blocks
     message_len = strlen(message);
     num_blocks = message_len / 16;
     if (message_len % 16 != 0)
         num_blocks++;
 
-    // Generate expanded keys
-    AES_key_expansion(AES128, AES128_expanded_key, AES128_user_key);
-    AES_key_expansion(AES192, AES192_expanded_key, AES192_user_key);
-    AES_key_expansion(AES256, AES256_expanded_key, AES256_user_key);
-
     // Process all the blocks from the message
+    printf("Input:\n");
     for (current_block = 0; current_block < num_blocks; current_block++)
     {
         char_blockify(message, state_array[current_block], message_pos);
@@ -166,17 +210,31 @@ int main(int argc, char *argv[])
         printf("Block %d\n", current_block);
         print_block(state_array[current_block]);
     }
+    printf("Input:\n%s\n\n", message);
 
-    //    **** TESTING PURPOSES **** /*
-    printf("Original\n");
-    print_block(state_array[0]);
-    AES_encrypt(AES128, state_array[0], AES128_expanded_key);
-    printf("Encrypted\n");
-    print_block(state_array[0]);
-    AES_decrypt(AES128, state_array[0], AES128_expanded_key);
-    printf("Decrypted should be same as before\n");
-    print_block(state_array[0]);
-    // */ **** TESTING PURPOSES ****
+    CBC_encrypt(AES128, state_array, num_blocks, IV, AES128_user_key);
+
+    printf("CBC encrpyted:\n");
+    message_pos = 0;
+    for (current_block = 0; current_block < num_blocks; current_block++)
+    {
+        char_unblockify(message, state_array[current_block], message_pos);
+        message_pos += 16;
+    }
+    message[message_pos] = '\0';
+    printf("%s\n\n", message);
+
+    CBC_decrypt(AES128, state_array, num_blocks, IV, AES128_user_key);
+
+    printf("CBC decrpyted:\n");
+    message_pos = 0;
+    for (current_block = 0; current_block < num_blocks; current_block++)
+    {
+        char_unblockify(message, state_array[current_block], message_pos);
+        message_pos += 16;
+    }
+    message[message_pos] = '\0';
+    printf("%s\n\n", message);
 }
 
 
@@ -218,7 +276,7 @@ void print_word(int word[], int length)
 // Output a 4x4 block to the terminal as a block of hex
 void print_block(int state_output[4][4])
 {
-    int row, col;
+    int row;
     for (row = 0; row < 4; row++)
         print_word(state_output[row], 4);
     printf("\n");
@@ -243,6 +301,19 @@ void print_expanded_key(int mode, int expanded_key[])
     for (i = 0; i < key_size; i += 16)
         print_word(expanded_key + i, 16);
     printf("\n");
+}
+
+
+// Convert block back to c-string
+void char_unblockify(char message[], int state_output[4][4], int start_pos)
+{
+    int byte_pos = start_pos;
+    int row, col;
+    for (col = 0; col < 4; col++)
+    {
+        for (row = 0; row < 4; row++)
+            message[byte_pos++] = state_output[row][col];
+    }
 }
 
 
@@ -604,7 +675,7 @@ bool AES_decrypt(int mode, int state_output[4][4], int expanded_key[]) // Checke
 
 
 // The Cipher Block Chaining encryption
-bool CBC_encrypt(int mode, int state_output_blocks[][4][4], int num_blocks, int IV[16], int user_key[]) // TODO: not tested
+bool CBC_encrypt(int mode, int state_output_blocks[][4][4], int num_blocks, int IV[16], int user_key[]) // Checked
 {
     int key_size;
     
@@ -620,19 +691,22 @@ bool CBC_encrypt(int mode, int state_output_blocks[][4][4], int num_blocks, int 
     int expanded_key[key_size];
     AES_key_expansion(mode, expanded_key, user_key);
     
-    int row, col;
+    int row, col, i;
+    int current_vector[16];
+    for (i = 0; i < 16; i ++) // Copy IV to not change its contents
+        current_vector[i] = IV[i];
 
     int block_pos;
     for (block_pos = 0; block_pos < num_blocks; block_pos++)
     {
-        // XOR chain with plaintext
+        // XOR current vector with plaintext
         for (col = 0; col < 4; col++)
         {
             for (row = 0; row < 4; row++)
-                state_output_blocks[block_pos][row][col] ^= IV[row + (col * 4)];
+                state_output_blocks[block_pos][row][col] ^= current_vector[row + (col * 4)];
         }
 
-        // Encrypt
+        // Encrypt to produce cipher text
         if (mode == AES128)
             AES_encrypt(AES128, state_output_blocks[block_pos], expanded_key);
         else if (mode == AES192)
@@ -640,11 +714,11 @@ bool CBC_encrypt(int mode, int state_output_blocks[][4][4], int num_blocks, int 
         else
             AES_encrypt(AES256, state_output_blocks[block_pos], expanded_key);
 
-        // Update chain with cipher text values
+        // Update current vector with cipher text values
         for (col = 0; col < 4; col++)
         {
             for (row = 0; row < 4; row++)
-                IV[row + (col * 4)] = state_output_blocks[block_pos][row][col];
+                current_vector[row + (col * 4)] = state_output_blocks[block_pos][row][col];
         }
     }
 
@@ -653,7 +727,7 @@ bool CBC_encrypt(int mode, int state_output_blocks[][4][4], int num_blocks, int 
 
 
 // The Cipher Block Chaining decryption
-bool CBC_decrypt(int mode, int state_output_blocks[][4][4], int num_blocks, int IV[16], int user_key[]) // TODO: not tested
+bool CBC_decrypt(int mode, int state_output_blocks[][4][4], int num_blocks, int IV[16], int user_key[]) // Checked
 {
     int key_size;
 
@@ -669,18 +743,21 @@ bool CBC_decrypt(int mode, int state_output_blocks[][4][4], int num_blocks, int 
     int expanded_key[key_size];
     AES_key_expansion(mode, expanded_key, user_key);
     
-    int row, col;
-    int chain_pos;
-    int chain[16];
+    int i, row, col;
+    int previous_ciphertext[16];
+    int current_vector[16];
+
+    for (i = 0; i < 16; i++) // Copy IV to not change its contents
+        current_vector[i] = IV[i];
 
     int block_pos;
     for (block_pos = 0; block_pos < num_blocks; block_pos++)
     {
-        // Update chain with cipher text values
+        // Copy current cipher text values
         for (col = 0; col < 4; col++)
         {
             for (row = 0; row < 4; row++)
-                chain[row + (col * 4)] = state_output_blocks[block_pos][row][col];
+                previous_ciphertext[row + (col * 4)] = state_output_blocks[block_pos][row][col];
         }
 
         // Decrypt
@@ -691,16 +768,16 @@ bool CBC_decrypt(int mode, int state_output_blocks[][4][4], int num_blocks, int 
         else 
             AES_decrypt(AES256, state_output_blocks[block_pos], expanded_key);
 
-        // XOR IV with decrypted text
+        // XOR current vector with decrypted text to produce plaintext
         for (col = 0; col < 4; col++)
         {
             for (row = 0; row < 4; row++)
-                state_output_blocks[block_pos][row][col] ^= IV[row + (col * 4)];
+                state_output_blocks[block_pos][row][col] ^= current_vector[row + (col * 4)];
         }
 
-        // Update IV with previous cipher text values
-        for (chain_pos = 0; chain_pos < 16; chain_pos++)
-            IV[chain_pos] = chain[chain_pos];
+        // Update the current vector with previous cipher text values
+        for (i = 0; i < 16; i++)
+            current_vector[i] = previous_ciphertext[i];
     }
 
     return EXIT_SUCCESS;
@@ -723,9 +800,8 @@ bool CFB_encrypt(int mode, int stream_input[][8], int num_blocks, int IV[16], in
 
     int expanded_key[key_size];
     AES_key_expansion(mode, expanded_key, user_key);
-    
-    int i;
-    int row, col;
+
+    int i, row, col;
     int block[4][4];
     int current_vector[16];
     
@@ -781,9 +857,8 @@ bool CFB_decrypt(int mode, int stream_input[][8], int num_blocks, int IV[16], in
 
     int expanded_key[key_size];
     AES_key_expansion(mode, expanded_key, user_key);
-    
-    int i;
-    int row, col;
+
+    int i, row, col;
     int block[4][4];
     int current_vector[16];
 
@@ -821,32 +896,3 @@ bool CFB_decrypt(int mode, int stream_input[][8], int num_blocks, int IV[16], in
 
     return EXIT_SUCCESS;
 }
-
-
-//void key_scheduler_192(int temp[6], int rcon)
-// {
-//    int byte_pos;
-//    word_rotate_192(temp, 0);
-//    for (byte_pos = 0; byte_pos < 6; byte_pos++)
-//    {
-//        temp[byte_pos] = s_box_transform(temp[byte_pos], 0);
-//        //printf("%02X", temp[byte_pos]);
-//        //printf(" ");
-//    }
-//    //printf("\n");
-//    temp[0] = temp[0]^rcon;
-//}
-//
-//void key_scheduler_256(int temp[8], int rcon)
-//{
-//    int byte_pos;
-//    word_rotate_256(temp, 0);
-//    for (byte_pos = 0; byte_pos < 8; byte_pos++)
-//    {
-//        temp[byte_pos] = s_box_transform(temp[byte_pos], 0);
-//        //printf("%02X", temp[byte_pos]);
-//        //printf(" ");
-//    }
-//    //printf("\n");
-//    temp[0] ^= rcon;
-//}

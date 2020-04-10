@@ -125,8 +125,17 @@ void print_expanded_key(int mode, int expanded_key[]);
 
 
 /**
+ * Convert block back to c-string.
+ * @param message The output array, must exist before being passed in.
+ * @param state_input The block to be converted.
+ * @param start_pos The position to start converting in the output.
+ */
+void char_unblockify(char message[], int state_input[4][4], int start_pos);
+
+
+/**
  * Shift last items in an array to the front or vice-versa.
- * @param word The array to be rotated.
+ * @param word The array to be rotated, also the output.
  * @param length The length of the word.
  * @param rotations The number of rotations to perform.
  * @param inverse Rotate in the opposite direction if true.
@@ -276,12 +285,6 @@ bool CFB_encrypt(int mode, int stream_input[][8], int num_blocks, int IV[16], in
  * @return Successful execution.
  */
 bool CFB_decrypt(int mode, int stream_input[][8], int num_blocks, int IV[16], int user_key[]);
-
-
-//void key_scheduler_192(int temp[6], int rcon);
-
-
-//void key_scheduler_256(int temp[8], int rcon);
 
 
 #endif //EHN_PRAC1_ENCRYPTION_H
