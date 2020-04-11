@@ -90,7 +90,7 @@ int main(int argc, char *argv[]);
  * @param state_output The output as a 4x4 integer array.
  * @param start_pos The position from which to start the conversion in the string.
  */
-void char_blockify(char message[], int state_output[4][4], int start_pos);
+void char_blockify(unsigned char message[], int state_output[4][4], int start_pos);
 
 
 /**
@@ -125,12 +125,20 @@ void print_expanded_key(int mode, int expanded_key[]);
 
 
 /**
+ * Print a c-string up to a certain length.
+ * @param message The message to be printed.
+ * @param message_len The length of the message.
+ */
+void print_c_string(unsigned char message[], int message_len);
+
+
+/**
  * Convert block back to c-string.
  * @param message The output array, must exist before being passed in.
  * @param state_input The block to be converted.
  * @param start_pos The position to start converting in the output.
  */
-void char_unblockify(char message[], int state_input[4][4], int start_pos);
+void char_unblockify(unsigned char message[], int state_input[4][4], int start_pos);
 
 
 /**
@@ -266,25 +274,25 @@ bool CBC_decrypt(int mode, int state_output_blocks[][4][4], int num_blocks, int 
 /**
  * The Cipher Feedback encryption algorithm.
  * @param mode Use the macros AES128, AES192 or AES256 to select which mode to use.
- * @param stream_input The stream to be encrypted, also the output.
- * @param num_blocks The number of blocks to be encrypted.
+ * @param message The stream to be encrypted, also the output.
+ * @param message_len The length of the message.
  * @param IV The initialization vector to be used.
  * @param user_key The user key to be used.
  * @return Successful execution.
  */
-bool CFB_encrypt(int mode, int stream_input[][8], int num_blocks, int IV[16], int user_key[]);
+bool CFB_encrypt(int mode, unsigned char message[], int message_len, int IV[16], int user_key[]);
 
 
 /**
  * The Cipher Feedback decryption algorithm.
  * @param mode Use the macros AES128, AES192 or AES256 to select which mode to use.
- * @param stream_input The stream to be decrypted, also the output.
- * @param num_blocks The number of blocks to be decrypted.
+ * @param message The stream to be decrypted, also the output.
+ * @param message_len The length of the message.
  * @param IV The initialization vector to be used.
  * @param user_key The user key to be used.
  * @return Successful execution.
  */
-bool CFB_decrypt(int mode, int stream_input[][8], int num_blocks, int IV[16], int user_key[]);
+bool CFB_decrypt(int mode, unsigned char message[], int message_len, int IV[16], int user_key[]);
 
 
 #endif //EHN_PRAC1_ENCRYPTION_H

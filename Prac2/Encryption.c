@@ -4,12 +4,10 @@
 int main(int argc, char *argv[])
 {
     int i;
+    bool CBC_CFB; // CBC if false, CFB if true
+    int mode; // AES128, AES192, AES256 macros
     int message_len;
-    int num_blocks;
-    int current_block = 0;
-    int message_pos = 0;
-    int state_array[MAX_REQ_LEN / 16][4][4];
-    char message[MAX_REQ_LEN];
+    unsigned char message[MAX_REQ_LEN];
 
     int AES128_user_key[AES128_USER_KEY_SIZE] = {0x74, 0x65, 0x73, 0x74, 0x20, 0x66, 0x75, 0x6E, 0x63, 0x74, 0x69, 0x6F,
                                                  0x6E, 0x61, 0x6C, 0x69};
@@ -195,51 +193,93 @@ int main(int argc, char *argv[])
 //    fgets(message, MAX_REQ_LEN, stdin); // TODO: add this later
     // TODO: ask for CBC or CFB mode
 
-    // Determine the number of blocks
     message_len = strlen(message);
-    num_blocks = message_len / 16;
-    if (message_len % 16 != 0)
-        num_blocks++;
+    CBC_CFB = true;
+    mode = AES128;
 
-    // Process all the blocks from the message
-    printf("Input:\n");
-    for (current_block = 0; current_block < num_blocks; current_block++)
+    if (mode == AES128)
+        printf("AES128 selected\n");
+    else if (mode == AES192)
+        printf("AES128 selected\n");
+    else if (mode == AES256)
+        printf("AES128 selected\n");
+    else
     {
-        char_blockify(message, state_array[current_block], message_pos);
-        message_pos += 16;
-        printf("Block %d\n", current_block);
-        print_block(state_array[current_block]);
+        printf("Invalid mode selected\n");
+        return EXIT_FAILURE;
     }
-    printf("Input:\n%s\n\n", message);
 
-    CBC_encrypt(AES128, state_array, num_blocks, IV, AES128_user_key);
 
-    printf("CBC encrpyted:\n");
-    message_pos = 0;
-    for (current_block = 0; current_block < num_blocks; current_block++)
+    if (CBC_CFB) // CFB mode
     {
-        char_unblockify(message, state_array[current_block], message_pos);
-        message_pos += 16;
-    }
-    message[message_pos] = '\0';
-    printf("%s\n\n", message);
+        printf("Cipher Feedback mode selected\n\n");
 
-    CBC_decrypt(AES128, state_array, num_blocks, IV, AES128_user_key);
+        // Print the input
+        printf("Input:\n");
+        print_c_string(message, message_len);
+        printf("\n\n");
 
-    printf("CBC decrpyted:\n");
-    message_pos = 0;
-    for (current_block = 0; current_block < num_blocks; current_block++)
+        // Encrypt the input with CFB and print
+        CFB_encrypt(AES128, message, message_len, IV, AES128_user_key);
+        printf("Encrypted:\n");
+        print_c_string(message, message_len);
+        printf("\n\n");
+
+        // Decrypt the input with CFB and print
+        CFB_decrypt(AES128, message, message_len, IV, AES128_user_key);
+        printf("Decrypted:\n");
+        print_c_string(message, message_len);
+        printf("\n\n");
+
+    } else // CBC mode
     {
-        char_unblockify(message, state_array[current_block], message_pos);
-        message_pos += 16;
+        int num_blocks;
+        int current_block = 0;
+        int message_pos = 0;
+        int state_array[MAX_REQ_LEN / 16][4][4];
+
+        printf("Cipher Block Chaining mode selected\n\n");
+
+        // Determine the number of blocks
+        num_blocks = message_len / 16;
+        if (message_len % 16 != 0)
+            num_blocks++;
+
+        // Process all the blocks from the message
+        printf("Input:\n");
+        for(current_block = 0; current_block < num_blocks; current_block++)
+        {
+            char_blockify(message, state_array[current_block], message_pos);
+            message_pos += 16;
+            printf("Block %d\n", current_block);
+            print_block(state_array[current_block]);
+        }
+
+        CBC_encrypt(AES128, state_array, num_blocks, IV, AES128_user_key);
+
+        printf("CBC encrpyted:\n");
+        for(current_block = 0; current_block < num_blocks; current_block++)
+        {
+            printf("Block %d\n", current_block);
+            print_block(state_array[current_block]);
+        }
+
+        CBC_decrypt(AES128, state_array, num_blocks, IV, AES128_user_key);
+
+        printf("CBC decrpyted:\n");
+        for(current_block = 0; current_block < num_blocks; current_block++)
+        {
+            printf("Block %d\n", current_block);
+            print_block(state_array[current_block]);
+        }
     }
-    message[message_pos] = '\0';
-    printf("%s\n\n", message);
+
+    return EXIT_SUCCESS;
 }
 
 
 // Convert a char array to 4x4 block of hex
-void char_blockify(char message[], int state_output[4][4], int start_pos)
+void char_blockify(unsigned char message[], int state_output[4][4], int start_pos)
 {
     int byte_pos = start_pos;
     int row, col;
@@ -304,8 +344,17 @@ void print_expanded_key(int mode, int expanded_key[])
 }
 
 
+// Print a c-string up to a certain length
+void print_c_string(unsigned char message[], int message_len)
+{
+    int i;
+    for (i = 0; i < message_len; i++)
+        printf("%c", message[i]);
+}
+
+
 // Convert block back to c-string
-void char_unblockify(char message[], int state_output[4][4], int start_pos)
+void char_unblockify(unsigned char message[], int state_output[4][4], int start_pos)
 {
     int byte_pos = start_pos;
     int row, col;
@@ -317,7 +366,7 @@ void char_unblockify(char message[], int state_output[4][4], int start_pos)
 }
 
 
-// Shift last items in an array to the front or vice-versa
+// Shift first items in an array to the back or vice-versa
 void AES_word_rotate(int word[], int length, int rotations, bool inverse)
 {
     int temp[length];
@@ -693,7 +742,9 @@ bool CBC_encrypt(int mode, int state_output_blocks[][4][4], int num_blocks, int 
     
     int row, col, i;
     int current_vector[16];
-    for (i = 0; i < 16; i ++) // Copy IV to not change its contents
+
+    // Copy IV to not change its contents
+    for (i = 0; i < 16; i ++)
         current_vector[i] = IV[i];
 
     int block_pos;
@@ -706,15 +757,10 @@ bool CBC_encrypt(int mode, int state_output_blocks[][4][4], int num_blocks, int 
                 state_output_blocks[block_pos][row][col] ^= current_vector[row + (col * 4)];
         }
 
-        // Encrypt to produce cipher text
-        if (mode == AES128)
-            AES_encrypt(AES128, state_output_blocks[block_pos], expanded_key);
-        else if (mode == AES192)
-            AES_encrypt(AES192, state_output_blocks[block_pos], expanded_key);
-        else
-            AES_encrypt(AES256, state_output_blocks[block_pos], expanded_key);
+        // Encrypt to produce ciphertext block
+        AES_encrypt(mode, state_output_blocks[block_pos], expanded_key);
 
-        // Update current vector with cipher text values
+        // Update current vector with ciphertext values
         for (col = 0; col < 4; col++)
         {
             for (row = 0; row < 4; row++)
@@ -747,26 +793,22 @@ bool CBC_decrypt(int mode, int state_output_blocks[][4][4], int num_blocks, int 
     int previous_ciphertext[16];
     int current_vector[16];
 
-    for (i = 0; i < 16; i++) // Copy IV to not change its contents
+    // Copy IV to not change its contents
+    for (i = 0; i < 16; i++)
         current_vector[i] = IV[i];
 
     int block_pos;
     for (block_pos = 0; block_pos < num_blocks; block_pos++)
     {
-        // Copy current cipher text values
+        // Copy current ciphertext values
         for (col = 0; col < 4; col++)
         {
             for (row = 0; row < 4; row++)
                 previous_ciphertext[row + (col * 4)] = state_output_blocks[block_pos][row][col];
         }
 
-        // Decrypt
-        if (mode == AES128)
-            AES_decrypt(AES128, state_output_blocks[block_pos], expanded_key);
-        else if (mode == AES192)
-            AES_decrypt(AES192, state_output_blocks[block_pos], expanded_key);
-        else 
-            AES_decrypt(AES256, state_output_blocks[block_pos], expanded_key);
+        // Decrypt the block
+        AES_decrypt(mode, state_output_blocks[block_pos], expanded_key);
 
         // XOR current vector with decrypted text to produce plaintext
         for (col = 0; col < 4; col++)
@@ -775,7 +817,7 @@ bool CBC_decrypt(int mode, int state_output_blocks[][4][4], int num_blocks, int 
                 state_output_blocks[block_pos][row][col] ^= current_vector[row + (col * 4)];
         }
 
-        // Update the current vector with previous cipher text values
+        // Update the current vector with previous ciphertext values
         for (i = 0; i < 16; i++)
             current_vector[i] = previous_ciphertext[i];
     }
@@ -785,7 +827,7 @@ bool CBC_decrypt(int mode, int state_output_blocks[][4][4], int num_blocks, int 
 
 
 // The Cipher Feedback encryption algorithm
-bool CFB_encrypt(int mode, int stream_input[][8], int num_blocks, int IV[16], int user_key[]) // TODO: not tested
+bool CFB_encrypt(int mode, unsigned char message[], int message_len, int IV[16], int user_key[]) // TODO: not tested
 {
     int key_size;
 
@@ -801,40 +843,31 @@ bool CFB_encrypt(int mode, int stream_input[][8], int num_blocks, int IV[16], in
     int expanded_key[key_size];
     AES_key_expansion(mode, expanded_key, user_key);
 
-    int i, row, col;
-    int block[4][4];
-    int current_vector[16];
-    
-    // Copy the initialization vector to preserve it
+    int i;
+    int current_block[4][4];
+    int current_vector[16]; // AES requires 128 bit input even though a character in the stream is only 8 bits
+
+    // Copy IV to not change its contents
     for (i = 0; i < 16; i++)
         current_vector[i] = IV[i];
 
-    int block_pos;
-    for (block_pos = 0; block_pos < num_blocks; block_pos++)
+    int message_pos;
+    for (message_pos = 0; message_pos < message_len; message_pos++)
     {
-        hex_blockify(current_vector, block);
+        // Convert the encryption input to a block
+        hex_blockify(current_vector, current_block);
 
-        // Encrypt
-        if (mode == AES128)
-            AES_encrypt(AES128, block, expanded_key);
-        else if (mode == AES192)
-            AES_encrypt(AES192, block, expanded_key);
-        else
-            AES_encrypt(AES256, block, expanded_key);
+        // Encrypt the block
+        AES_encrypt(mode, current_block, expanded_key);
 
-        // Move bytes
-        for (i = 0; i < 8; i++)
-            current_vector[i] = current_vector[i + 8];
+        // Take first byte in the block and XOR with the plaintext byte to get the ciphertext byte
+        message[message_pos] ^= current_block[0][0]; 
+        // Discard the rest of the block (a bit wasteful)
 
-        // XOR chain with plaintext
-        for (col = 0; col < 2; col++)
-        {
-            for (row = 0; row < 4; row++)
-            {
-                stream_input[block_pos][row + (col * 4)] ^= block[row][col];
-                current_vector[row + (col * 4) + 8] = stream_input[block_pos][row + (col * 4)];
-            }
-        }
+        // Shift the current vector to the left by one byte
+        AES_word_rotate(current_vector, 16, 1, false);
+        // Put the ciphertext byte in the last byte
+        current_vector[15] = message[message_pos];
     }
 
     return EXIT_SUCCESS;
@@ -842,7 +875,7 @@ bool CFB_encrypt(int mode, int stream_input[][8], int num_blocks, int IV[16], in
 
 
 // The Cipher Feedback decryption algorithm
-bool CFB_decrypt(int mode, int stream_input[][8], int num_blocks, int IV[16], int user_key[]) // TODO: not tested
+bool CFB_decrypt(int mode, unsigned char message[], int message_len, int IV[16], int user_key[]) // TODO: not tested
 {
     int key_size;
 
@@ -858,40 +891,31 @@ bool CFB_decrypt(int mode, int stream_input[][8], int num_blocks, int IV[16], in
     int expanded_key[key_size];
     AES_key_expansion(mode, expanded_key, user_key);
 
-    int i, row, col;
-    int block[4][4];
-    int current_vector[16];
+    int i;
+    int current_block[4][4];
+    int current_vector[16]; // AES requires 128 bit input even though a character in the stream is only 8 bits
 
-    // Copy the initialization vector to preserve it
+    // Copy IV to not change its contents
     for (i = 0; i < 16; i++)
         current_vector[i] = IV[i];
 
-    int block_pos;
-    for (block_pos = 0; block_pos < num_blocks; block_pos++)
+    int message_pos;
+    for (message_pos = 0; message_pos < message_len; message_pos++)
     {
-        hex_blockify(current_vector, block);
+        // Convert the encryption input to a block
+        hex_blockify(current_vector, current_block);
 
-        // Decrypt
-        if (mode == AES128)
-            AES_decrypt(AES128, block, expanded_key);
-        else if (mode == AES192)
-            AES_decrypt(AES192, block, expanded_key);
-        else
-            AES_decrypt(AES256, block, expanded_key);
+        // Encrypt the block
+        AES_encrypt(mode, current_block, expanded_key);
 
-        // Move bytes
-        for (i = 0; i < 8; i++)
-            current_vector[i] = current_vector[i + 8];
+        // Shift the current vector to the left by one byte
+        AES_word_rotate(current_vector, 16, 1, false);
+        // Put the ciphertext byte in the last byte
+        current_vector[15] = message[message_pos];
 
-        // XOR chain with plaintext
-        for (col = 0; col < 2; col++)
-        {
-            for (row = 0; row < 4; row++)
-            {
-                current_vector[row + (col * 4) + 8] = stream_input[block_pos][row + (col * 4)];
-                stream_input[block_pos][row + (col * 4)] ^= block[row][col];
-            }
-        }
+        // Take first byte in the block and XOR with the ciphertext byte to get the plaintext byte
+        message[message_pos] ^= current_block[0][0];
+        // Discard the rest of the block (a bit wasteful)
     }
 
     return EXIT_SUCCESS;
