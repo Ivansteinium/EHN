@@ -7,8 +7,7 @@
 #include <string.h>
 #include <stdbool.h>
 
-#define DEBUG 0
-#define MAX_REQ_LEN 256
+#define MAX_REQ_LEN 4096 // Want wat is memory management nou entlik?
 
 // AES constants
 #define AES128 0
@@ -128,8 +127,9 @@ void print_expanded_key(int mode, int expanded_key[]);
  * Print a c-string up to a certain length.
  * @param message The message to be printed.
  * @param message_len The length of the message.
+ * @param hex Output as hexadecimal rather than ASCII if true.
  */
-void print_c_string(unsigned char message[], int message_len);
+void print_c_string(unsigned char message[], int message_len, bool hex);
 
 
 /**
