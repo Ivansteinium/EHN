@@ -5,12 +5,12 @@ int main(int argc, char *argv[])
 {
     int i;
     bool test = false;
-    bool method; // CBC if false, CFB if true
+    bool method = false; // CBC if false, CFB if true
     int operation = -1; // encrypt if false, decrypt if true
     int mode = -1; // AES128, AES192, AES256 macros
-    int message_len;
+    int message_len = 0;
     unsigned char message[MAX_REQ_LEN];
-    int *user_key;
+    int *user_key = NULL;
     int IV[16];
 
     for (i = 0; i < MAX_REQ_LEN; i++)
@@ -363,6 +363,13 @@ int main(int argc, char *argv[])
         return EXIT_SUCCESS;
         // */ **** TESTING PURPOSES ****
     }
+
+    if (message_len == 0)
+        return EXIT_FAILURE;
+
+    if (user_key == NULL)
+        return EXIT_FAILURE;
+
 
     if (method) // CFB mode
     {
@@ -1040,14 +1047,15 @@ bool CFB_encrypt(int mode, unsigned char message[], int message_len, int IV[16],
 
     int i;
     int current_block[4][4];
-    int current_vector[16]; // AES requires 128 bit input even though a character in the stream is only 8 bits
+    int current_vector[16]; // AES requires 128 bit input
+    unsigned char current_string[16];
 
     // Copy IV to not change its contents
     for (i = 0; i < 16; i++)
         current_vector[i] = IV[i];
 
     int message_pos;
-    for (message_pos = 0; message_pos < message_len; message_pos++)
+    for (message_pos = 0; message_pos < message_len / 8; message_pos++)
     {
         // Convert the encryption input to a block
         hex_blockify(current_vector, current_block);
@@ -1055,14 +1063,18 @@ bool CFB_encrypt(int mode, unsigned char message[], int message_len, int IV[16],
         // Encrypt the block
         AES_encrypt(mode, current_block, expanded_key);
 
-        // Take first byte in the block and XOR with the plaintext byte to get the ciphertext byte
-        message[message_pos] ^= current_block[0][0]; 
-        // Discard the rest of the block (a bit wasteful)
+        // Take first 8 bytes in the block and XOR with the plaintext bytes to get the ciphertext bytes
+        char_unblockify(current_string, current_block, 0);
+        for (i = 0; i < 8; i++)
+            message[message_pos + i] ^= current_string[i];
+        // Discard the rest of the block
 
-        // Shift the current vector to the left by one byte
-        AES_word_rotate(current_vector, 16, 1, false);
-        // Put the ciphertext byte in the last byte
-        current_vector[15] = message[message_pos];
+        // Shift the current vector to the left by 8 bytes
+        for (i = 0; i < 8; i++)
+            current_vector[i] = current_vector[i + 8];
+        // Put the ciphertext bytes in the last 8 bytes
+        for (i = 0; i < 8; i++)
+            current_vector[i + 8] = message[message_pos + i];
     }
 
     return EXIT_SUCCESS;
@@ -1088,14 +1100,15 @@ bool CFB_decrypt(int mode, unsigned char message[], int message_len, int IV[16],
 
     int i;
     int current_block[4][4];
-    int current_vector[16]; // AES requires 128 bit input even though a character in the stream is only 8 bits
+    int current_vector[16]; // AES requires 128 bit input
+    unsigned char current_string[16];
 
     // Copy IV to not change its contents
     for (i = 0; i < 16; i++)
         current_vector[i] = IV[i];
 
     int message_pos;
-    for (message_pos = 0; message_pos < message_len; message_pos++)
+    for (message_pos = 0; message_pos < message_len / 8; message_pos++)
     {
         // Convert the encryption input to a block
         hex_blockify(current_vector, current_block);
@@ -1103,14 +1116,18 @@ bool CFB_decrypt(int mode, unsigned char message[], int message_len, int IV[16],
         // Encrypt the block
         AES_encrypt(mode, current_block, expanded_key);
 
-        // Shift the current vector to the left by one byte
-        AES_word_rotate(current_vector, 16, 1, false);
-        // Put the ciphertext byte in the last byte
-        current_vector[15] = message[message_pos];
+        // Shift the current vector to the left by 8 bytes
+        for (i = 0; i < 8; i++)
+            current_vector[i] = current_vector[i + 8];
+        // Put the ciphertext bytes in the last 8 bytes
+        for (i = 0; i < 8; i++)
+            current_vector[i + 8] = message[message_pos + i];
 
-        // Take first byte in the block and XOR with the ciphertext byte to get the plaintext byte
-        message[message_pos] ^= current_block[0][0];
-        // Discard the rest of the block (a bit wasteful)
+        // Take first 8 bytes in the block and XOR with the ciphertext bytes to get the plaintext bytes
+        char_unblockify(current_string, current_block, 0);
+        for (i = 0; i < 8; i++)
+            message[message_pos + i] ^= current_string[i];
+        // Discard the rest of the block
     }
 
     return EXIT_SUCCESS;
