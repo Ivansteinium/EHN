@@ -4,8 +4,8 @@
 int main(int argc, char *argv[])
 {
     int i;
-    bool test = false;
-    bool method = false; // CBC if false, CFB if true
+    bool parameters[6] = {false, false, false, false, false, true};
+    int method = -1; // CBC if false, CFB if true
     int operation = -1; // encrypt if false, decrypt if true
     int mode = -1; // AES128, AES192, AES256 macros
     int message_len = 0;
@@ -19,11 +19,7 @@ int main(int argc, char *argv[])
     // Greeting
     printf("EHN 410 Group 12 Practical 2\n\n");
 
-    if (argc < 6)
-    {
-        printf("All parameters are not given, performing tests...\n\n");
-        test = true;
-    } else
+    if (argc > 6)
     {
         for (i = 1; i < argc; i++)
         {
@@ -31,6 +27,8 @@ int main(int argc, char *argv[])
 
             if (strstr(argv[i], "width=") != NULL) // Set AES width
             {
+                parameters[0] = true;
+
                 if (!strcmp(parameter, "128"))
                 {
                     mode = AES128;
@@ -51,14 +49,16 @@ int main(int argc, char *argv[])
                 }
             } else if (strstr(argv[i], "chain=") != NULL) // Set chaining mode
             {
+                parameters[1] = true;
+
                 if(!strcmp(parameter, "CBC"))
                 {
                     method = false;
-                    printf("Cipher Block Chaining method selected\n\n");
+                    printf("Cipher Block Chaining method selected\n");
                 } else if(!strcmp(parameter, "CFB"))
                 {
                     method = true;
-                    printf("Cipher Feedback method selected\n\n");
+                    printf("Cipher Feedback method selected\n");
                 } else
                 {
                     printf("Parameter '%s' is not a valid parameter for 'chain='", parameter);
@@ -67,11 +67,17 @@ int main(int argc, char *argv[])
                 }
             } else if (strstr(argv[i], "op=") != NULL) // Set operation (encrypt or decrypt)
             {
+                parameters[2] = true;
+
                 if (!strcmp(parameter, "E"))
+                {
                     operation = false;
-                else if (!strcmp(parameter, "D"))
+                    printf("Encryption selected\n");
+                } else if (!strcmp(parameter, "D"))
+                {
                     operation = true;
-                else
+                    printf("Decryption selected\n");
+                } else
                 {
                     printf("Parameter '%s' is not a valid parameter for 'op='", parameter);
                     printf("Valid parameters are 'E' for encrypt and 'D' for decrypt\n");
@@ -79,6 +85,8 @@ int main(int argc, char *argv[])
                 }
             } else if (strstr(argv[i], "key=") != NULL) // Set the user key
             {
+                parameters[3] = true;
+
                 if (mode == -1)
                 {
                     printf("The AES width must be specified before the key is given\n");
@@ -96,6 +104,7 @@ int main(int argc, char *argv[])
 
                     if (strlen(parameter) == 2 * user_key_size) // 16 bytes for AES128, 24 bytes for AES192, 32 bytes for ARS256
                     {
+                        printf("User key (HEX): ");
                         user_key = (int *) malloc(user_key_size * sizeof(int));
 
                         // Convert from hex string to int array
@@ -104,9 +113,11 @@ int main(int argc, char *argv[])
                         for (pos = 0; pos < user_key_size; pos++)
                         {
                             strncpy(current_number, parameter, 2); // Retrieve one byte (two hex chars)
-                            user_key[pos] = (int) strtol(current_number, NULL, 16); // Get the integer value from the byte
+                            user_key[pos] = (unsigned char) strtol(current_number, NULL, 16); // Get the integer value from the byte
+                            printf("%02X", user_key[pos]);
                             parameter += 2; // Move to the next byte
                         }
+                        printf("\n");
                     } else
                     {
                         printf("The key size (%ld / 2) given does not match the expected length for the specified width\n", strlen(parameter));
@@ -116,10 +127,17 @@ int main(int argc, char *argv[])
                 }
             } else if (strstr(argv[i], "msg=") != NULL) // Set the input message
             {
+                parameters[4] = true;
+
                 if (operation == -1)
                 {
-                    printf("The operation must be specified before the message is given\n");
+                    printf("The operation type must be specified before the message is given\n");
                     printf("Specify this with 'op='\n");
+                    return EXIT_FAILURE;
+                } else if (method == -1)
+                {
+                    printf("The chaining method type must be specified before the message is given\n");
+                    printf("Specify this with 'chain='\n");
                     return EXIT_FAILURE;
                 } else if (operation == false) // Encrypt
                 {
@@ -130,11 +148,33 @@ int main(int argc, char *argv[])
                         printf("The message is too long, a maximum of %d bytes may be given with 'msg='\n", MAX_REQ_LEN);
                         return EXIT_FAILURE;
                     } else
-                        strcpy(message, parameter);
+                    {
+                        strcpy((char *) message, parameter);
+                        printf("Plaintext message (ASCII): \"%s\"\n", message);
+                    }
                 } else // Deprypt
                 {
                     // Take message as hex input
-                    message_len = strlen(parameter) / 2;
+                    message_len = strlen(parameter);
+                    if (method)
+                    {
+                        if(message_len % 16 != 0)
+                        {
+                            printf("The encrypted message does not have the correct number of bits\n");
+                            printf("(%d / 2) is not a multiple of 8 bytes (64 bits)\n", message_len);
+                            return EXIT_FAILURE;
+                        }
+                    } else
+                    {
+                        if(message_len % 32 != 0)
+                        {
+                            printf("The encrypted message does not have the correct number of bits\n");
+                            printf("(%d / 2) is not a multiple of 16 bytes (128 bits)\n", message_len);
+                            return EXIT_FAILURE;
+                        }
+                    }
+                    message_len /= 2;
+
                     if (message_len > MAX_REQ_LEN)
                     {
                         printf("The message is too long, a maximum of %d bytes may be given with 'msg='\n", MAX_REQ_LEN);
@@ -150,21 +190,31 @@ int main(int argc, char *argv[])
                             message[pos] = (unsigned char) strtol(current_number, NULL, 16); // Get the integer value from the byte
                             parameter += 2; // Move to the next byte
                         }
+
+                        printf("Encrypted message (HEX): ");
+                        print_c_string(message, message_len, true);
+                        printf("\n");
                     }
                 }
             } else if (strstr(argv[i], "iv=") != NULL) // Set the initialization vector
             {
+                parameters[5] = true;
+
                 if (strlen(parameter) == 32)
                 {
+                    printf("Initialization vector (HEX): ");
+
                     // Convert from hex string to int array
                     int pos;
                     char current_number[2];
                     for (pos = 0; pos < 16; pos++)
                     {
                         strncpy(current_number, parameter, 2); // Retrieve one byte (two hex chars)
-                        IV[pos] = (int) strtol(current_number, NULL, 16); // Get the integer value from the byte
+                        IV[pos] = (unsigned char) strtol(current_number, NULL, 16); // Get the integer value from the byte
+                        printf("%02X", IV[pos]);
                         parameter += 2; // Move to the next byte
                     }
+                    printf("\n");
                 } else
                 {
                     printf("The initialization vector size given (%ld / 2) is not 16 bytes\n", strlen(parameter));
@@ -172,28 +222,29 @@ int main(int argc, char *argv[])
                     return EXIT_FAILURE;
                 }
             } else
-            {
                 printf("Invalid parameter: %s\n", argv[i]);
-                printf("Usage:\n"
-                       "./Encrpytion Argument1 Argument2 ...\n"
-                       "\t\n"
-                       "\tThe arguments are structured as follows: 'parameter=value'\n"
-                       "\tThe available settings are: 'width=', 'chain=', 'op=', 'key=', 'msg=' and 'iv='\n"
-                       "\t\n"
-                       "\t'width=' specifies the AES width, valid parameters are '128', '192' and '256'\n"
-                       "\t'chain=' specifies the chaining mode, valid parameters are 'CBC' and 'CFB'\n"
-                       "\t'op=' specifies the operation to be performed, valid parameters are 'E' for encrypt and 'D' for decrypt\n"
-                       "\t'key=' specifies the user key given in hexadecimal, ex. '1A2F0C32...'\n"
-                       "\t'msg=' specifies the message to be processed, ex. 'Lorem ipsum dolor sit amet.'"
-                       "\t'iv=' specifies the 16-byte initialization vector to be used\n"
-                       );
-                return EXIT_FAILURE;
-            }
         }
     }
 
-    if (test)
+    if (!parameters[0] || !parameters[1] || !parameters[2] || !parameters[3] || !parameters[4] || !parameters[5])
     {
+        printf("All parameters are not given\nUsage:\n"
+               "./Encrpytion Argument1 Argument2 ...\n"
+               "\t\n"
+               "\tThe arguments are structured as follows: 'parameter=value'\n"
+               "\tThe available settings are: 'width=', 'chain=', 'op=', 'key=', 'msg=' and 'iv='\n"
+               "\t\n"
+               "\t'width=' specifies the AES width, valid parameters are '128', '192' and '256'\n"
+               "\t'chain=' specifies the chaining mode, valid parameters are 'CBC' and 'CFB'\n"
+               "\t'op='    specifies the operation to be performed, valid parameters are 'E' for encrypt and 'D' for decrypt\n"
+               "\t'key='   specifies the user key given in hexadecimal, ex. '1A2F0C32...'\n"
+               "\t'msg='   specifies the message to be processed, ex. '\"Lorem ipsum dolor sit amet...\"'\n"
+               "\t         (remember to add double quatation marks if there are spaces in the message)\n"
+               "\t         or in hexadecimal if it is encrypted, ex. '1A2F0C32...' \n"
+               "\t'iv='    specifies the 16-byte initialization vector to be used in hexadecimal, ex. '1A2F0C32...'\n"
+        );
+        printf("\nperforming tests...\n\n");
+
         //    **** TESTING PURPOSES **** /*
         int AES128_user_key[AES128_USER_KEY_SIZE] = {0x74, 0x65, 0x73, 0x74, 0x20, 0x66, 0x75, 0x6E, 0x63, 0x74, 0x69, 0x6F,
                                                      0x6E, 0x61, 0x6C, 0x69};
@@ -202,7 +253,7 @@ int main(int argc, char *argv[])
         int AES256_user_key[AES256_USER_KEY_SIZE] = {0x74, 0x65, 0x73, 0x74, 0x20, 0x66, 0x75, 0x6E, 0x63, 0x74, 0x69, 0x6F,
                                                      0x6E, 0x61, 0x6C, 0x69, 0x74, 0x65, 0x73, 0x74, 0x20, 0x66, 0x75, 0x6E,
                                                      0x63, 0x74, 0x69, 0x6F, 0x6E, 0x61, 0x6C, 0x69};
-        int IV_test[16] = {0x74, 0x65, 0x73, 0x74, 0x20, 0x66, 0x75, 0x6E, 0x63, 0x74, 0x69, 0x6F, 0x6E, 0x61, 0x6C, 0x69};
+//        int IV_test[16] = {0x74, 0x65, 0x73, 0x74, 0x20, 0x66, 0x75, 0x6E, 0x63, 0x74, 0x69, 0x6F, 0x6E, 0x61, 0x6C, 0x69};
         int AES128_expanded_key[AES128_KEY_SIZE];
         int AES192_expanded_key[AES192_KEY_SIZE];
         int AES256_expanded_key[AES256_KEY_SIZE];
@@ -364,64 +415,75 @@ int main(int argc, char *argv[])
         // */ **** TESTING PURPOSES ****
     }
 
-    if (message_len == 0)
-        return EXIT_FAILURE;
 
-    if (user_key == NULL)
-        return EXIT_FAILURE;
-
+    // MAIN PROGRAM
+    printf("\n\n");
 
     if (method) // CFB mode
     {
+        // Determine the number of blocks
+        int num_blocks = message_len / 8;
+        if (message_len % 8 != 0)
+            num_blocks++;
+
+        // Process all the blocks from the message
+        unsigned char state_array[MAX_REQ_LEN / 8][8];
+        int current_block;
+        for (current_block = 0; current_block < num_blocks; current_block++)
+        {
+            for (i = 0; i < 8; i++)
+                state_array[current_block][i] = message[(8 * current_block) + i];
+        }
+
         if (operation) // Decrypt
         {
-            // Print the input
-            printf("Input (HEX):\n");
-            print_c_string(message, message_len, true);
-            printf("\n\n");
-
             // Decrypt the input with CFB and print
-            CFB_decrypt(mode, message, message_len, IV, user_key);
-            printf("Decrypted (ASCII):\n");
+            CFB_decrypt(mode, state_array, num_blocks, IV, user_key);
+
+            for (current_block = 0; current_block < num_blocks; current_block++)
+            {
+                for (i = 0; i < 8; i++)
+                    message[(8 * current_block) + i] = state_array[current_block][i];
+            }
+
+            printf("Decrypted (ASCII):\n\"");
+            message_len = strlen((char *) message);
             print_c_string(message, message_len, false);
-            printf("\n\n");
+            printf("\"\n\n");
         } else // Encrypt
         {
-            // Print the input
-            printf("Input (ASCII):\n");
-            print_c_string(message, message_len, false);
-            printf("\n\n");
-
             // Encrypt the input with CFB and print
-            CFB_encrypt(mode, message, message_len, IV, user_key);
+            CFB_encrypt(mode, state_array, num_blocks, IV, user_key);
+
+            for (current_block = 0; current_block < num_blocks; current_block++)
+            {
+                for (i = 0; i < 8; i++)
+                    message[(8 * current_block) + i] = state_array[current_block][i];
+            }
+
             printf("Encrypted (HEX):\n");
-            print_c_string(message, message_len, true);
+            print_c_string(message, num_blocks * 8, true);
             printf("\n\n");
         }
     } else // CBC mode
     {
+        // Determine the number of blocks
+        int num_blocks = message_len / 16;
+        if (message_len % 16 != 0)
+            num_blocks++;
+
+        // Process all the blocks from the message
+        int state_array[MAX_REQ_LEN / 16][4][4];
+        int message_pos = 0;
+        int current_block;
+        for (current_block = 0; current_block < num_blocks; current_block++)
+        {
+            char_blockify(message, state_array[current_block], message_pos);
+            message_pos += 16;
+        }
+
         if (operation) // Decrypt
         {
-            // Print the input
-            printf("Input (HEX):\n");
-            print_c_string(message, message_len, true);
-            printf("\n\n");
-
-            // Determine the number of blocks
-            int num_blocks = message_len / 16;
-            if (message_len % 16 != 0)
-                num_blocks++;
-
-            // Process all the blocks from the message
-            int state_array[MAX_REQ_LEN / 16][4][4];
-            int message_pos = 0;
-            int current_block;
-            for (current_block = 0; current_block < num_blocks; current_block++)
-            {
-                char_blockify(message, state_array[current_block], message_pos);
-                message_pos += 16;
-            }
-
             // Decrypt the input with CBC and print
             CBC_decrypt(AES128, state_array, num_blocks, IV, user_key);
             message_pos = 0;
@@ -431,31 +493,12 @@ int main(int argc, char *argv[])
                 message_pos += 16;
             }
 
-            printf("Decrypted (ASCII):\n");
+            printf("Decrypted (ASCII):\n\"");
+            message_len = strlen((char *) message);
             print_c_string(message, message_len, false);
-            printf("\n\n");
+            printf("\"\n\n");
         } else // Encrypt
         {
-            // Print the input
-            printf("Input (ASCII):\n");
-            print_c_string(message, message_len, false);
-            printf("\n\n");
-
-            // Determine the number of blocks
-            int num_blocks = message_len / 16;
-            if (message_len % 16 != 0)
-                num_blocks++;
-
-            // Process all the blocks from the message
-            int state_array[MAX_REQ_LEN / 16][4][4];
-            int message_pos = 0;
-            int current_block;
-            for (current_block = 0; current_block < num_blocks; current_block++)
-            {
-                char_blockify(message, state_array[current_block], message_pos);
-                message_pos += 16;
-            }
-
             // Encrypt the input with CBC and print
             CBC_encrypt(mode, state_array, num_blocks, IV, user_key);
             message_pos = 0;
@@ -466,7 +509,7 @@ int main(int argc, char *argv[])
             }
 
             printf("Encrypted (HEX):\n");
-            print_c_string(message, message_len, true);
+            print_c_string(message, num_blocks * 16, true);
             printf("\n\n");
         }
     }
@@ -1029,7 +1072,7 @@ bool CBC_decrypt(int mode, int state_output_blocks[][4][4], int num_blocks, int 
 
 
 // The Cipher Feedback encryption algorithm
-bool CFB_encrypt(int mode, unsigned char message[], int message_len, int IV[16], int user_key[])
+bool CFB_encrypt(int mode, unsigned char message[][8], int num_blocks, int IV[16], int user_key[])
 {
     int key_size;
 
@@ -1055,7 +1098,7 @@ bool CFB_encrypt(int mode, unsigned char message[], int message_len, int IV[16],
         current_vector[i] = IV[i];
 
     int message_pos;
-    for (message_pos = 0; message_pos < message_len / 8; message_pos++)
+    for (message_pos = 0; message_pos < num_blocks; message_pos++)
     {
         // Convert the encryption input to a block
         hex_blockify(current_vector, current_block);
@@ -1066,7 +1109,7 @@ bool CFB_encrypt(int mode, unsigned char message[], int message_len, int IV[16],
         // Take first 8 bytes in the block and XOR with the plaintext bytes to get the ciphertext bytes
         char_unblockify(current_string, current_block, 0);
         for (i = 0; i < 8; i++)
-            message[message_pos + i] ^= current_string[i];
+            message[message_pos][i] ^= current_string[i];
         // Discard the rest of the block
 
         // Shift the current vector to the left by 8 bytes
@@ -1074,7 +1117,7 @@ bool CFB_encrypt(int mode, unsigned char message[], int message_len, int IV[16],
             current_vector[i] = current_vector[i + 8];
         // Put the ciphertext bytes in the last 8 bytes
         for (i = 0; i < 8; i++)
-            current_vector[i + 8] = message[message_pos + i];
+            current_vector[i + 8] = message[message_pos][i];
     }
 
     return EXIT_SUCCESS;
@@ -1082,7 +1125,7 @@ bool CFB_encrypt(int mode, unsigned char message[], int message_len, int IV[16],
 
 
 // The Cipher Feedback decryption algorithm
-bool CFB_decrypt(int mode, unsigned char message[], int message_len, int IV[16], int user_key[])
+bool CFB_decrypt(int mode, unsigned char message[][8], int num_blocks, int IV[16], int user_key[])
 {
     int key_size;
 
@@ -1108,7 +1151,7 @@ bool CFB_decrypt(int mode, unsigned char message[], int message_len, int IV[16],
         current_vector[i] = IV[i];
 
     int message_pos;
-    for (message_pos = 0; message_pos < message_len / 8; message_pos++)
+    for (message_pos = 0; message_pos < num_blocks; message_pos++)
     {
         // Convert the encryption input to a block
         hex_blockify(current_vector, current_block);
@@ -1121,12 +1164,12 @@ bool CFB_decrypt(int mode, unsigned char message[], int message_len, int IV[16],
             current_vector[i] = current_vector[i + 8];
         // Put the ciphertext bytes in the last 8 bytes
         for (i = 0; i < 8; i++)
-            current_vector[i + 8] = message[message_pos + i];
+            current_vector[i + 8] = message[message_pos][i];
 
         // Take first 8 bytes in the block and XOR with the ciphertext bytes to get the plaintext bytes
         char_unblockify(current_string, current_block, 0);
         for (i = 0; i < 8; i++)
-            message[message_pos + i] ^= current_string[i];
+            message[message_pos][i] ^= current_string[i];
         // Discard the rest of the block
     }
 

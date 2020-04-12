@@ -7,7 +7,7 @@
 #include <string.h>
 #include <stdbool.h>
 
-#define MAX_REQ_LEN 4096 // Want wat is memory management nou entlik?
+#define MAX_REQ_LEN 4096 // pfft daar is baie memory
 
 // AES constants
 #define AES128 0
@@ -275,24 +275,24 @@ bool CBC_decrypt(int mode, int state_output_blocks[][4][4], int num_blocks, int 
  * The Cipher Feedback encryption algorithm.
  * @param mode Use the macros AES128, AES192 or AES256 to select which mode to use.
  * @param message The stream to be encrypted, also the output.
- * @param message_len The length of the message.
+ * @param num_blocks The number of blocks in the message.
  * @param IV The initialization vector to be used.
  * @param user_key The user key to be used.
  * @return Successful execution.
  */
-bool CFB_encrypt(int mode, unsigned char message[], int message_len, int IV[16], int user_key[]);
+bool CFB_encrypt(int mode, unsigned char message[][8], int num_blocks, int IV[16], int user_key[]);
 
 
 /**
  * The Cipher Feedback decryption algorithm.
  * @param mode Use the macros AES128, AES192 or AES256 to select which mode to use.
  * @param message The stream to be decrypted, also the output.
- * @param message_len The length of the message.
+ * @param num_blocks The number of blocks in the message.
  * @param IV The initialization vector to be used.
  * @param user_key The user key to be used.
  * @return Successful execution.
  */
-bool CFB_decrypt(int mode, unsigned char message[], int message_len, int IV[16], int user_key[]);
+bool CFB_decrypt(int mode, unsigned char message[][8], int num_blocks, int IV[16], int user_key[]);
 
 
 #endif //EHN_PRAC1_ENCRYPTION_H
