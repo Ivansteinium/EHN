@@ -31,22 +31,22 @@ int main(int argc, char *argv[])
 
             if (strstr(argv[i], "width=") != NULL) // Set AES width
             {
-                if (!strcmp(parameter, "AES128"))
+                if (!strcmp(parameter, "128"))
                 {
                     mode = AES128;
                     printf("AES128 selected\n");
-                } else if (!strcmp(parameter, "AES192"))
+                } else if (!strcmp(parameter, "192"))
                 {
                     mode = AES192;
                     printf("AES192 selected\n");
-                } else if (!strcmp(parameter, "AES256"))
+                } else if (!strcmp(parameter, "256"))
                 {
                     mode = AES256;
                     printf("AES256 selected\n");
                 } else
                 {
                     printf("Parameter '%s' is not a valid parameter for 'width='\n", parameter);
-                    printf("Valid parameters are 'AES128', 'AES192' and 'AES256'\n");
+                    printf("Valid parameters are '128', '192' and '256'\n");
                     return EXIT_FAILURE;
                 }
             } else if (strstr(argv[i], "chain=") != NULL) // Set chaining mode
@@ -86,22 +86,22 @@ int main(int argc, char *argv[])
                     return EXIT_FAILURE;
                 } else
                 {
-                    int key_size;
+                    int user_key_size;
                     if (mode == AES128)
-                        key_size = AES128_KEY_SIZE;
+                        user_key_size = AES128_USER_KEY_SIZE;
                     else if (mode == AES192)
-                        key_size = AES192_KEY_SIZE;
+                        user_key_size = AES192_USER_KEY_SIZE;
                     else
-                        key_size = AES256_KEY_SIZE;
+                        user_key_size = AES256_USER_KEY_SIZE;
 
-                    if (strlen(parameter) == 2 * key_size) // 16 bytes for AES128, 24 bytes for AES192, 32 bytes for ARS256
+                    if (strlen(parameter) == 2 * user_key_size) // 16 bytes for AES128, 24 bytes for AES192, 32 bytes for ARS256
                     {
-                        user_key = (int *) malloc(key_size * sizeof(int));
+                        user_key = (int *) malloc(user_key_size * sizeof(int));
 
                         // Convert from hex string to int array
                         int pos;
                         char current_number[2];
-                        for (pos = 0; pos < key_size; pos++)
+                        for (pos = 0; pos < user_key_size; pos++)
                         {
                             strncpy(current_number, parameter, 2); // Retrieve one byte (two hex chars)
                             user_key[pos] = (int) strtol(current_number, NULL, 16); // Get the integer value from the byte
@@ -109,7 +109,7 @@ int main(int argc, char *argv[])
                         }
                     } else
                     {
-                        printf("The key size given does not match the expected length for the specified width\n");
+                        printf("The key size (%ld / 2) given does not match the expected length for the specified width\n", strlen(parameter));
                         printf("Input the key with 'key=' where the key is given in hexadecimal, ex. '1A2F0C32...'\n");
                         return EXIT_FAILURE;
                     }
@@ -167,7 +167,7 @@ int main(int argc, char *argv[])
                     }
                 } else
                 {
-                    printf("The initialization vector size given is not 16 bytes\n");
+                    printf("The initialization vector size given (%ld / 2) is not 16 bytes\n", strlen(parameter));
                     printf("Input the initialization vector with 'iv=' where the vector is given in hexadecimal, ex. '1A2F0C32...'\n");
                     return EXIT_FAILURE;
                 }
@@ -180,7 +180,7 @@ int main(int argc, char *argv[])
                        "\tThe arguments are structured as follows: 'parameter=value'\n"
                        "\tThe available settings are: 'width=', 'chain=', 'op=', 'key=', 'msg=' and 'iv='\n"
                        "\t\n"
-                       "\t'width=' specifies the AES width, valid parameters are 'AES128', 'AES192' and 'AES256'\n"
+                       "\t'width=' specifies the AES width, valid parameters are '128', '192' and '256'\n"
                        "\t'chain=' specifies the chaining mode, valid parameters are 'CBC' and 'CFB'\n"
                        "\t'op=' specifies the operation to be performed, valid parameters are 'E' for encrypt and 'D' for decrypt\n"
                        "\t'key=' specifies the user key given in hexadecimal, ex. '1A2F0C32...'\n"
@@ -432,7 +432,7 @@ int main(int argc, char *argv[])
             }
 
             printf("Decrypted (ASCII):\n");
-            print_c_string(message, message_len, true);
+            print_c_string(message, message_len, false);
             printf("\n\n");
         } else // Encrypt
         {
