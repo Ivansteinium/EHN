@@ -179,7 +179,7 @@ int AES_exp_2(int previous);
 /**
  * Main key expansion function.
  * @param width Use the macros AES128, AES192 or AES256 to select which width to use.
- * @param expanded_key The expanded key output, the correct length array must exist and be passed in here.
+ * @param expanded_key The expanded key output, the correct length array (AESxxx_KEY_SIZE + 32) must exist and be passed in here.
  * @param user_key The user key to be expanded.
  */
 void AES_key_expansion(int width, int expanded_key[], int user_key[]);
