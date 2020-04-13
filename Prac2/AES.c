@@ -1,13 +1,13 @@
-#include "Encryption.h"
+#include "AES.h"
 
 
 int main(int argc, char *argv[])
 {
     int i;
-    bool parameters[6] = {false, false, false, false, false, true};
+    bool args[6] = {false, false, false, false, false, false};
     int method = -1; // CBC if false, CFB if true
     int operation = -1; // encrypt if false, decrypt if true
-    int mode = -1; // AES128, AES192, AES256 macros
+    int width = -1; // AES128, AES192, AES256 macros
     int message_len = 0;
     unsigned char message[MAX_REQ_LEN];
     int *user_key = NULL;
@@ -25,31 +25,31 @@ int main(int argc, char *argv[])
         {
             char *parameter = strstr(argv[i],"=") + 1;
 
-            if (strstr(argv[i], "width=") != NULL) // Set AES width
+            if (strstr(argv[i], "-w=") != NULL) // Set AES width
             {
-                parameters[0] = true;
+                args[0] = true;
 
                 if (!strcmp(parameter, "128"))
                 {
-                    mode = AES128;
+                    width = AES128;
                     printf("AES128 selected\n");
                 } else if (!strcmp(parameter, "192"))
                 {
-                    mode = AES192;
+                    width = AES192;
                     printf("AES192 selected\n");
                 } else if (!strcmp(parameter, "256"))
                 {
-                    mode = AES256;
+                    width = AES256;
                     printf("AES256 selected\n");
                 } else
                 {
-                    printf("Parameter '%s' is not a valid parameter for 'width='\n", parameter);
+                    printf("Parameter '%s' is not a valid parameter for '-w='\n", parameter);
                     printf("Valid parameters are '128', '192' and '256'\n");
                     return EXIT_FAILURE;
                 }
-            } else if (strstr(argv[i], "chain=") != NULL) // Set chaining mode
+            } else if (strstr(argv[i], "-c=") != NULL) // Set chaining method
             {
-                parameters[1] = true;
+                args[1] = true;
 
                 if(!strcmp(parameter, "CBC"))
                 {
@@ -61,13 +61,13 @@ int main(int argc, char *argv[])
                     printf("Cipher Feedback method selected\n");
                 } else
                 {
-                    printf("Parameter '%s' is not a valid parameter for 'chain='", parameter);
-                    printf("Valid parameters are 'CBC' and 'CFB'\n");
+                    printf("Parameter '%s' is not a valid parameter for '-c='", parameter);
+                    printf("Valid parameters are 'CBC' for Cipher Block Chaining and 'CFB' for Cipher Feedback\n");
                     return EXIT_FAILURE;
                 }
-            } else if (strstr(argv[i], "op=") != NULL) // Set operation (encrypt or decrypt)
+            } else if (strstr(argv[i], "-o=") != NULL) // Set operation (encrypt or decrypt)
             {
-                parameters[2] = true;
+                args[2] = true;
 
                 if (!strcmp(parameter, "E"))
                 {
@@ -79,25 +79,25 @@ int main(int argc, char *argv[])
                     printf("Decryption selected\n");
                 } else
                 {
-                    printf("Parameter '%s' is not a valid parameter for 'op='", parameter);
+                    printf("Parameter '%s' is not a valid parameter for '-o='", parameter);
                     printf("Valid parameters are 'E' for encrypt and 'D' for decrypt\n");
                     return EXIT_FAILURE;
                 }
-            } else if (strstr(argv[i], "key=") != NULL) // Set the user key
+            } else if (strstr(argv[i], "-k=") != NULL) // Set the user key
             {
-                parameters[3] = true;
+                args[3] = true;
 
-                if (mode == -1)
+                if (width == -1)
                 {
                     printf("The AES width must be specified before the key is given\n");
-                    printf("Specify this with 'width='\n");
+                    printf("Specify this with '-w='\n");
                     return EXIT_FAILURE;
                 } else
                 {
                     int user_key_size;
-                    if (mode == AES128)
+                    if (width == AES128)
                         user_key_size = AES128_USER_KEY_SIZE;
-                    else if (mode == AES192)
+                    else if (width == AES192)
                         user_key_size = AES192_USER_KEY_SIZE;
                     else
                         user_key_size = AES256_USER_KEY_SIZE;
@@ -121,23 +121,23 @@ int main(int argc, char *argv[])
                     } else
                     {
                         printf("The key size (%ld / 2) given does not match the expected length for the specified width\n", strlen(parameter));
-                        printf("Input the key with 'key=' where the key is given in hexadecimal, ex. '1A2F0C32...'\n");
+                        printf("Input the key with '-k=' where the key is given in hexadecimal, ex. '1A2F0C32...'\n");
                         return EXIT_FAILURE;
                     }
                 }
-            } else if (strstr(argv[i], "msg=") != NULL) // Set the input message
+            } else if (strstr(argv[i], "-m=") != NULL) // Set the input message
             {
-                parameters[4] = true;
+                args[4] = true;
 
                 if (operation == -1)
                 {
                     printf("The operation type must be specified before the message is given\n");
-                    printf("Specify this with 'op='\n");
+                    printf("Specify this with '-o='\n");
                     return EXIT_FAILURE;
                 } else if (method == -1)
                 {
                     printf("The chaining method type must be specified before the message is given\n");
-                    printf("Specify this with 'chain='\n");
+                    printf("Specify this with '-c='\n");
                     return EXIT_FAILURE;
                 } else if (operation == false) // Encrypt
                 {
@@ -145,7 +145,7 @@ int main(int argc, char *argv[])
                     message_len = strlen(parameter);
                     if (message_len > MAX_REQ_LEN)
                     {
-                        printf("The message is too long, a maximum of %d bytes may be given with 'msg='\n", MAX_REQ_LEN);
+                        printf("The message is too long, a maximum of %d bytes may be given with '-m='\n", MAX_REQ_LEN);
                         return EXIT_FAILURE;
                     } else
                     {
@@ -177,7 +177,7 @@ int main(int argc, char *argv[])
 
                     if (message_len > MAX_REQ_LEN)
                     {
-                        printf("The message is too long, a maximum of %d bytes may be given with 'msg='\n", MAX_REQ_LEN);
+                        printf("The message is too long, a maximum of %d bytes may be given with '-m='\n", MAX_REQ_LEN);
                         return EXIT_FAILURE;
                     } else
                     {
@@ -196,9 +196,9 @@ int main(int argc, char *argv[])
                         printf("\n");
                     }
                 }
-            } else if (strstr(argv[i], "iv=") != NULL) // Set the initialization vector
+            } else if (strstr(argv[i], "-i=") != NULL) // Set the initialization vector
             {
-                parameters[5] = true;
+                args[5] = true;
 
                 if (strlen(parameter) == 32)
                 {
@@ -218,7 +218,7 @@ int main(int argc, char *argv[])
                 } else
                 {
                     printf("The initialization vector size given (%ld / 2) is not 16 bytes\n", strlen(parameter));
-                    printf("Input the initialization vector with 'iv=' where the vector is given in hexadecimal, ex. '1A2F0C32...'\n");
+                    printf("Input the initialization vector with '-i=' where the vector is given in hexadecimal, ex. '1A2F0C32...'\n");
                     return EXIT_FAILURE;
                 }
             } else
@@ -226,22 +226,22 @@ int main(int argc, char *argv[])
         }
     }
 
-    if (!parameters[0] || !parameters[1] || !parameters[2] || !parameters[3] || !parameters[4] || !parameters[5])
+    if (!args[0] || !args[1] || !args[2] || !args[3] || !args[4] || !args[5])
     {
         printf("All parameters are not given\nUsage:\n"
-               "./Encrpytion Argument1 Argument2 ...\n"
+               "./AES -arg1 -arg2 ...\n"
                "\t\n"
-               "\tThe arguments are structured as follows: 'parameter=value'\n"
-               "\tThe available settings are: 'width=', 'chain=', 'op=', 'key=', 'msg=' and 'iv='\n"
+               "\tThe arguments are structured as follows: '-parameter=value'\n"
+               "\tThe available settings are: '-w=', '-c=', '-o=', '-k=', '-m=' and '-i='\n"
                "\t\n"
-               "\t'width=' specifies the AES width, valid parameters are '128', '192' and '256'\n"
-               "\t'chain=' specifies the chaining mode, valid parameters are 'CBC' and 'CFB'\n"
-               "\t'op='    specifies the operation to be performed, valid parameters are 'E' for encrypt and 'D' for decrypt\n"
-               "\t'key='   specifies the user key given in hexadecimal, ex. '1A2F0C32...'\n"
-               "\t'msg='   specifies the message to be processed, ex. '\"Lorem ipsum dolor sit amet...\"'\n"
-               "\t         (remember to add double quatation marks if there are spaces in the message)\n"
-               "\t         or in hexadecimal if it is encrypted, ex. '1A2F0C32...' \n"
-               "\t'iv='    specifies the 16-byte initialization vector to be used in hexadecimal, ex. '1A2F0C32...'\n"
+               "\t'-w=' specifies the AES width, valid parameters are '128', '192' and '256'\n"
+               "\t'-c=' specifies the chaining method, valid parameters are 'CBC' for Cipher Block Chaining and 'CFB' for Cipher Feedback\n"
+               "\t'-o=' specifies the operation to be performed, valid parameters are 'E' for encrypt and 'D' for decrypt\n"
+               "\t'-k=' specifies the user key given in hexadecimal, ex. '1A2F0C32...'\n"
+               "\t'-m=' specifies the message to be processed, ex. '\"Lorem ipsum dolor sit amet...\"'\n"
+               "\t      (remember to add double quatation marks if there are spaces in the message)\n"
+               "\t      or in hexadecimal if it is encrypted, ex. '1A2F0C32...' \n"
+               "\t'-i=' specifies the 16-byte initialization vector to be used in hexadecimal, ex. '1A2F0C32...'\n"
         );
         printf("\nperforming tests...\n\n");
 
@@ -419,7 +419,7 @@ int main(int argc, char *argv[])
     // MAIN PROGRAM
     printf("\n\n");
 
-    if (method) // CFB mode
+    if (method) // CFB method
     {
         // Determine the number of blocks
         int num_blocks = message_len / 8;
@@ -438,7 +438,7 @@ int main(int argc, char *argv[])
         if (operation) // Decrypt
         {
             // Decrypt the input with CFB and print
-            CFB_decrypt(mode, state_array, num_blocks, IV, user_key);
+            CFB_decrypt(width, state_array, num_blocks, IV, user_key);
 
             for (current_block = 0; current_block < num_blocks; current_block++)
             {
@@ -453,7 +453,7 @@ int main(int argc, char *argv[])
         } else // Encrypt
         {
             // Encrypt the input with CFB and print
-            CFB_encrypt(mode, state_array, num_blocks, IV, user_key);
+            CFB_encrypt(width, state_array, num_blocks, IV, user_key);
 
             for (current_block = 0; current_block < num_blocks; current_block++)
             {
@@ -465,7 +465,7 @@ int main(int argc, char *argv[])
             print_c_string(message, num_blocks * 8, true);
             printf("\n\n");
         }
-    } else // CBC mode
+    } else // CBC method
     {
         // Determine the number of blocks
         int num_blocks = message_len / 16;
@@ -500,7 +500,7 @@ int main(int argc, char *argv[])
         } else // Encrypt
         {
             // Encrypt the input with CBC and print
-            CBC_encrypt(mode, state_array, num_blocks, IV, user_key);
+            CBC_encrypt(width, state_array, num_blocks, IV, user_key);
             message_pos = 0;
             for (current_block = 0; current_block < num_blocks; current_block++)
             {
@@ -566,15 +566,15 @@ void print_block(int state_output[4][4])
 
 
 // Output the expanded key in rows of 16
-void print_expanded_key(int mode, int expanded_key[])
+void print_expanded_key(int width, int expanded_key[])
 {
     int key_size;
 
-    if (mode == AES128)
+    if (width == AES128)
         key_size = AES128_KEY_SIZE;
-    else if (mode == AES192)
+    else if (width == AES192)
         key_size = AES192_KEY_SIZE;
-    else if (mode == AES256)
+    else if (width == AES256)
         key_size = AES256_KEY_SIZE;
     else
         return;
@@ -672,23 +672,23 @@ int AES_exp_2(int previous)
 
 
 // Main key expansion function
-void AES_key_expansion(int mode, int expanded_key[], int user_key[])
+void AES_key_expansion(int width, int expanded_key[], int user_key[])
 {
     int user_key_size;
     int expansion;
     int sub_expansion;
 
-    if (mode == AES128)
+    if (width == AES128)
     {
         expansion = AES128_EXPANSION;
         sub_expansion = AES128_SUB_EXPANSION;
         user_key_size = AES128_USER_KEY_SIZE;
-    } else if (mode == AES192)
+    } else if (width == AES192)
     {
         expansion = AES192_EXPANSION;
         sub_expansion = AES192_SUB_EXPANSION;
         user_key_size = AES192_USER_KEY_SIZE;
-    } else if (mode == AES256)
+    } else if (width == AES256)
     {
         expansion = AES256_EXPANSION;
         sub_expansion = AES256_SUB_EXPANSION;
@@ -880,15 +880,15 @@ void AES_add_round_key(int state_output[4][4], int expanded_key[], int key_index
 
 
 // The AES encryption algorithm
-bool AES_encrypt(int mode, int state_output[4][4], int expanded_key[])
+bool AES_encrypt(int width, int state_output[4][4], int expanded_key[])
 {
     int number_of_rounds;
 
-    if (mode == AES128)
+    if (width == AES128)
         number_of_rounds = AES128_ROUNDS;
-    else if (mode == AES192)
+    else if (width == AES192)
         number_of_rounds = AES192_ROUNDS;
-    else if (mode == AES256)
+    else if (width == AES256)
         number_of_rounds = AES256_ROUNDS;
     else
         return EXIT_FAILURE;
@@ -921,20 +921,20 @@ bool AES_encrypt(int mode, int state_output[4][4], int expanded_key[])
 
 
 // The AES decryption algorithm
-bool AES_decrypt(int mode, int state_output[4][4], int expanded_key[])
+bool AES_decrypt(int width, int state_output[4][4], int expanded_key[])
 {
     int number_of_rounds;
     int key_size;
 
-    if (mode == AES128)
+    if (width == AES128)
     {
         number_of_rounds = AES128_ROUNDS;
         key_size = AES128_KEY_SIZE;
-    } else if (mode == AES192)
+    } else if (width == AES192)
     {
         number_of_rounds = AES192_ROUNDS;
         key_size = AES192_KEY_SIZE;
-    } else if (mode == AES256)
+    } else if (width == AES256)
     {
         number_of_rounds = AES256_ROUNDS;
         key_size = AES256_KEY_SIZE;
@@ -969,21 +969,21 @@ bool AES_decrypt(int mode, int state_output[4][4], int expanded_key[])
 
 
 // The Cipher Block Chaining encryption
-bool CBC_encrypt(int mode, int state_output_blocks[][4][4], int num_blocks, int IV[16], int user_key[])
+bool CBC_encrypt(int width, int state_output_blocks[][4][4], int num_blocks, int IV[16], int user_key[])
 {
     int key_size;
     
-    if (mode == AES128)
+    if (width == AES128)
         key_size = AES128_KEY_SIZE;
-    else if (mode == AES192)
+    else if (width == AES192)
         key_size = AES192_KEY_SIZE;
-    else if (mode == AES256)
+    else if (width == AES256)
         key_size = AES256_KEY_SIZE;
     else
         return EXIT_FAILURE;
     
     int expanded_key[key_size];
-    AES_key_expansion(mode, expanded_key, user_key);
+    AES_key_expansion(width, expanded_key, user_key);
     
     int row, col, i;
     int current_vector[16];
@@ -1003,7 +1003,7 @@ bool CBC_encrypt(int mode, int state_output_blocks[][4][4], int num_blocks, int 
         }
 
         // Encrypt to produce ciphertext block
-        AES_encrypt(mode, state_output_blocks[block_pos], expanded_key);
+        AES_encrypt(width, state_output_blocks[block_pos], expanded_key);
 
         // Update current vector with ciphertext values
         for (col = 0; col < 4; col++)
@@ -1018,21 +1018,21 @@ bool CBC_encrypt(int mode, int state_output_blocks[][4][4], int num_blocks, int 
 
 
 // The Cipher Block Chaining decryption
-bool CBC_decrypt(int mode, int state_output_blocks[][4][4], int num_blocks, int IV[16], int user_key[])
+bool CBC_decrypt(int width, int state_output_blocks[][4][4], int num_blocks, int IV[16], int user_key[])
 {
     int key_size;
 
-    if (mode == AES128)
+    if (width == AES128)
         key_size = AES128_KEY_SIZE;
-    else if (mode == AES192)
+    else if (width == AES192)
         key_size = AES192_KEY_SIZE;
-    else if (mode == AES256)
+    else if (width == AES256)
         key_size = AES256_KEY_SIZE;
     else
         return EXIT_FAILURE;
 
     int expanded_key[key_size];
-    AES_key_expansion(mode, expanded_key, user_key);
+    AES_key_expansion(width, expanded_key, user_key);
     
     int i, row, col;
     int previous_ciphertext[16];
@@ -1053,7 +1053,7 @@ bool CBC_decrypt(int mode, int state_output_blocks[][4][4], int num_blocks, int 
         }
 
         // Decrypt the block
-        AES_decrypt(mode, state_output_blocks[block_pos], expanded_key);
+        AES_decrypt(width, state_output_blocks[block_pos], expanded_key);
 
         // XOR current vector with decrypted text to produce plaintext
         for (col = 0; col < 4; col++)
@@ -1072,21 +1072,21 @@ bool CBC_decrypt(int mode, int state_output_blocks[][4][4], int num_blocks, int 
 
 
 // The Cipher Feedback encryption algorithm
-bool CFB_encrypt(int mode, unsigned char message[][8], int num_blocks, int IV[16], int user_key[])
+bool CFB_encrypt(int width, unsigned char message[][8], int num_blocks, int IV[16], int user_key[])
 {
     int key_size;
 
-    if (mode == AES128)
+    if (width == AES128)
         key_size = AES128_KEY_SIZE;
-    else if (mode == AES192)
+    else if (width == AES192)
         key_size = AES192_KEY_SIZE;
-    else if (mode == AES256)
+    else if (width == AES256)
         key_size = AES256_KEY_SIZE;
     else
         return EXIT_FAILURE;
 
     int expanded_key[key_size];
-    AES_key_expansion(mode, expanded_key, user_key);
+    AES_key_expansion(width, expanded_key, user_key);
 
     int i;
     int current_block[4][4];
@@ -1104,7 +1104,7 @@ bool CFB_encrypt(int mode, unsigned char message[][8], int num_blocks, int IV[16
         hex_blockify(current_vector, current_block);
 
         // Encrypt the block
-        AES_encrypt(mode, current_block, expanded_key);
+        AES_encrypt(width, current_block, expanded_key);
 
         // Take first 8 bytes in the block and XOR with the plaintext bytes to get the ciphertext bytes
         char_unblockify(current_string, current_block, 0);
@@ -1125,21 +1125,21 @@ bool CFB_encrypt(int mode, unsigned char message[][8], int num_blocks, int IV[16
 
 
 // The Cipher Feedback decryption algorithm
-bool CFB_decrypt(int mode, unsigned char message[][8], int num_blocks, int IV[16], int user_key[])
+bool CFB_decrypt(int width, unsigned char message[][8], int num_blocks, int IV[16], int user_key[])
 {
     int key_size;
 
-    if (mode == AES128)
+    if (width == AES128)
         key_size = AES128_KEY_SIZE;
-    else if (mode == AES192)
+    else if (width == AES192)
         key_size = AES192_KEY_SIZE;
-    else if (mode == AES256)
+    else if (width == AES256)
         key_size = AES256_KEY_SIZE;
     else
         return EXIT_FAILURE;
 
     int expanded_key[key_size];
-    AES_key_expansion(mode, expanded_key, user_key);
+    AES_key_expansion(width, expanded_key, user_key);
 
     int i;
     int current_block[4][4];
@@ -1157,7 +1157,7 @@ bool CFB_decrypt(int mode, unsigned char message[][8], int num_blocks, int IV[16
         hex_blockify(current_vector, current_block);
 
         // Encrypt the block
-        AES_encrypt(mode, current_block, expanded_key);
+        AES_encrypt(width, current_block, expanded_key);
 
         // Shift the current vector to the left by 8 bytes
         for (i = 0; i < 8; i++)

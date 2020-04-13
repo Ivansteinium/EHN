@@ -1,5 +1,5 @@
-#ifndef EHN_PRAC1_ENCRYPTION_H
-#define EHN_PRAC1_ENCRYPTION_H
+#ifndef EHN_PRAC2_AES_H
+#define EHN_PRAC2_AES_H
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -117,10 +117,10 @@ void print_block(int state_output[4][4]);
 
 /**
  * Output the expanded key in rows of 16.
- * @param mode Use the macros AES128, AES192 or AES256 to select which mode to use.
+ * @param width Use the macros AES128, AES192 or AES256 to select which width to use.
  * @param expanded_key The expanded key to print.
  */
-void print_expanded_key(int mode, int expanded_key[]);
+void print_expanded_key(int width, int expanded_key[]);
 
 
 /**
@@ -178,11 +178,11 @@ int AES_exp_2(int previous);
 
 /**
  * Main key expansion function.
- * @param mode Use the macros AES128, AES192 or AES256 to select which mode to use.
+ * @param width Use the macros AES128, AES192 or AES256 to select which width to use.
  * @param expanded_key The expanded key output, the correct length array must exist and be passed in here.
  * @param user_key The user key to be expanded.
  */
-void AES_key_expansion(int mode, int expanded_key[], int user_key[]);
+void AES_key_expansion(int width, int expanded_key[], int user_key[]);
 
 
 /**
@@ -229,70 +229,70 @@ void AES_add_round_key(int state_output[4][4], int expanded_key[], int key_index
 
 /**
  * The AES encryption algorithm.
- * @param mode Use the macros AES128, AES192 or AES256 to select which mode to use.
+ * @param width Use the macros AES128, AES192 or AES256 to select which width to use.
  * @param state_output The block to be encrypted, also the output.
  * @param expanded_key The expanded key to be used.
  * @return Successful execution.
  */
-bool AES_encrypt(int mode, int state_output[4][4], int expanded_key[]);
+bool AES_encrypt(int width, int state_output[4][4], int expanded_key[]);
 
 
 /**
  * The AES decryption algorithm.
- * @param mode Use the macros AES128, AES192 or AES256 to select which mode to use.
+ * @param width Use the macros AES128, AES192 or AES256 to select which width to use.
  * @param state_output The block to be decrypted, also the output.
  * @param expanded_key The expanded key to be used.
  * @return Successful execution.
  */
-bool AES_decrypt(int mode, int state_output[4][4], int expanded_key[]);
+bool AES_decrypt(int width, int state_output[4][4], int expanded_key[]);
 
 
 /**
  * The Cipher Block Chaining encryption algorithm.
- * @param mode Use the macros AES128, AES192 or AES256 to select which mode to use.
+ * @param width Use the macros AES128, AES192 or AES256 to select which width to use.
  * @param state_output_blocks The blocks to be encrypted, also the output.
  * @param num_blocks The number of blocks to be encrypted.
  * @param IV The initialization vector to be used.
  * @param user_key The user key to be used.
  * @return Successful execution.
  */
-bool CBC_encrypt(int mode, int state_output_blocks[][4][4], int num_blocks, int IV[16], int user_key[]);
+bool CBC_encrypt(int width, int state_output_blocks[][4][4], int num_blocks, int IV[16], int user_key[]);
 
 
 /**
  * The Cipher Block Chaining decryption algorithm.
- * @param mode Use the macros AES128, AES192 or AES256 to select which mode to use.
+ * @param width Use the macros AES128, AES192 or AES256 to select which width to use.
  * @param state_output_blocks The blocks to be decrypted, also the output.
  * @param num_blocks The number of blocks to be decrypted.
  * @param IV The initialization vector to be used.
  * @param user_key The user key to be used.
  * @return Successful execution.
  */
-bool CBC_decrypt(int mode, int state_output_blocks[][4][4], int num_blocks, int IV[16], int user_key[]);
+bool CBC_decrypt(int width, int state_output_blocks[][4][4], int num_blocks, int IV[16], int user_key[]);
 
 
 /**
  * The Cipher Feedback encryption algorithm.
- * @param mode Use the macros AES128, AES192 or AES256 to select which mode to use.
+ * @param width Use the macros AES128, AES192 or AES256 to select which width to use.
  * @param message The stream to be encrypted, also the output.
  * @param num_blocks The number of blocks in the message.
  * @param IV The initialization vector to be used.
  * @param user_key The user key to be used.
  * @return Successful execution.
  */
-bool CFB_encrypt(int mode, unsigned char message[][8], int num_blocks, int IV[16], int user_key[]);
+bool CFB_encrypt(int width, unsigned char message[][8], int num_blocks, int IV[16], int user_key[]);
 
 
 /**
  * The Cipher Feedback decryption algorithm.
- * @param mode Use the macros AES128, AES192 or AES256 to select which mode to use.
+ * @param width Use the macros AES128, AES192 or AES256 to select which width to use.
  * @param message The stream to be decrypted, also the output.
  * @param num_blocks The number of blocks in the message.
  * @param IV The initialization vector to be used.
  * @param user_key The user key to be used.
  * @return Successful execution.
  */
-bool CFB_decrypt(int mode, unsigned char message[][8], int num_blocks, int IV[16], int user_key[]);
+bool CFB_decrypt(int width, unsigned char message[][8], int num_blocks, int IV[16], int user_key[]);
 
 
-#endif //EHN_PRAC1_ENCRYPTION_H
+#endif //EHN_PRAC2_AES_H
