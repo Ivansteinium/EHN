@@ -10,8 +10,8 @@ int main(int argc, char *argv[])
     int width = -1; // AES128, AES192, AES256 macros
     int message_len = 0;
     unsigned char message[MAX_REQ_LEN];
-    int *user_key = NULL;
     int IV[16];
+    int *user_key = NULL;
 
     for (i = 0; i < MAX_REQ_LEN; i++)
         message[i] = '\0';
@@ -982,7 +982,7 @@ bool CBC_encrypt(int width, int state_output_blocks[][4][4], int num_blocks, int
     else
         return EXIT_FAILURE;
     
-    int expanded_key[key_size];
+    int expanded_key[key_size  + 32]; // Allocate more space since AES_key_expansion deliberately writes out of bounds
     AES_key_expansion(width, expanded_key, user_key);
     
     int row, col, i;
@@ -1031,7 +1031,7 @@ bool CBC_decrypt(int width, int state_output_blocks[][4][4], int num_blocks, int
     else
         return EXIT_FAILURE;
 
-    int expanded_key[key_size];
+    int expanded_key[key_size + 32]; // Allocate more space since AES_key_expansion deliberately writes out of bounds
     AES_key_expansion(width, expanded_key, user_key);
     
     int i, row, col;
@@ -1085,7 +1085,7 @@ bool CFB_encrypt(int width, unsigned char message[][8], int num_blocks, int IV[1
     else
         return EXIT_FAILURE;
 
-    int expanded_key[key_size];
+    int expanded_key[key_size  + 32]; // Allocate more space since AES_key_expansion deliberately writes out of bounds
     AES_key_expansion(width, expanded_key, user_key);
 
     int i;
@@ -1138,7 +1138,7 @@ bool CFB_decrypt(int width, unsigned char message[][8], int num_blocks, int IV[1
     else
         return EXIT_FAILURE;
 
-    int expanded_key[key_size];
+    int expanded_key[key_size  + 32]; // Allocate more space since AES_key_expansion deliberately writes out of bounds
     AES_key_expansion(width, expanded_key, user_key);
 
     int i;
