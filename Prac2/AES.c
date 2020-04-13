@@ -4,17 +4,22 @@
 int main(int argc, char *argv[])
 {
     int i;
-    bool args[6] = {false, false, false, false, false, false};
+    bool args[7] = {false, false, false, false, false, false, false};
     int method = -1; // CBC if false, CFB if true
     int operation = -1; // encrypt if false, decrypt if true
     int width = -1; // AES128, AES192, AES256 macros
     int message_len = 0;
     unsigned char message[MAX_REQ_LEN];
+    char output_file_name[MAX_REQ_LEN];
     int IV[16];
     int *user_key = NULL;
+    int CFBlen = -1;
 
     for (i = 0; i < MAX_REQ_LEN; i++)
+    {
         message[i] = '\0';
+        output_file_name[i] = '\0';
+    }
 
     // Greeting
     printf("EHN 410 Group 12 Practical 2\n\n");
@@ -23,76 +28,89 @@ int main(int argc, char *argv[])
     {
         for (i = 1; i < argc; i++)
         {
-            char *parameter = strstr(argv[i],"=") + 1;
+            char *parameter;
 
-            if (strstr(argv[i], "-w=") != NULL) // Set AES width
+            if (strstr(argv[i], "-cbc") != NULL) // Set chaining method to cbc and length
             {
                 args[0] = true;
+                method = false; //set the chaining method
 
-                if (!strcmp(parameter, "128"))
+                if (!strcmp(argv[i + 1], "128"))
                 {
                     width = AES128;
-                    printf("AES128 selected\n");
-                } else if (!strcmp(parameter, "192"))
+                    printf("AES128 with CBC selected\n");
+                }
+                else if (!strcmp(argv[i + 1], "192"))
                 {
                     width = AES192;
-                    printf("AES192 selected\n");
-                } else if (!strcmp(parameter, "256"))
+                    printf("AES192 with CBC selected\n");
+                }
+                else if (!strcmp(argv[i + 1], "256"))
                 {
                     width = AES256;
-                    printf("AES256 selected\n");
-                } else
+                    printf("AES256 with CBC selected\n");
+                }
+                else
                 {
-                    printf("Parameter '%s' is not a valid parameter for '-w='\n", parameter);
+                    printf("Parameter '%s' is not a valid length\n", argv[i + 1]);
                     printf("Valid parameters are '128', '192' and '256'\n");
                     return EXIT_FAILURE;
                 }
-            } else if (strstr(argv[i], "-c=") != NULL) // Set chaining method
+                i++; //skip over the value parameter that follows this parameter
+            }
+            else if (strstr(argv[i], "-cfb") != NULL) // Set chaining method to cfb and length
             {
-                args[1] = true;
+                args[0] = true;
+                method = true; //set the chaining method
 
-                if(!strcmp(parameter, "CBC"))
+                if (!strcmp(argv[i + 1], "128"))
                 {
-                    method = false;
-                    printf("Cipher Block Chaining method selected\n");
-                } else if(!strcmp(parameter, "CFB"))
+                    width = AES128;
+                    printf("AES128 with CFB selected\n");
+                }
+                else if (!strcmp(argv[i + 1], "192"))
                 {
-                    method = true;
-                    printf("Cipher Feedback method selected\n");
-                } else
+                    width = AES192;
+                    printf("AES192 with CFB selected\n");
+                }
+                else if (!strcmp(argv[i + 1], "256"))
                 {
-                    printf("Parameter '%s' is not a valid parameter for '-c='", parameter);
-                    printf("Valid parameters are 'CBC' for Cipher Block Chaining and 'CFB' for Cipher Feedback\n");
+                    width = AES256;
+                    printf("AES256 with CFB selected\n");
+                }
+                else
+                {
+                    printf("Parameter '%s' is not a valid length\n", argv[i + 1]);
+                    printf("Valid parameters are '128', '192' and '256'\n");
                     return EXIT_FAILURE;
                 }
-            } else if (strstr(argv[i], "-o=") != NULL) // Set operation (encrypt or decrypt)
+                i++; //skip over the value parameter that follows this parameter
+            }
+            else if (strstr(argv[i], "-e") != NULL) // Set operation encrypt
+            {
+                args[1] = true;
+                operation = false;
+                printf("Encryption selected\n");
+
+            }
+            else if (strstr(argv[i], "-d") != NULL) // Set operation decrypt
+            {
+                args[1] = true;
+                operation = true;
+                printf("Decryption selected\n");
+
+            }
+            else if (strstr(argv[i], "-key") != NULL) // Set the user key
             {
                 args[2] = true;
 
-                if (!strcmp(parameter, "E"))
-                {
-                    operation = false;
-                    printf("Encryption selected\n");
-                } else if (!strcmp(parameter, "D"))
-                {
-                    operation = true;
-                    printf("Decryption selected\n");
-                } else
-                {
-                    printf("Parameter '%s' is not a valid parameter for '-o='", parameter);
-                    printf("Valid parameters are 'E' for encrypt and 'D' for decrypt\n");
-                    return EXIT_FAILURE;
-                }
-            } else if (strstr(argv[i], "-k=") != NULL) // Set the user key
-            {
-                args[3] = true;
-
                 if (width == -1)
                 {
-                    printf("The AES width must be specified before the key is given\n");
-                    printf("Specify this with '-w='\n");
+                    printf("The AES length must be specified before the key is given\n");
+                    printf("Specify this with '-cbc <length>' or '-cfb <length>'\n");
                     return EXIT_FAILURE;
-                } else
+                }
+                else
                 {
                     int user_key_size;
                     if (width == AES128)
@@ -102,7 +120,8 @@ int main(int argc, char *argv[])
                     else
                         user_key_size = AES256_USER_KEY_SIZE;
 
-                    if (strlen(parameter) == 2 * user_key_size) // 16 bytes for AES128, 24 bytes for AES192, 32 bytes for ARS256
+                    if (strlen(argv[i + 1]) ==
+                        2 * user_key_size) // 16 bytes for AES128, 24 bytes for AES192, 32 bytes for ARS256
                     {
                         printf("User key (HEX): ");
                         user_key = (int *) malloc(user_key_size * sizeof(int));
@@ -110,63 +129,78 @@ int main(int argc, char *argv[])
                         // Convert from hex string to int array
                         int pos;
                         char current_number[2];
+                        parameter = argv[i + 1];
                         for (pos = 0; pos < user_key_size; pos++)
                         {
                             strncpy(current_number, parameter, 2); // Retrieve one byte (two hex chars)
-                            user_key[pos] = (unsigned char) strtol(current_number, NULL, 16); // Get the integer value from the byte
+                            user_key[pos] = (unsigned char) strtol(current_number, NULL,
+                                                                   16); // Get the integer value from the byte
                             printf("%02X", user_key[pos]);
                             parameter += 2; // Move to the next byte
                         }
                         printf("\n");
-                    } else
+                    }
+                    else
                     {
-                        printf("The key size (%ld / 2) given does not match the expected length for the specified width\n", strlen(parameter));
-                        printf("Input the key with '-k=' where the key is given in hexadecimal, ex. '1A2F0C32...'\n");
+                        printf("The key size (%ld / 2) given does not match the expected length for the specified "
+                               "length\n",
+                               strlen(parameter));
+                        printf("Input the key with '-key <key_value>' where the key is given in hexadecimal, ex. "
+                               "'1A2F0C32...'\n");
                         return EXIT_FAILURE;
                     }
+                    i++;//skip over the value parameter that follows this parameter
                 }
-            } else if (strstr(argv[i], "-m=") != NULL) // Set the input message
+            }
+            else if (strstr(argv[i], "-t") != NULL) // Set the input message
             {
-                args[4] = true;
+                args[3] = true;
 
                 if (operation == -1)
                 {
                     printf("The operation type must be specified before the message is given\n");
-                    printf("Specify this with '-o='\n");
+                    printf("Specify this with '-e' for encryption or '-d' for decryption\n");
                     return EXIT_FAILURE;
-                } else if (method == -1)
+                }
+                else if (method == -1)
                 {
                     printf("The chaining method type must be specified before the message is given\n");
-                    printf("Specify this with '-c='\n");
+                    printf("Specify this with '-cbc <length>' or '-cfb <length>'\n");
                     return EXIT_FAILURE;
-                } else if (operation == false) // Encrypt
+                }
+                else if (operation == false) // Encrypt
                 {
                     // Take message as ASCII input
+                    parameter = argv[i + 1];
                     message_len = strlen(parameter);
                     if (message_len > MAX_REQ_LEN)
                     {
                         printf("The message is too long, a maximum of %d bytes may be given with '-m='\n", MAX_REQ_LEN);
                         return EXIT_FAILURE;
-                    } else
+                    }
+                    else
                     {
                         strcpy((char *) message, parameter);
                         printf("Plaintext message (ASCII): \"%s\"\n", message);
                     }
-                } else // Deprypt
+                }
+                else // Deprypt
                 {
                     // Take message as hex input
+                    parameter = argv[i + 1];
                     message_len = strlen(parameter);
                     if (method)
                     {
-                        if(message_len % 16 != 0)
+                        if (message_len % 16 != 0)
                         {
                             printf("The encrypted message does not have the correct number of bits\n");
                             printf("(%d / 2) is not a multiple of 8 bytes (64 bits)\n", message_len);
                             return EXIT_FAILURE;
                         }
-                    } else
+                    }
+                    else
                     {
-                        if(message_len % 32 != 0)
+                        if (message_len % 32 != 0)
                         {
                             printf("The encrypted message does not have the correct number of bits\n");
                             printf("(%d / 2) is not a multiple of 16 bytes (128 bits)\n", message_len);
@@ -179,7 +213,8 @@ int main(int argc, char *argv[])
                     {
                         printf("The message is too long, a maximum of %d bytes may be given with '-m='\n", MAX_REQ_LEN);
                         return EXIT_FAILURE;
-                    } else
+                    }
+                    else
                     {
                         // Convert from hex string to int array
                         int pos;
@@ -187,7 +222,8 @@ int main(int argc, char *argv[])
                         for (pos = 0; pos < message_len; pos++)
                         {
                             strncpy(current_number, parameter, 2); // Retrieve one byte (two hex chars)
-                            message[pos] = (unsigned char) strtol(current_number, NULL, 16); // Get the integer value from the byte
+                            message[pos] = (unsigned char) strtol(current_number, NULL,
+                                                                  16); // Get the integer value from the byte
                             parameter += 2; // Move to the next byte
                         }
 
@@ -196,9 +232,12 @@ int main(int argc, char *argv[])
                         printf("\n");
                     }
                 }
-            } else if (strstr(argv[i], "-i=") != NULL) // Set the initialization vector
+                i++;//skip over the value parameter that follows this parameter
+            }
+            else if (strstr(argv[i], "-iv") != NULL) // Set the initialization vector
             {
-                args[5] = true;
+                args[4] = true;
+                parameter = argv[i + 1];
 
                 if (strlen(parameter) == 32)
                 {
@@ -210,18 +249,168 @@ int main(int argc, char *argv[])
                     for (pos = 0; pos < 16; pos++)
                     {
                         strncpy(current_number, parameter, 2); // Retrieve one byte (two hex chars)
-                        IV[pos] = (unsigned char) strtol(current_number, NULL, 16); // Get the integer value from the byte
+                        IV[pos] = (unsigned char) strtol(current_number, NULL,
+                                                         16); // Get the integer value from the byte
                         printf("%02X", IV[pos]);
                         parameter += 2; // Move to the next byte
                     }
                     printf("\n");
-                } else
+                }
+                else
                 {
                     printf("The initialization vector size given (%ld / 2) is not 16 bytes\n", strlen(parameter));
                     printf("Input the initialization vector with '-i=' where the vector is given in hexadecimal, ex. '1A2F0C32...'\n");
                     return EXIT_FAILURE;
                 }
-            } else
+                i++; //skip over the value parameter that follows this parameter
+            }
+            else if (strstr(argv[i], "-fi") != NULL) // read the input file
+            {
+                args[3] = true;
+                parameter = argv[i + 1];
+                FILE *inputfileptr;
+
+                inputfileptr = fopen(parameter, "r");
+
+                if (inputfileptr == NULL)
+                {
+                    printf("The input file specified could not be opened. Make sure the file name and path is correct"
+                           " and that the file exists\n");
+                    printf("Give the input file in the following format: -fi <valid path to the existing text file>\n");
+                    return EXIT_FAILURE;
+                }
+
+                if (operation == -1)
+                {
+                    printf("The operation type must be specified before the input file is given\n");
+                    printf("Specify this with '-e' for encryption or '-d' for decryption\n");
+                    return EXIT_FAILURE;
+                }
+                else if (method == -1)
+                {
+                    printf("The chaining method type must be specified before the input file is given\n");
+                    printf("Specify this with '-cbc <length>' or '-cfb <length>'\n");
+                    return EXIT_FAILURE;
+                }
+                else if (operation == false) // Encrypt
+                {
+                    // Take message as ASCII input
+                    fscanf(inputfileptr, "%s", message);
+                    printf("Plaintext message (ASCII): \"%s\"\n", message);
+                }
+                else // Deprypt
+                {
+                    // Take message as hex input
+                    char temp_input[MAX_REQ_LEN];
+                    fscanf(inputfileptr, "%s", temp_input);
+                    parameter = temp_input;
+                    message_len = strlen(parameter);
+                    if (method)
+                    {
+                        if (message_len % 16 != 0)
+                        {
+                            printf("The encrypted input does not have the correct number of bits\n");
+                            printf("(%d / 2) is not a multiple of 8 bytes (64 bits)\n", message_len);
+                            return EXIT_FAILURE;
+                        }
+                    }
+                    else
+                    {
+                        if (message_len % 32 != 0)
+                        {
+                            printf("The encrypted input does not have the correct number of bits\n");
+                            printf("(%d / 2) is not a multiple of 16 bytes (128 bits)\n", message_len);
+                            return EXIT_FAILURE;
+                        }
+                    }
+                    message_len /= 2;
+
+                    if (message_len > MAX_REQ_LEN)
+                    {
+                        printf("The input is too long, a maximum of %d bytes may be given in the file with '-fi <file "
+                               "name>'\n", MAX_REQ_LEN);
+                        return EXIT_FAILURE;
+                    }
+                    else
+                    {
+                        // Convert from hex string to int array
+                        int pos;
+                        char current_number[2];
+                        for (pos = 0; pos < message_len; pos++)
+                        {
+                            strncpy(current_number, parameter, 2); // Retrieve one byte (two hex chars)
+                            message[pos] = (unsigned char) strtol(current_number, NULL,
+                                                                  16); // Get the integer value from the byte
+                            parameter += 2; // Move to the next byte
+                        }
+
+                        printf("Encrypted message (HEX): ");
+                        print_c_string(message, message_len, true);
+                        printf("\n");
+                    }
+                }
+                i++; //skip over the value parameter that follows this parameter
+            }
+            else if (strstr(argv[i], "-fo") != NULL) // Set the output file name
+            {
+                //TODO should the file out parameter be compulsory?
+                //TODO is any validation needed for the output file name?
+                //TODO should the 'CBC output'/'CFB output' folders be automatically added to the file names of the
+                // input and output files?
+                args[5] = true;
+                parameter = argv[i + 1];
+                strncpy(output_file_name, parameter, MAX_REQ_LEN);
+
+                i++; //skip over the value parameter that follows this parameter
+            }
+            else if (strstr(argv[i], "-streamlen") != NULL) // Set the stream length for cfb
+            {
+                //TODO where should this be used?
+                //TODO verify that this parameter is given when cfb is selected
+                args[6] = true;
+                parameter = argv[i + 1];
+                CFBlen = atoi(parameter);
+                if (CFBlen == 0)
+                {
+                    printf("The parameter '%s' given as the stream length is invalid\n", parameter);
+                    printf("Specify this with '-streamlen <value>' where value is 8, 64 or 128\n");
+                    return EXIT_FAILURE;
+                }
+                else if (!(CFBlen == 8 || CFBlen == 64 || CFBlen == 128))
+                {
+                    printf("The parameter '%s' given as the stream length is invalid. Valid values are 8, 64 or 128\n",
+                           parameter);
+                    printf("Specify this with '-streamlen <value>' where value is 8, 64 or 128\n");
+                    return EXIT_FAILURE;
+                }
+                i++; //skip over the value parameter that follows this parameter
+            }
+            else if (strstr(argv[i], "-h") != NULL) // show help
+            {
+                printf("Parameters:\n"
+                       "-e encryption\n"
+                       "-d decryption\n"
+                       "-cbc <len> cbc encryption/decryption\n"
+                       "-cfb <len> cfb encryption/decryption\n"
+                       "<len> either 128, 192 or 256\n"
+                       "-t <text to decrypt>\n"
+                       "-key <password>\n"
+                       "-iv <initialization vector>\n"
+                       "-fi <input file>\n"
+                       "-fo <output file>\n"
+                       "-streamlen <len> length of the stream ( for cfb: either 8, 64 or 128)\n"
+                       "-h help\n\n"
+                       "Example usage:\n"
+                       "1.-e -cbc 128 -fi <input file> -fo <encrypted file> -key <password> -iv <initialization "
+                       "vector>\n"
+                       "2.  -d -cbc 192 -fi <encrypted file> -fo <decrypted file> -key <password> -iv <initialization"
+                       " vector>\n "
+                       "3.  -d -cfb 192 -fi <encrypted file> -fo <decrypted file> -key <password> -iv <initialization"
+                       " vector> \n"
+                       "4.  -e -cfb 256 -t <text>  -key <password> -iv <initialization vector> -streamlen <len>\n");
+                return EXIT_SUCCESS;
+            }
+            else
                 printf("Invalid parameter: %s\n", argv[i]);
         }
     }
@@ -450,7 +639,8 @@ int main(int argc, char *argv[])
             message_len = strlen((char *) message);
             print_c_string(message, message_len, false);
             printf("\"\n\n");
-        } else // Encrypt
+        }
+        else // Encrypt
         {
             // Encrypt the input with CFB and print
             CFB_encrypt(width, state_array, num_blocks, IV, user_key);
@@ -465,7 +655,8 @@ int main(int argc, char *argv[])
             print_c_string(message, num_blocks * 8, true);
             printf("\n\n");
         }
-    } else // CBC method
+    }
+    else // CBC method
     {
         // Determine the number of blocks
         int num_blocks = message_len / 16;
@@ -497,7 +688,8 @@ int main(int argc, char *argv[])
             message_len = strlen((char *) message);
             print_c_string(message, message_len, false);
             printf("\"\n\n");
-        } else // Encrypt
+        }
+        else // Encrypt
         {
             // Encrypt the input with CBC and print
             CBC_encrypt(width, state_array, num_blocks, IV, user_key);
@@ -630,7 +822,8 @@ void AES_word_rotate(int word[], int length, int rotations, bool inverse)
 
         for (i = pivot; i < length; i++) // Populate the front with the other values from the back
             word[i - pivot] = old[i];
-    } else // Shift the items in the front to the back
+    }
+    else // Shift the items in the front to the back
     {
         for (i = 0; i < pivot; i++) // Populate the front with the items from the back
             word[i] = old[i + rotations];
@@ -683,17 +876,20 @@ void AES_key_expansion(int width, int expanded_key[], int user_key[])
         expansion = AES128_EXPANSION;
         sub_expansion = AES128_SUB_EXPANSION;
         user_key_size = AES128_USER_KEY_SIZE;
-    } else if (width == AES192)
+    }
+    else if (width == AES192)
     {
         expansion = AES192_EXPANSION;
         sub_expansion = AES192_SUB_EXPANSION;
         user_key_size = AES192_USER_KEY_SIZE;
-    } else if (width == AES256)
+    }
+    else if (width == AES256)
     {
         expansion = AES256_EXPANSION;
         sub_expansion = AES256_SUB_EXPANSION;
         user_key_size = AES256_USER_KEY_SIZE;
-    } else
+    }
+    else
         return;
 
     int byte_pos;
@@ -711,7 +907,7 @@ void AES_key_expansion(int width, int expanded_key[], int user_key[])
     // Fill the expanded key until the required length is reached
     int expanded_pos;
     int sub_pos;
-    int rcon  = 1;
+    int rcon = 1;
     for (expanded_pos = 0; expanded_pos < expansion; expanded_pos++)
     {
         AES_key_scheduler(temp, rcon);
@@ -930,15 +1126,18 @@ bool AES_decrypt(int width, int state_output[4][4], int expanded_key[])
     {
         number_of_rounds = AES128_ROUNDS;
         key_size = AES128_KEY_SIZE;
-    } else if (width == AES192)
+    }
+    else if (width == AES192)
     {
         number_of_rounds = AES192_ROUNDS;
         key_size = AES192_KEY_SIZE;
-    } else if (width == AES256)
+    }
+    else if (width == AES256)
     {
         number_of_rounds = AES256_ROUNDS;
         key_size = AES256_KEY_SIZE;
-    } else
+    }
+    else
         return EXIT_FAILURE;
 
     int key_index = key_size - 16; // Start at the end of the key and work backwards
@@ -1085,7 +1284,7 @@ bool CFB_encrypt(int width, unsigned char message[][8], int num_blocks, int IV[1
     else
         return EXIT_FAILURE;
 
-    int expanded_key[key_size  + 32]; // Allocate more space since AES_key_expansion deliberately writes out of bounds
+    int expanded_key[key_size + 32]; // Allocate more space since AES_key_expansion deliberately writes out of bounds
     AES_key_expansion(width, expanded_key, user_key);
 
     int i;
@@ -1138,7 +1337,7 @@ bool CFB_decrypt(int width, unsigned char message[][8], int num_blocks, int IV[1
     else
         return EXIT_FAILURE;
 
-    int expanded_key[key_size  + 32]; // Allocate more space since AES_key_expansion deliberately writes out of bounds
+    int expanded_key[key_size + 32]; // Allocate more space since AES_key_expansion deliberately writes out of bounds
     AES_key_expansion(width, expanded_key, user_key);
 
     int i;
