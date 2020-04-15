@@ -16,6 +16,29 @@ int main(int argc, char *argv[])
     int IV[16];
     int user_key[32];
 
+    char help_message[] = "./AES -arg1 -arg2 ...\n"
+                        "\t\n"
+                        "\t The following parameters should then be given in this order:"
+                        "\t-e (encryption), or\n"
+                        "\t-d (decryption)\n"
+                        "\t-cbc <len> (Ciphen Block Chaining, <len> either 128, 192 or 256), or\n"
+                        "\t-cfb <len> (Cipher Feedback, <len> either 128, 192 or 256)\n"
+                        "\t-t <text to decrypt>\n"
+                        "\t-key <password>\n"
+                        "\t-iv <initialization vector>\n"
+                        "\t-fi <input file>\n"
+                        "\t-fo <output file>\n"
+                        "\t-streamlen <len> (length of the stream CFB, either 8, 64 or 128)\n"
+                        "\t-h help\n\n"
+                        "\tExample usage:\n"
+                        "\t1.\t-e -cbc 128 -fi \"input.txt\" -fo \"output.txt\" -key \"this is a password\" -iv \"initialization v\""
+                        "\tvector>\n"
+                        "\t2.\t-d -cbc 192 -fi <encrypted file> -fo <decrypted file> -key <password> -iv <initialization"
+                        "\t vector>\n "
+                        "\t3.\t-d -cfb 192 -fi <encrypted file> -fo <decrypted file> -key <password> -iv <initialization"
+                        "\t vector> \n"
+                        "\t4.\t-e -cfb 256 -t \"Put your text here\"  -key <password> -iv <initialization vector> -streamlen 64\n";
+
     for (i = 0; i < MAX_REQ_LEN; i++)
         message[i] = '\0';
 
@@ -107,9 +130,9 @@ int main(int argc, char *argv[])
                     else
                         user_key_size = AES256_USER_KEY_SIZE;
 
-                    char key[user_key_size];
+                    char key[user_key_size + 1];
                     int pos;
-                    for (pos = 0; pos < user_key_size; pos++)
+                    for (pos = 0; pos < user_key_size + 1; pos++)
                         key[pos] = '\0';
 
                     strncpy(key, argv[i + 1], user_key_size);
@@ -175,9 +198,9 @@ int main(int argc, char *argv[])
             } else if (strstr(argv[i], "-iv") != NULL) // Set the initialization vector
             {
                 args[4] = true;
-                char iv[16];
+                char iv[17];
                 int pos;
-                for (pos = 0; pos < 16; pos++)
+                for (pos = 0; pos < 17; pos++)
                     iv[pos] = '\0';
 
                 strncpy(iv, argv[i + 1], 16);
@@ -258,27 +281,7 @@ int main(int argc, char *argv[])
             }
             else if (strstr(argv[i], "-h") != NULL) // show help
             {
-                printf("Parameters:\n"
-                       "-e encryption\n"
-                       "-d decryption\n"
-                       "-cbc <len> cbc encryption/decryption\n"
-                       "-cfb <len> cfb encryption/decryption\n"
-                       "<len> either 128, 192 or 256\n"
-                       "-t <text to decrypt>\n"
-                       "-key <password>\n"
-                       "-iv <initialization vector>\n"
-                       "-fi <input file>\n"
-                       "-fo <output file>\n"
-                       "-streamlen <len> length of the stream ( for cfb: either 8, 64 or 128)\n"
-                       "-h help\n\n"
-                       "Example usage:\n"
-                       "1.-e -cbc 128 -fi <input file> -fo <encrypted file> -key <password> -iv <initialization "
-                       "vector>\n"
-                       "2.  -d -cbc 192 -fi <encrypted file> -fo <decrypted file> -key <password> -iv <initialization"
-                       " vector>\n "
-                       "3.  -d -cfb 192 -fi <encrypted file> -fo <decrypted file> -key <password> -iv <initialization"
-                       " vector> \n"
-                       "4.  -e -cfb 256 -t <text>  -key <password> -iv <initialization vector> -streamlen <len>\n");
+                printf("Usage:\n%s", help_message);
                 return EXIT_SUCCESS;
             }
             else
@@ -286,31 +289,9 @@ int main(int argc, char *argv[])
         }
     }
 
-    if (!args[0] || !args[1] || !args[2] || !args[4] )
+    if (!args[0] || !args[1] || !args[2] || !args[4])
     {
-        printf("All parameters are not given\nUsage:\n"
-               "./AES -arg1 -arg2 ...\n"
-               "\t\n"
-               "\t-e encryption\n"
-               "\t-d decryption\n"
-               "\t-cbc <len> cbc encryption/decryption\n"
-               "\t-cfb <len> cfb encryption/decryption\n"
-               "\t<len> either 128, 192 or 256\n"
-               "\t-t <text to decrypt>\n"
-               "\t-key <password>\n"
-               "\t-iv <initialization vector>\n"
-               "\t-fi <input file>\n"
-               "\t-fo <output file>\n"
-               "\t-streamlen <len> length of the stream ( for cfb: either 8, 64 or 128)\n"
-               "\t-h help\n\n"
-               "\tExample usage:\n"
-               "\t1.-e -cbc 128 -fi <input file> -fo <encrypted file> -key <password> -iv <initialization "
-               "\tvector>\n"
-               "\t2.  -d -cbc 192 -fi <encrypted file> -fo <decrypted file> -key <password> -iv <initialization"
-               "\t vector>\n "
-               "\t3.  -d -cfb 192 -fi <encrypted file> -fo <decrypted file> -key <password> -iv <initialization"
-               "\t vector> \n"
-               "\t4.  -e -cfb 256 -t <text>  -key <password> -iv <initialization vector> -streamlen <len>\n");
+        printf("All parameters are not given\nUsage:\n%s", help_message);
         printf("\nperforming tests...\n\n");
 
         //    **** TESTING PURPOSES **** /*
@@ -491,30 +472,10 @@ int main(int argc, char *argv[])
 
     if (method) // CFB method
     {
-        // Determine the number of blocks
-        int num_blocks = message_len / 8;
-        if (message_len % 8 != 0)
-            num_blocks++;
-
-        // Process all the blocks from the message
-        unsigned char state_array[MAX_REQ_LEN / 8][8];
-        int current_block;
-        for (current_block = 0; current_block < num_blocks; current_block++)
-        {
-            for (i = 0; i < 8; i++)
-                state_array[current_block][i] = message[(8 * current_block) + i];
-        }
-
         if (operation) // Decrypt
         {
             // Decrypt the input with CFB and print
-            CFB_decrypt(width, state_array, num_blocks, IV, user_key);
-
-            for (current_block = 0; current_block < num_blocks; current_block++)
-            {
-                for (i = 0; i < 8; i++)
-                    message[(8 * current_block) + i] = state_array[current_block][i];
-            }
+            CFB_decrypt(width, message, message_len, CFBlen, IV, user_key);
 
             printf("Decrypted (ASCII):\n\"");
             message_len = strlen((char *) message);
@@ -524,16 +485,13 @@ int main(int argc, char *argv[])
         else // Encrypt
         {
             // Encrypt the input with CFB and print
-            CFB_encrypt(width, state_array, num_blocks, IV, user_key);
+            CFB_encrypt(width, message, message_len, CFBlen, IV, user_key);
 
-            for (current_block = 0; current_block < num_blocks; current_block++)
-            {
-                for (i = 0; i < 8; i++)
-                    message[(8 * current_block) + i] = state_array[current_block][i];
-            }
-
+            int num_blocks = message_len / CFBlen;
+            if (message_len % CFBlen != 0)
+                num_blocks++;
             printf("Encrypted (HEX):\n");
-            print_c_string(message, num_blocks * 8, true);
+            print_c_string(message, num_blocks * CFBlen, true);
             printf("\n\n");
         }
     }
@@ -1150,7 +1108,7 @@ bool CBC_decrypt(int width, int state_output_blocks[][4][4], int num_blocks, int
 
 
 // The Cipher Feedback encryption algorithm
-bool CFB_encrypt(int width, unsigned char message[][8], int num_blocks, int IV[16], int user_key[])
+bool CFB_encrypt(int width, unsigned char message[], int message_len, int CFBlen, int IV[16], int user_key[])
 {
     int key_size;
 
@@ -1175,6 +1133,11 @@ bool CFB_encrypt(int width, unsigned char message[][8], int num_blocks, int IV[1
     for (i = 0; i < 16; i++)
         current_vector[i] = IV[i];
 
+    // Determine the number of blocks
+    int num_blocks = message_len / CFBlen;
+    if (message_len % CFBlen != 0)
+        num_blocks++;
+
     int message_pos;
     for (message_pos = 0; message_pos < num_blocks; message_pos++)
     {
@@ -1184,18 +1147,18 @@ bool CFB_encrypt(int width, unsigned char message[][8], int num_blocks, int IV[1
         // Encrypt the block
         AES_encrypt(width, current_block, expanded_key);
 
-        // Take first 8 bytes in the block and XOR with the plaintext bytes to get the ciphertext bytes
+        // Take first CFBlen bytes in the block and XOR with the plaintext bytes to get the ciphertext bytes
         char_unblockify(current_string, current_block, 0);
-        for (i = 0; i < 8; i++)
-            message[message_pos][i] ^= current_string[i];
+        for (i = 0; i < CFBlen; i++)
+            message[(CFBlen * message_pos) + i] ^= current_string[i];
         // Discard the rest of the block
 
-        // Shift the current vector to the left by 8 bytes
-        for (i = 0; i < 8; i++)
-            current_vector[i] = current_vector[i + 8];
-        // Put the ciphertext bytes in the last 8 bytes
-        for (i = 0; i < 8; i++)
-            current_vector[i + 8] = message[message_pos][i];
+        // Shift the current vector to the left by CFBlen bytes
+        for (i = 0; i < CFBlen; i++)
+            current_vector[i] = current_vector[i + CFBlen];
+        // Put the ciphertext bytes in the last CFBlen bytes
+        for (i = 0; i < CFBlen; i++)
+            current_vector[i + CFBlen] = message[(CFBlen * message_pos) + i];
     }
 
     return EXIT_SUCCESS;
@@ -1203,7 +1166,7 @@ bool CFB_encrypt(int width, unsigned char message[][8], int num_blocks, int IV[1
 
 
 // The Cipher Feedback decryption algorithm
-bool CFB_decrypt(int width, unsigned char message[][8], int num_blocks, int IV[16], int user_key[])
+bool CFB_decrypt(int width, unsigned char message[], int message_len, int CFBlen, int IV[16], int user_key[])
 {
     int key_size;
 
@@ -1228,6 +1191,11 @@ bool CFB_decrypt(int width, unsigned char message[][8], int num_blocks, int IV[1
     for (i = 0; i < 16; i++)
         current_vector[i] = IV[i];
 
+    // Determine the number of blocks
+    int num_blocks = message_len / CFBlen;
+    if (message_len % CFBlen != 0)
+        num_blocks++;
+
     int message_pos;
     for (message_pos = 0; message_pos < num_blocks; message_pos++)
     {
@@ -1237,17 +1205,17 @@ bool CFB_decrypt(int width, unsigned char message[][8], int num_blocks, int IV[1
         // Encrypt the block
         AES_encrypt(width, current_block, expanded_key);
 
-        // Shift the current vector to the left by 8 bytes
-        for (i = 0; i < 8; i++)
-            current_vector[i] = current_vector[i + 8];
-        // Put the ciphertext bytes in the last 8 bytes
-        for (i = 0; i < 8; i++)
-            current_vector[i + 8] = message[message_pos][i];
+        // Shift the current vector to the left by CFBlen bytes
+        for (i = 0; i < CFBlen; i++)
+            current_vector[i] = current_vector[i + CFBlen];
+        // Put the ciphertext bytes in the last CFBlen bytes
+        for (i = 0; i < CFBlen; i++)
+            current_vector[i + CFBlen] = message[(CFBlen * message_pos) + i];
 
-        // Take first 8 bytes in the block and XOR with the ciphertext bytes to get the plaintext bytes
+        // Take first CFBlen bytes in the block and XOR with the ciphertext bytes to get the plaintext bytes
         char_unblockify(current_string, current_block, 0);
-        for (i = 0; i < 8; i++)
-            message[message_pos][i] ^= current_string[i];
+        for (i = 0; i < CFBlen; i++)
+            message[(CFBlen * message_pos) + i] ^= current_string[i];
         // Discard the rest of the block
     }
 
