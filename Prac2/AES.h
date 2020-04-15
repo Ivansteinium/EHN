@@ -28,6 +28,9 @@
 #define AES128_SUB_EXPANSION 3
 #define AES192_SUB_EXPANSION 5
 #define AES256_SUB_EXPANSION 7
+#define CFB8 1 // Default
+#define CFB64 8
+#define CFB128 16
 
 
 const int S_BOX[2][16][16] = {{{0x63, 0x7c, 0x77, 0x7b, 0xf2, 0x6b, 0x6f, 0xc5, 0x30, 0x01, 0x67, 0x2b, 0xfe, 0xd7, 0xab, 0x76}, // Forward
