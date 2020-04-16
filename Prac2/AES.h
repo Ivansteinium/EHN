@@ -7,7 +7,7 @@
 #include <string.h>
 #include <stdbool.h>
 
-#define MAX_REQ_LEN 12800 // pfft daar is baie memory
+#define MAX_REQ_LEN 128000 // pfft daar is baie memory
 
 // AES constants
 #define AES128 0
@@ -133,6 +133,15 @@ void print_expanded_key(int width, int expanded_key[]);
  * @param hex Output as hexadecimal rather than ASCII if true.
  */
 void print_c_string(unsigned char message[], int message_len, bool hex);
+
+
+/**
+ * Write a message to a file.
+ * @param filename The name of the output file.
+ * @param message The message to be written.
+ * @param message_len The length of the message.
+ */
+void write_to_file(char filename[], unsigned char message[], int message_len);
 
 
 /**

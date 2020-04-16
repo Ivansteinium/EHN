@@ -17,7 +17,7 @@ int main(int argc, char *argv[])
     int IV[16];
     int user_key[32];
 
-    char help_message[] = "\t./AES -arg1 -arg2 ...\n"
+    char help_message[] = "\t./AES -arg1 value1 -arg2 value2...\n"
                         "\t\n"
                         "\tThe following parameters should then be given in this order:\n"
                         "\t-e (encryption), or\n"
@@ -32,9 +32,10 @@ int main(int argc, char *argv[])
                         "\t-streamlen <len> (length of the CFB stream if '-cfb' is given, either 8, 64 or 128)\n"
                         "\t-h help (will show this message)\n\n"
                         "\tExample usage:\n"
-                        "\t1.\t-e -cbc 128 -fi \"input.txt\" -fo \"output.txt\" -key \"Very strong password\" -iv \"Initialization vector\"\n"
-                        "\t2.\t-d -cbc 192 -fi \"encrypted.jpg\" -fo \"image.jpg\" -key \"Very strong password\" -iv \"Initialization vector\"\n"
-                        "\t3.\t-e -cfb 256 -t \"Text to encrypt\" -key \"Very strong password\" -iv \"Initialization vector\" -streamlen 64\n";
+                        "\t1.\t./AES -e -cbc 128 -fi \"input.txt\" -fo \"output.txt\" -key \"Very strong password\" -iv \"Initialization vector\"\n"
+                        "\t2.\t./AES -d -cbc 192 -fi \"encrypted.jpg\" -fo \"image.jpg\" -key \"Very strong password\" -iv \"Initialization vector\"\n"
+                        "\t3.\t./AES -e -cfb 256 -t \"Text to encrypt\" -key \"Very strong password\" -iv \"Initialization vector\" -streamlen 64\n"
+                        "\t4.\t./AES -d -cfb 128 -t D5BF47B56DD1EEC3ABF4B5E0CA5741020FBE6228F3E15FF16F -key \"Very strong password\" -iv \"Initialization vector\" -streamlen 8\n";
 
     for (i = 0; i < MAX_REQ_LEN; i++)
         message[i] = '\0';
@@ -231,6 +232,7 @@ int main(int argc, char *argv[])
 
                 // Take message as ASCII input
                 fscanf(inputfileptr, "%s", message);
+                message_len = size;
                 printf("Plaintext file input: \"%s\"\n", argv[i + 1]);
             } else
             {
@@ -500,7 +502,7 @@ int main(int argc, char *argv[])
 
             if (file_output)
             {
-                // TODO: write output
+                write_to_file(output_file_name, message, message_len);
                 printf("Plaintext file output: \"%s\"\n", output_file_name);
             } else
             {
@@ -517,7 +519,7 @@ int main(int argc, char *argv[])
 
             if (file_output)
             {
-                // TODO: write output
+                write_to_file(output_file_name, message, message_len);
                 printf("Encrypted file output: \"%s\"\n", output_file_name);
             } else
             {
@@ -540,7 +542,7 @@ int main(int argc, char *argv[])
 
             if (file_output)
             {
-                // TODO: write output
+                write_to_file(output_file_name, message, message_len);
                 printf("Plaintext file output: \"%s\"\n", output_file_name);
             } else
             {
@@ -557,7 +559,7 @@ int main(int argc, char *argv[])
 
             if (file_output)
             {
-                // TODO: write output
+                write_to_file(output_file_name, message, message_len);
                 printf("Encrypted file output: \"%s\"\n", output_file_name);
             } else
             {
@@ -654,6 +656,20 @@ void print_c_string(unsigned char message[], int message_len, bool hex)
         else // Print as ASCII character
             printf("%c", message[i]);
     }
+}
+
+
+// Write a message to a file
+void write_to_file(char filename[], unsigned char message[], int message_len)
+{
+    FILE *outputfileptr;
+    outputfileptr = fopen(filename, "w");
+
+    int i;
+    for (i = 0; i < message_len; i++)
+        fprintf(outputfileptr, "%c", message[i]);
+
+    fclose(outputfileptr);
 }
 
 
