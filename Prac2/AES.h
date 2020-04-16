@@ -89,18 +89,18 @@ int main(int argc, char *argv[]);
 /**
  * Convert a char array to 4x4 block of hex.
  * @param message A c-string containing the message to be converted.
- * @param state_output The output as a 4x4 integer array.
+ * @param current_block The output as a 4x4 integer array.
  * @param start_pos The position from which to start the conversion in the string.
  */
-void char_blockify(unsigned char message[], int state_output[4][4], int start_pos);
+void char_blockify(unsigned char message[], int current_block[4][4], int start_pos);
 
 
 /**
  * Convert an integer array to 4x4 block of hex.
  * @param message An integer array containing the values to be converted.
- * @param state_output The output as a 4x4 integer array.
+ * @param current_block The output as a 4x4 integer array.
  */
-void hex_blockify(int message[16], int state_output[4][4]);
+void hex_blockify(int message[16], int current_block[4][4]);
 
 
 /**
@@ -113,9 +113,9 @@ void print_word(int word[], int length);
 
 /**
  * Output a 4x4 block to the terminal as a block of hex.
- * @param state_output The block to be printed.
+ * @param current_block The block to be printed.
  */
-void print_block(int state_output[4][4]);
+void print_block(int current_block[4][4]);
 
 
 /**
@@ -138,10 +138,10 @@ void print_c_string(unsigned char message[], int message_len, bool hex);
 /**
  * Convert block back to c-string.
  * @param message The output array, must exist before being passed in.
- * @param state_input The block to be converted.
+ * @param current_block The block to be converted.
  * @param start_pos The position to start converting in the output.
  */
-void char_unblockify(unsigned char message[], int state_input[4][4], int start_pos);
+void char_unblockify(unsigned char message[], int current_block[4][4], int start_pos);
 
 
 /**
@@ -165,10 +165,10 @@ int AES_s_box_transform(int input, bool inverse);
 
 /**
  * Core key operation, transform of previous 4 bytes.
- * @param temp The bytes to be transformed, also the output.
+ * @param word The bytes to be transformed, also the output.
  * @param rcon The round constant to be used.
  */
-void AES_key_scheduler(int temp[4], int rcon);
+void AES_key_scheduler(int word[4], int rcon);
 
 
 /**
@@ -183,6 +183,7 @@ int AES_exp_2(int previous);
  * Main key expansion function.
  * @param width Use the macros AES128, AES192 or AES256 to select which width to use.
  * @param expanded_key The expanded key output, the correct length array (AESxxx_KEY_SIZE + 32) must exist and be passed in here.
+ * Allocate more space since AES_key_expansion deliberately writes out of bounds.
  * @param user_key The user key to be expanded.
  */
 void AES_key_expansion(int width, int expanded_key[], int user_key[]);
@@ -190,18 +191,18 @@ void AES_key_expansion(int width, int expanded_key[], int user_key[]);
 
 /**
  * Substitute a block through the S-transform.
- * @param state_output The block to be transformed, also the output.
+ * @param current_block The block to be transformed, also the output.
  * @param inverse Perform the inverse transform if true.
  */
-void AES_sub_bytes(int state_output[4][4], bool inverse);
+void AES_sub_bytes(int current_block[4][4], bool inverse);
 
 
 /**
  * The AES row shifting function.
- * @param state_output The block to be shifted, also the output.
+ * @param current_block The block to be shifted, also the output.
  * @param inverse Perform the inverse shift if true.
  */
-void AES_shift_rows(int state_output[4][4], bool inverse);
+void AES_shift_rows(int current_block[4][4], bool inverse);
 
 
 /**
@@ -215,63 +216,63 @@ int AES_dot_product(int a, int b);
 
 /**
  * Perform the dot product of the block and the prime matrix.
- * @param state_output The block to be used in the dot product, also the output.
+ * @param current_block The block to be used in the dot product, also the output.
  * @param inverse Perform the inverse dot product if true.
  */
-void AES_mix_cols(int state_output[4][4], bool inverse);
+void AES_mix_cols(int current_block[4][4], bool inverse);
 
 
 /**
  * XOR a block with the expanded key at a certain index
- * @param state_output The block to which the round key should be added, also the output.
+ * @param current_block The block to which the round key should be added, also the output.
  * @param expanded_key The expanded key to use.
  * @param key_index The index in the key to start from.
  */
-void AES_add_round_key(int state_output[4][4], int expanded_key[], int key_index);
+void AES_add_round_key(int current_block[4][4], int expanded_key[], int key_index);
 
 
 /**
  * The AES encryption algorithm.
  * @param width Use the macros AES128, AES192 or AES256 to select which width to use.
- * @param state_output The block to be encrypted, also the output.
+ * @param current_block The block to be encrypted, also the output.
  * @param expanded_key The expanded key to be used.
  * @return Successful execution.
  */
-bool AES_encrypt(int width, int state_output[4][4], int expanded_key[]);
+bool AES_encrypt(int width, int current_block[4][4], int expanded_key[]);
 
 
 /**
  * The AES decryption algorithm.
  * @param width Use the macros AES128, AES192 or AES256 to select which width to use.
- * @param state_output The block to be decrypted, also the output.
+ * @param current_block The block to be decrypted, also the output.
  * @param expanded_key The expanded key to be used.
  * @return Successful execution.
  */
-bool AES_decrypt(int width, int state_output[4][4], int expanded_key[]);
+bool AES_decrypt(int width, int current_block[4][4], int expanded_key[]);
 
 
 /**
  * The Cipher Block Chaining encryption algorithm.
  * @param width Use the macros AES128, AES192 or AES256 to select which width to use.
- * @param state_output_blocks The blocks to be encrypted, also the output.
- * @param num_blocks The number of blocks to be encrypted.
+ * @param message The message to be encrypted, also the output.
+ * @param message_len The length of the message.
  * @param IV The initialization vector to be used.
  * @param user_key The user key to be used.
  * @return Successful execution.
  */
-bool CBC_encrypt(int width, int state_output_blocks[][4][4], int num_blocks, int IV[16], int user_key[]);
+bool CBC_encrypt(int width, unsigned char message[], int message_len, int IV[16], int user_key[]);
 
 
 /**
  * The Cipher Block Chaining decryption algorithm.
  * @param width Use the macros AES128, AES192 or AES256 to select which width to use.
- * @param state_output_blocks The blocks to be decrypted, also the output.
- * @param num_blocks The number of blocks to be decrypted.
+ * @param message The message to be decrypted, also the output.
+ * @param message_len The length of the message.
  * @param IV The initialization vector to be used.
  * @param user_key The user key to be used.
  * @return Successful execution.
  */
-bool CBC_decrypt(int width, int state_output_blocks[][4][4], int num_blocks, int IV[16], int user_key[]);
+bool CBC_decrypt(int width, unsigned char message[], int message_len, int IV[16], int user_key[]);
 
 
 /**
@@ -279,12 +280,12 @@ bool CBC_decrypt(int width, int state_output_blocks[][4][4], int num_blocks, int
  * @param width Use the macros AES128, AES192 or AES256 to select which width to use.
  * @param message The stream to be encrypted, also the output.
  * @param message_len The length of the message.
- * @param CFBlen The length of the chain to use.
+ * @param CFB_len The length of the chain to use.
  * @param IV The initialization vector to be used.
  * @param user_key The user key to be used.
  * @return Successful execution.
  */
-bool CFB_encrypt(int width, unsigned char message[], int message_len, int CFBlen, int IV[16], int user_key[]);
+bool CFB_encrypt(int width, unsigned char message[], int message_len, int CFB_len, int IV[16], int user_key[]);
 
 
 /**
@@ -292,12 +293,12 @@ bool CFB_encrypt(int width, unsigned char message[], int message_len, int CFBlen
  * @param width Use the macros AES128, AES192 or AES256 to select which width to use.
  * @param message The stream to be decrypted, also the output.
  * @param message_len The length of the message.
- * @param CFBlen The length of the chain to use.
+ * @param CFB_len The length of the chain to use.
  * @param IV The initialization vector to be used.
  * @param user_key The user key to be used.
  * @return Successful execution.
  */
-bool CFB_decrypt(int width, unsigned char message[], int message_len, int CFBlen, int IV[16], int user_key[]);
+bool CFB_decrypt(int width, unsigned char message[], int message_len, int CF_Blen, int IV[16], int user_key[]);
 
 
 #endif //EHN_PRAC2_AES_H
