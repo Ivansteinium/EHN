@@ -1,6 +1,9 @@
 main: AES.c AES.h
 	gcc AES.c -o Compiled/AES
 
+test: main
+	./Compiled/AES
+
 cbc128e: main
 	./Compiled/AES -e -cbc 128 -t "Lorem ipsum dolor sit amet." -key "Very strong password" -iv "Initialization vector"
 

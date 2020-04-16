@@ -17,9 +17,9 @@ int main(int argc, char *argv[])
     int IV[16];
     int user_key[32];
 
-    char help_message[] = "./AES -arg1 -arg2 ...\n"
+    char help_message[] = "\t./AES -arg1 -arg2 ...\n"
                         "\t\n"
-                        "\t The following parameters should then be given in this order:"
+                        "\tThe following parameters should then be given in this order:\n"
                         "\t-e (encryption), or\n"
                         "\t-d (decryption)\n"
                         "\t-cbc <len> (Ciphen Block Chaining, <len> either 128, 192 or 256), or\n"
@@ -30,15 +30,11 @@ int main(int argc, char *argv[])
                         "\t-fi <input file>\n"
                         "\t-fo <output file>\n"
                         "\t-streamlen <len> (length of the CFB stream if '-cfb' is given, either 8, 64 or 128)\n"
-                        "\t-h help\n\n"
+                        "\t-h help (will show this message)\n\n"
                         "\tExample usage:\n"
-                        "\t1.\t-e -cbc 128 -fi \"input.txt\" -fo \"output.txt\" -key \"this is a password\" -iv \"initialization v\""
-                        "\tvector>\n"
-                        "\t2.\t-d -cbc 192 -fi <encrypted file> -fo <decrypted file> -key <password> -iv <initialization"
-                        "\t vector>\n "
-                        "\t3.\t-d -cfb 192 -fi <encrypted file> -fo <decrypted file> -key <password> -iv <initialization"
-                        "\t vector> \n"
-                        "\t4.\t-e -cfb 256 -t \"Put your text here\"  -key <password> -iv <initialization vector> -streamlen 64\n";
+                        "\t1.\t-e -cbc 128 -fi \"input.txt\" -fo \"output.txt\" -key \"Very strong password\" -iv \"Initialization vector\"\n"
+                        "\t2.\t-d -cbc 192 -fi \"encrypted.jpg\" -fo \"image.jpg\" -key \"Very strong password\" -iv \"Initialization vector\"\n"
+                        "\t3.\t-e -cfb 256 -t \"Text to encrypt\" -key \"Very strong password\" -iv \"Initialization vector\" -streamlen 64\n";
 
     for (i = 0; i < MAX_REQ_LEN; i++)
         message[i] = '\0';
@@ -297,7 +293,7 @@ int main(int argc, char *argv[])
             i++; //skip over the value parameter that follows this parameter
         } else if (strstr(argv[i], "-h") != NULL) // show help
         {
-            printf("Usage:\n%s", help_message);
+            printf("\nUsage:\n%s", help_message);
             return EXIT_SUCCESS;
         } else
             printf("Invalid parameter: %s\n", argv[i]);
@@ -305,7 +301,7 @@ int main(int argc, char *argv[])
 
     if (!args[0] || !args[1] || !args[2] || !args[4])
     {
-        printf("All parameters are not given\nUsage:\n%s\n\nperforming tests...\n\n", help_message);
+        printf("All parameters are not given\n\nUsage:\n%s\n\nPerforming tests:\n\n", help_message);
 
         //    **** TESTING PURPOSES **** /*
         int AES128_user_key[AES128_USER_KEY_SIZE] = {0x74, 0x65, 0x73, 0x74, 0x20, 0x66, 0x75, 0x6E, 0x63, 0x74, 0x69, 0x6F,
