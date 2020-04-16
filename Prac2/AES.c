@@ -44,7 +44,7 @@ int main(int argc, char *argv[])
         message[i] = '\0';
 
     // Greeting
-    printf("EHN 410 Group 12 Practical 2\n\n");
+    printf("\nEHN 410 Group 12 Practical 2\n\n");
 
     for (i = 1; i < argc; i++)
     {
@@ -279,11 +279,11 @@ int main(int argc, char *argv[])
             {
                 CFB_len = CFB8;
                 printf("8-bit CFB selected\n");
-            } else if (!strcmp(argv[i + 1], "192"))
+            } else if (!strcmp(argv[i + 1], "64"))
             {
                 CFB_len = CFB64;
                 printf("64-bit CFB selected\n");
-            } else if (!strcmp(argv[i + 1], "256"))
+            } else if (!strcmp(argv[i + 1], "128"))
             {
                 CFB_len = CFB128;
                 printf("128-bit CFB selected\n");

@@ -206,7 +206,7 @@ void AES_shift_rows(int current_block[4][4], bool inverse);
 
 
 /**
- * Finite field multiplication according to AES specifications.
+ * Finite field multiplication.
  * @param a The first value.
  * @param b The second value.
  * @return The result of the dot product.
