@@ -9,11 +9,11 @@ int main(int argc, char *argv[])
     int method = -1; // CBC if false, CFB if true
     int operation = -1; // encrypt if false, decrypt if true
     int width = -1; // AES128, AES192, AES256 macros
-    int CFB_len = CFB8; // CFB8 (default), CFB64 , CFB128 marcos
+    int CFB_len = -1; // CFB8 (default), CFB64 , CFB128 marcos
     bool file_output = false;
     int message_len = 0;
-    unsigned char message[MAX_REQ_LEN];
-    char output_file_name[512];
+    unsigned char *message = NULL;
+    char output_file_name[256];
     int IV[16];
     int user_key[32];
 
@@ -37,15 +37,12 @@ int main(int argc, char *argv[])
                         "\t3.\t./AES -e -cfb 256 -t \"Text to encrypt\" -key \"Very strong password\" -iv \"Initialization vector\" -streamlen 64\n"
                         "\t4.\t./AES -d -cfb 128 -t D5BF47B56DD1EEC3ABF4B5E0CA5741020FBE6228F3E15FF16F -key \"Very strong password\" -iv \"Initialization vector\" -streamlen 8\n";
 
-    for (i = 0; i < MAX_REQ_LEN; i++)
-        message[i] = '\0';
-
     // Greeting
     printf("\nEHN 410 Group 12 Practical 2\n\n");
 
     for (i = 1; i < argc; i++)
     {
-        if (strstr(argv[i], "-cbc") != NULL) // Set chaining method to cbc and length
+        if (strstr(argv[i], "-cbc") != NULL) // Set chaining method to CBC and length
         {
             args[0] = true;
             method = false; //set the chaining method
@@ -71,7 +68,7 @@ int main(int argc, char *argv[])
 
             i++; // Skip over the value parameter that follows this parameter
         }
-        else if (strstr(argv[i], "-cfb") != NULL) // Set chaining method to cfb and length
+        else if (strstr(argv[i], "-cfb") != NULL) // Set chaining method to CFB and length
         {
             args[0] = true;
             method = true; //set the chaining method
@@ -128,10 +125,10 @@ int main(int argc, char *argv[])
 
                 char key[user_key_size + 1]; // +1 for null terminator
                 int pos;
-                for (pos = 0; pos < user_key_size + 1; pos++)
+                for (pos = 0; pos < user_key_size + 1; pos++) // Fill with zeroes to pad if needed + null terminator
                     key[pos] = '\0';
 
-                strncpy(key, argv[i + 1], user_key_size);
+                strncpy(key, argv[i + 1], user_key_size); // Copy the user key input
 
                 // Convert from ASCII string to int array
                 for (pos = 0; pos < user_key_size; pos++)
@@ -159,14 +156,20 @@ int main(int argc, char *argv[])
                     return EXIT_FAILURE;
                 } else
                 {
-                    strcpy((char *) message, argv[i + 1]);
+                    message = (unsigned char *) malloc((message_len + 17) * sizeof(unsigned char)); // + 17 if incomplete block to pad with zeroes
+
+                    int pos;
+                    for (pos = 0; pos < message_len + 17; pos++) // Fill with zeroes to pad if needed + null terminator
+                        message[pos] = '\0';
+
+                    strcpy((char *) message, argv[i + 1]); // Copy the message input
                     printf("Plaintext message (ASCII): \"%s\"\n", message);
                 }
             } else // Deprypt
             {
                 // Take message as hex input
                 char * parameter = argv[i + 1];
-                message_len = strlen(parameter) / 2;
+                message_len = strlen(parameter) / 2; // 2 hex chars = 1 byte
 
                 if (message_len > MAX_REQ_LEN)
                 {
@@ -174,8 +177,13 @@ int main(int argc, char *argv[])
                     return EXIT_FAILURE;
                 } else
                 {
-                    // Convert from hex string to int array
+                    message = (unsigned char *) malloc((message_len + 17) * sizeof(unsigned char)); // + 17 if incomplete block to pad with zeroes
+
                     int pos;
+                    for (pos = 0; pos < message_len + 17; pos++) // Fill with zeroes to pad if needed + null terminator
+                        message[pos] = '\0';
+
+                    // Convert from hex string to int array
                     char current_number[2];
                     for (pos = 0; pos < message_len; pos++)
                     {
@@ -196,10 +204,10 @@ int main(int argc, char *argv[])
             args[4] = true;
             char iv[17]; // +1 for null terminator
             int pos;
-            for (pos = 0; pos < 17; pos++)
+            for (pos = 0; pos < 17; pos++) // Fill with zeroes to pad if needed + null terminator
                 iv[pos] = '\0';
 
-            strncpy(iv, argv[i + 1], 16);
+            strncpy(iv, argv[i + 1], 16); // Copy the initialization vector input
 
             // Convert from ASCII string to int array
             for (pos = 0; pos < 16; pos++)
@@ -207,37 +215,64 @@ int main(int argc, char *argv[])
 
             printf("Initialization Vector (ASCII): \"%s\"\n", iv);
             i++; // Skip over the value parameter that follows this parameter
-        } else if (strstr(argv[i], "-fi") != NULL) // read the input file
+        } else if (strstr(argv[i], "-fi") != NULL) // Read the input file
         {
             args[5] = true;
-            FILE *inputfileptr;
 
-            inputfileptr = fopen(argv[i + 1], "r");
-
-            if (inputfileptr == NULL)
+            if (operation == -1)
             {
-                printf("The input file specified could not be opened. "
-                       "Make sure the file name and path is correct and that the file exists\n"
-                       "Give the input file in the following format: -fi <valid path to the existing file>\n");
+                printf("The operation type must be specified before the input file is given\n");
+                printf("Specify this with '-e' for encryption or '-d' for decryption\n");
                 return EXIT_FAILURE;
-            }
-
-            fseek(inputfileptr, 0, SEEK_END); // Seek to end of file
-            int size = ftell(inputfileptr); // Get current file pointer
-            fseek(inputfileptr, 0, SEEK_SET); // Seek back to beginning of file
-
-            if (size < MAX_REQ_LEN)
-            {
-                file_output = true;
-
-                // Take message as ASCII input
-                fscanf(inputfileptr, "%s", message);
-                message_len = size;
-                printf("Plaintext file input: \"%s\"\n", argv[i + 1]);
             } else
             {
-                printf("The file is too large, a maximum of %d bytes may be given with '-fi'\n", MAX_REQ_LEN);
-                return EXIT_FAILURE;
+                FILE *inputfileptr;
+
+                inputfileptr = fopen(argv[i + 1], "rb");
+
+                if (inputfileptr == NULL)
+                {
+                    printf("The input file specified could not be opened. "
+                           "Make sure the file name and path is correct and that the file exists\n"
+                           "Give the input file in the following format: -fi <valid path to the existing file>\n");
+                    return EXIT_FAILURE;
+                }
+
+                fseek(inputfileptr, 0, SEEK_END); // Seek to end of file
+                int size = ftell(inputfileptr); // Get current file pointer => length of the file
+                fseek(inputfileptr, 0, SEEK_SET); // Seek back to beginning of file for use
+
+                if (size < MAX_REQ_LEN)
+                {
+                    file_output = true;
+                    message_len = size;
+
+                    message = (unsigned char *) malloc((message_len + 17) * sizeof(unsigned char)); // + 17 if incomplete block to pad with zeroes
+
+                    int pos;
+                    for (pos = 0; pos < message_len + 17; pos++) // Fill with zeroes to pad if needed + null terminator
+                        message[pos] = '\0';
+
+                    // Take message as ASCII input
+                    int temp;
+                    for (pos = 0; pos < message_len; pos++)
+                    {
+                        fread(&temp, sizeof(unsigned char), 1, inputfileptr); // Read one byte from the file
+                        message[pos] = temp; // Write the byte to the message
+                    }
+
+                    if (operation) // Decrypt
+                        printf("Encrypted file input: \"%s\"\n", argv[i + 1]);
+                    else // Encrypt
+                        printf("Plaintext file input: \"%s\"\n", argv[i + 1]);
+
+                    fclose(inputfileptr);
+                } else
+                {
+                    printf("The file is too large, a maximum of %d bytes may be given with '-fi'\n", MAX_REQ_LEN);
+                    fclose(inputfileptr);
+                    return EXIT_FAILURE;
+                }
             }
 
             i++; //skip over the value parameter that follows this parameter
@@ -252,24 +287,24 @@ int main(int argc, char *argv[])
                 return EXIT_FAILURE;
             } else if (method) // CFB
             {
-                if (strstr(argv[i + 1], "CBC output/") == NULL)
-                {
-                    strcpy(output_file_name, "CFB output/");
-                    strcat(output_file_name, argv[i + 1]);
-                } else
-                    strncpy(output_file_name, argv[i + 1], 512);
+//                if (strstr(argv[i + 1], "/CBC output/") == NULL) // Add file path if not included
+//                {
+//                    strcpy(output_file_name, "/CFB output/");
+//                    strcat(output_file_name, argv[i + 1]);
+//                } else
+                    strcpy(output_file_name, argv[i + 1]); // TODO: fix spaces in path problem
             } else // CBC
             {
-                if (strstr(argv[i + 1], "CBC output/") == NULL)
-                {
-                    strcpy(output_file_name, "CBC output/");
-                    strcat(output_file_name, argv[i + 1]);
-                } else
-                    strncpy(output_file_name, argv[i + 1], 512);
+//                if (strstr(argv[i + 1], "/CBC output/") == NULL) // Add file path if not included
+//                {
+//                    strcpy(output_file_name, "/CBC output/");
+//                    strcat(output_file_name, argv[i + 1]);
+//                } else
+                    strcpy(output_file_name, argv[i + 1]); // TODO: fix spaces in path problem
             }
 
             i++; //skip over the value parameter that follows this parameter
-        } else if (strstr(argv[i], "-streamlen") != NULL) // Set the stream length for cfb
+        } else if (strstr(argv[i], "-streamlen") != NULL) // Set the stream length for CFB
         {
             args[7] = true;
 
@@ -293,7 +328,7 @@ int main(int argc, char *argv[])
             }
 
             i++; //skip over the value parameter that follows this parameter
-        } else if (strstr(argv[i], "-h") != NULL) // show help
+        } else if (strstr(argv[i], "-h") != NULL) // Show help
         {
             printf("\nUsage:\n%s", help_message);
             return EXIT_SUCCESS;
@@ -476,16 +511,26 @@ int main(int argc, char *argv[])
     }
 
     if (!args[7] && method)
+    {
         printf("The CFB stream length is not specified, using default value of 8-bits\n");
+        CFB_len = CFB8;
+    }
 
     if (!args[6] && file_output)
     {
         printf("The output file is not specified\nUsing default value of \"output.txt\"\n");
 
-        if (method) // CFB
-            strcpy(output_file_name, "CFB output/output.txt");
-        else // CBC
-            strcpy(output_file_name, "CBC output/output.txt");
+//        if (method) // CFB
+//            strcpy(output_file_name, "/CFB output/output.txt");
+//        else // CBC
+//            strcpy(output_file_name, "/CBC output/output.txt");
+        strcpy(output_file_name, "output.txt"); // TODO: fix spaces in path problem
+    }
+
+    if (message == NULL)
+    {
+        printf("No input was specified. Use the '-t' or '-fi' arguments to specify the input\n");
+        return EXIT_FAILURE;
     }
 
     // TODO: print all the other stuff he wants for some reason
@@ -497,8 +542,11 @@ int main(int argc, char *argv[])
     {
         if (operation) // Decrypt
         {
-            // Decrypt the input with CFB and print
+            // Decrypt the input with CFB
             CFB_decrypt(width, message, message_len, CFB_len, IV, user_key);
+
+            // Determine the new message length
+            message_len = strlen((char *) message);
 
             if (file_output)
             {
@@ -507,26 +555,26 @@ int main(int argc, char *argv[])
             } else
             {
                 printf("Decrypted (ASCII):\n\"");
-                message_len = strlen((char *) message);
                 print_c_string(message, message_len, false);
                 printf("\"\n\n");
             }
         }
         else // Encrypt
         {
-            // Encrypt the input with CFB and print
+            // Encrypt the input with CFB
             CFB_encrypt(width, message, message_len, CFB_len, IV, user_key);
+
+            // Determine the number of blocks
+            int num_blocks = message_len / CFB_len;
+            if (message_len % CFB_len != 0)
+                num_blocks++;
 
             if (file_output)
             {
-                write_to_file(output_file_name, message, message_len);
+                write_to_file(output_file_name, message, num_blocks * CFB_len);
                 printf("Encrypted file output: \"%s\"\n", output_file_name);
             } else
             {
-                int num_blocks = message_len / CFB_len;
-                if (message_len % CFB_len != 0)
-                    num_blocks++;
-
                 printf("Encrypted (HEX):\n");
                 print_c_string(message, num_blocks * CFB_len, true);
                 printf("\n\n");
@@ -537,8 +585,11 @@ int main(int argc, char *argv[])
     {
         if (operation) // Decrypt
         {
-            // Decrypt the input with CBC and print
+            // Decrypt the input with CBC
             CBC_decrypt(width, message, message_len, IV, user_key);
+
+            // Determine the new message length
+            message_len = strlen((char *) message);
 
             if (file_output)
             {
@@ -547,33 +598,34 @@ int main(int argc, char *argv[])
             } else
             {
                 printf("Decrypted (ASCII):\n\"");
-                message_len = strlen((char *) message);
                 print_c_string(message, message_len, false);
                 printf("\"\n\n");
             }
         }
         else // Encrypt
         {
-            // Encrypt the input with CBC and print
+            // Encrypt the input with CBC
             CBC_encrypt(width, message, message_len, IV, user_key);
+
+            // Determine the number of blocks
+            int num_blocks = message_len / 16;
+            if (message_len % 16 != 0)
+                num_blocks++;
 
             if (file_output)
             {
-                write_to_file(output_file_name, message, message_len);
+                write_to_file(output_file_name, message, num_blocks * 16);
                 printf("Encrypted file output: \"%s\"\n", output_file_name);
             } else
             {
-                // Determine the number of blocks
-                int num_blocks = message_len / 16;
-                if (message_len % 16 != 0)
-                    num_blocks++;
-
                 printf("Encrypted (HEX):\n");
                 print_c_string(message, num_blocks * 16, true);
                 printf("\n\n");
             }
         }
     }
+
+    free(message);
 
     return EXIT_SUCCESS;
 }
@@ -663,11 +715,15 @@ void print_c_string(unsigned char message[], int message_len, bool hex)
 void write_to_file(char filename[], unsigned char message[], int message_len)
 {
     FILE *outputfileptr;
-    outputfileptr = fopen(filename, "w");
+    outputfileptr = fopen(filename, "wb");
 
     int i;
+    int temp;
     for (i = 0; i < message_len; i++)
-        fprintf(outputfileptr, "%c", message[i]);
+    {
+        temp = message[i]; // Get one char from the message
+        fwrite(&temp, sizeof(unsigned char), 1, outputfileptr); // Write one byte to the file
+    }
 
     fclose(outputfileptr);
 }
@@ -805,7 +861,7 @@ void AES_key_expansion(int width, int expanded_key[], int user_key[])
             expanded_key[byte_pos + user_key_size + (user_key_size * expanded_pos)] = temp[byte_pos]; // Expand key
         }
 
-        // Perform the sub-expansion
+        // Perform the sub-expansion (will deliberately write out of bounds on last iteration)
         for (sub_pos = 0; sub_pos < sub_expansion; sub_pos++)
         {
             for (byte_pos = 0; byte_pos < 4; byte_pos++)

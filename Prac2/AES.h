@@ -7,7 +7,7 @@
 #include <string.h>
 #include <stdbool.h>
 
-#define MAX_REQ_LEN 128000 // pfft daar is baie memory
+#define MAX_REQ_LEN 10485760 // 10 MB, pfft daar is baie memory
 
 // AES constants
 #define AES128 0
