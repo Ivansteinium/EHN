@@ -594,94 +594,55 @@ int main(int argc, char *argv[])
     // MAIN PROGRAM
     printf("\n\n");
 
-    if (method) // CFB method
+
+    if (operation) // Decrypt
     {
-        if (operation) // Decrypt
-        {
-            // Decrypt the input with CFB
+        printf("Decryption in process...\n\n");
+
+        if (method) // CFB
             CFB_decrypt(width, message, message_len, CFB_len, IV, user_key);
-
-            // Determine the new message length
-            message_len = strlen((char *) message);
-
-            if (file_output)
-            {
-                write_to_file(output_file_name, message, message_len);
-                printf("Plaintext file output: \"%s\"\n", output_file_name);
-            }
-            else
-            {
-                printf("Decrypted (ASCII):\n\"");
-                print_c_string(message, message_len, false);
-                printf("\"\n\n");
-            }
-        }
-        else // Encrypt
-        {
-            // Encrypt the input with CFB
-            CFB_encrypt(width, message, message_len, CFB_len, IV, user_key);
-
-            // Determine the number of blocks
-            int num_blocks = message_len / CFB_len;
-            if (message_len % CFB_len != 0)
-                num_blocks++;
-
-            if (file_output)
-            {
-                write_to_file(output_file_name, message, num_blocks * CFB_len);
-                printf("Encrypted file output: \"%s\"\n", output_file_name);
-            }
-            else
-            {
-                printf("Encrypted (HEX):\n");
-                print_c_string(message, num_blocks * CFB_len, true);
-                printf("\n\n");
-            }
-        }
-    }
-    else // CBC method
-    {
-        if (operation) // Decrypt
-        {
-            // Decrypt the input with CBC
+        else // CBC
             CBC_decrypt(width, message, message_len, IV, user_key);
 
-            // Determine the new message length
-            message_len = strlen((char *) message);
-
-            if (file_output)
-            {
-                write_to_file(output_file_name, message, message_len);
-                printf("Plaintext file output: \"%s\"\n", output_file_name);
-            }
-            else
-            {
-                printf("Decrypted (ASCII):\n\"");
-                print_c_string(message, message_len, false);
-                printf("\"\n\n");
-            }
-        }
-        else // Encrypt
+        if (file_output)
         {
-            // Encrypt the input with CBC
+            // Will print trailing zeroes, no way to tell how many since there can be zeroes in the file
+            // Doesn't seem to be a problem, but file size may be slightly larger this way
+            write_to_file(output_file_name, message, message_len);
+            printf("Plaintext file output: \"%s\"\n", output_file_name);
+        }
+        else
+            printf("Decrypted (ASCII):\n\"%s\"\n\n", message);
+    }
+    else // Encrypt
+    {
+        printf("Encryption in process...\n\n");
+        int block_len = 16;
+
+        if (method) // CFB
+        {
+            CFB_encrypt(width, message, message_len, CFB_len, IV, user_key);
+            block_len = CFB_len;
+        }
+        else // CBC
             CBC_encrypt(width, message, message_len, IV, user_key);
 
-            // Determine the number of blocks
-            int num_blocks = message_len / 16;
-            if (message_len % 16 != 0)
-                num_blocks++;
+        // Determine the new message length
+        int num_blocks = message_len / block_len;
+        if (message_len % block_len != 0)
+            num_blocks++;
+        message_len = num_blocks * block_len; // New message length may be larger due to the required block size
 
-            if (file_output)
-            {
-                write_to_file(output_file_name, message, num_blocks * 16);
-                printf("Encrypted file output: \"%s\"\n", output_file_name);
-            }
-            else
-            {
-                printf("Encrypted (HEX):\n");
-                print_c_string(message, num_blocks * 16, true);
-                printf("\n\n");
-            }
+        if (file_output)
+        {
+            write_to_file(output_file_name, message, message_len);
+            printf("Encrypted file output: \"%s\"\n", output_file_name);
+        }
+        else
+        {
+            printf("Encrypted (HEX):\n");
+            print_c_string(message, message_len, true);
+            printf("\n\n");
         }
     }
 
