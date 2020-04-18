@@ -13,7 +13,7 @@ int main(int argc, char *argv[])
     bool file_output = false;
     int message_len = 0;
     unsigned char *message = NULL;
-    char output_file_name[256];
+    char *output_file_name = NULL;
     int IV[16];
     int user_key[32];
 
@@ -287,20 +287,36 @@ int main(int argc, char *argv[])
                 return EXIT_FAILURE;
             } else if (method) // CFB
             {
-//                if (strstr(argv[i + 1], "/CBC output/") == NULL) // Add file path if not included
+//                if (strstr(argv[i + 1], "/CFB output/") == NULL) // Add file path if not included
 //                {
+//                    output_file_name = (char *) malloc((strlen(argv[i + 1]) + 13) * sizeof(char));
 //                    strcpy(output_file_name, "/CFB output/");
 //                    strcat(output_file_name, argv[i + 1]);
 //                } else
+                {
+                    output_file_name = (char *) malloc((strlen(argv[i + 1]) + 1) * sizeof(char));
                     strcpy(output_file_name, argv[i + 1]); // TODO: fix spaces in path problem
+                }
+
+                struct stat st = {0};
+                if (stat("/CFB output/", &st) == -1) // Make the output directory if it does not exits
+                    mkdir("/CFB output/", 0700);
             } else // CBC
             {
 //                if (strstr(argv[i + 1], "/CBC output/") == NULL) // Add file path if not included
 //                {
+//                    output_file_name = (char *) malloc((strlen(argv[i + 1]) + 13) * sizeof(char));
 //                    strcpy(output_file_name, "/CBC output/");
 //                    strcat(output_file_name, argv[i + 1]);
 //                } else
+                {
+                    output_file_name = (char *) malloc((strlen(argv[i + 1]) + 1) * sizeof(char));
                     strcpy(output_file_name, argv[i + 1]); // TODO: fix spaces in path problem
+                }
+
+                struct stat st = {0};
+                if (stat("/CBC output/", &st) == -1) // Make the output directory if it does not exits
+                    mkdir("/CBC output/", 0700);
             }
 
             i++; //skip over the value parameter that follows this parameter
@@ -336,7 +352,7 @@ int main(int argc, char *argv[])
             printf("Invalid parameter: %s\n", argv[i]);
     }
 
-    if (!args[0] || !args[1] || !args[2] || !args[4])
+    if (!args[0] || !args[1] || !args[2] || message == NULL)
     {
         printf("All parameters are not given\n\nUsage:\n%s\n\nPerforming tests:\n\n", help_message);
 
@@ -510,28 +526,41 @@ int main(int argc, char *argv[])
         // */ **** TESTING PURPOSES ****
     }
 
+    if (!args[4])
+    {
+        printf("The initialization vector was not set\nUsing the user key as the initialization vector\n");
+        for (i = 0; i < 16; i++)
+            IV[i] = user_key[i];
+    }
+
+    if (!args[6] && file_output)
+    {
+        printf("The output file is not specified\nUsing default value of \"output.txt\"\n");
+        output_file_name = (char *) malloc(23 * sizeof(char));
+
+//        if (method) // CFB
+//        {
+//            strcpy(output_file_name, "/CFB output/output.txt");
+//            struct stat st = {0};
+//            if (stat("/CFB output/", &st) == -1) // Make the output directory if it does not exits
+//                mkdir("/CFB output/", 0700);
+//        }
+//        else // CBC
+//        {
+//            strcpy(output_file_name, "/CBC output/output.txt");
+//            struct stat st = {0};
+//            if (stat("/CBC output/", &st) == -1) // Make the output directory if it does not exits
+//                mkdir("/CBC output/", 0700);
+//        }
+        strcpy(output_file_name, "output.txt"); // TODO: fix spaces in path problem
+    }
+
     if (!args[7] && method)
     {
         printf("The CFB stream length is not specified, using default value of 8-bits\n");
         CFB_len = CFB8;
     }
 
-    if (!args[6] && file_output)
-    {
-        printf("The output file is not specified\nUsing default value of \"output.txt\"\n");
-
-//        if (method) // CFB
-//            strcpy(output_file_name, "/CFB output/output.txt");
-//        else // CBC
-//            strcpy(output_file_name, "/CBC output/output.txt");
-        strcpy(output_file_name, "output.txt"); // TODO: fix spaces in path problem
-    }
-
-    if (message == NULL)
-    {
-        printf("No input was specified. Use the '-t' or '-fi' arguments to specify the input\n");
-        return EXIT_FAILURE;
-    }
 
     // TODO: print all the other stuff he wants for some reason
 
@@ -626,6 +655,7 @@ int main(int argc, char *argv[])
     }
 
     free(message);
+    free(output_file_name);
 
     return EXIT_SUCCESS;
 }

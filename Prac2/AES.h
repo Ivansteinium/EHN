@@ -6,8 +6,10 @@
 #include <unistd.h>
 #include <string.h>
 #include <stdbool.h>
+#include <sys/types.h>
+#include <sys/stat.h>
 
-#define MAX_REQ_LEN 10485760 // 10 MB, pfft daar is baie memory
+#define MAX_REQ_LEN 104857600 // 100 MB, pfft daar is baie memory
 
 // AES constants
 #define AES128 0
