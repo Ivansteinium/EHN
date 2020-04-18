@@ -35,7 +35,8 @@ int main(int argc, char *argv[])
                           "\t1.\t./AES -e -cbc 128 -fi \"input.txt\" -fo \"encrypted.enc\" -key \"Very strong password\" -iv \"Initialization vector\"\n"
                           "\t2.\t./AES -d -cbc 192 -fi \"encrypted.jpg\" -fo \"image.jpg\" -key \"Very strong password\" -iv \"Initialization vector\"\n"
                           "\t3.\t./AES -e -cfb 256 -t \"Text to encrypt\" -key \"Very strong password\" -iv \"Initialization vector\" -streamlen 64\n"
-                          "\t4.\t./AES -d -cfb 128 -t D5BF47B56DD1EEC3ABF4B5E0CA5741020FBE6228F3E15FF16F -key \"Very strong password\" -iv \"Initialization vector\" -streamlen 8\n";
+                          "\t4.\t./AES -d -cfb 128 -t C7D3CAAFEE6137 -key \"Very strong password\" -iv \"Initialization vector\" -streamlen 8\n";
+    //                                                ^^^^^^^^^^^^^^ "Success"
 
     // Greeting
     printf("\nEHN 410 Group 12 Practical 2\n\n");
@@ -158,28 +159,7 @@ int main(int argc, char *argv[])
                 printf("Specify this with '-e' for encryption or '-d' for decryption\n");
                 return EXIT_FAILURE;
             }
-            else if (operation == false) // Encrypt
-            {
-                // Take message as ASCII input
-                message_len = strlen(argv[i + 1]);
-                if (message_len > MAX_REQ_LEN)
-                {
-                    printf("The message is too long, a maximum of %d bytes may be given with '-t'\n", MAX_REQ_LEN);
-                    return EXIT_FAILURE;
-                }
-                else
-                {
-                    message = (unsigned char *) malloc((message_len + 17) * sizeof(unsigned char)); // + 17 if incomplete block to pad with zeroes
-
-                    int pos;
-                    for (pos = 0; pos < message_len + 17; pos++) // Fill with zeroes to pad if needed + null terminator
-                        message[pos] = '\0';
-
-                    strcpy((char *) message, argv[i + 1]); // Copy the message input
-                    printf("Plaintext message (ASCII): \"%s\"\n", message);
-                }
-            }
-            else // Deprypt
+            else if (operation) // Decrypt
             {
                 // Take message as hex input
                 char *parameter = argv[i + 1];
@@ -195,7 +175,7 @@ int main(int argc, char *argv[])
                     message = (unsigned char *) malloc((message_len + 17) * sizeof(unsigned char)); // + 17 if incomplete block to pad with zeroes
 
                     int pos;
-                    for (pos = 0; pos < message_len + 17; pos++) // Fill with zeroes to pad if needed + null terminator
+                    for (pos = message_len; pos < message_len + 17; pos++) // Fill with zeroes to pad if needed + null terminator
                         message[pos] = '\0';
 
                     // Convert from hex string to int array
@@ -208,8 +188,30 @@ int main(int argc, char *argv[])
                     }
 
                     printf("Encrypted message (HEX): ");
-                    print_c_string(message, message_len, true);
+                    print_hex_string(message, message_len);
                     printf("\n");
+                }
+
+            }
+            else // Encrypt
+            {
+                // Take message as ASCII input
+                message_len = strlen(argv[i + 1]);
+                if (message_len > MAX_REQ_LEN)
+                {
+                    printf("The message is too long, a maximum of %d bytes may be given with '-t'\n", MAX_REQ_LEN);
+                    return EXIT_FAILURE;
+                }
+                else
+                {
+                    message = (unsigned char *) malloc((message_len + 17) * sizeof(unsigned char)); // + 17 if incomplete block to pad with zeroes
+
+                    int pos;
+                    for (pos = message_len; pos < message_len + 17; pos++) // Fill with zeroes to pad if needed + null terminator
+                        message[pos] = '\0';
+
+                    strcpy((char *) message, argv[i + 1]); // Copy the message input
+                    printf("Plaintext message (ASCII): \"%s\"\n", message);
                 }
             }
 
@@ -268,7 +270,7 @@ int main(int argc, char *argv[])
                     message = (unsigned char *) malloc((message_len + 17) * sizeof(unsigned char)); // + 17 if incomplete block to pad with zeroes
 
                     int pos;
-                    for (pos = 0; pos < message_len + 17; pos++) // Fill with zeroes to pad if needed + null terminator
+                    for (pos = message_len; pos < message_len + 17; pos++) // Fill with zeroes to pad if needed + null terminator
                         message[pos] = '\0';
 
                     // Take message as ASCII input
@@ -311,8 +313,8 @@ int main(int argc, char *argv[])
                 output_file_path[pos++] = temp_path[0]; // Retrieve the file path
                 temp_path++; // Move to next char
             }
-
             // temp_path now contains the output filename
+
             free(output_file_path); // Discard the file path if one is given
             if (method == -1)
             {
@@ -397,187 +399,20 @@ int main(int argc, char *argv[])
     if (!args[0] || !args[1] || !args[2] || message == NULL)
     {
         printf("All parameters are not given\n\nUsage:\n%s\n\nPerforming tests:\n\n", help_message);
-
-        //    **** TESTING PURPOSES **** /*
-        int AES128_user_key[AES128_USER_KEY_SIZE] = {0x74, 0x65, 0x73, 0x74, 0x20, 0x66, 0x75, 0x6E, 0x63, 0x74, 0x69, 0x6F,
-                                                     0x6E, 0x61, 0x6C, 0x69};
-        int AES192_user_key[AES192_USER_KEY_SIZE] = {0x74, 0x65, 0x73, 0x74, 0x20, 0x66, 0x75, 0x6E, 0x63, 0x74, 0x69, 0x6F,
-                                                     0x6E, 0x61, 0x6C, 0x69, 0x74, 0x65, 0x73, 0x74, 0x20, 0x66, 0x75, 0x6E};
-        int AES256_user_key[AES256_USER_KEY_SIZE] = {0x74, 0x65, 0x73, 0x74, 0x20, 0x66, 0x75, 0x6E, 0x63, 0x74, 0x69, 0x6F,
-                                                     0x6E, 0x61, 0x6C, 0x69, 0x74, 0x65, 0x73, 0x74, 0x20, 0x66, 0x75, 0x6E,
-                                                     0x63, 0x74, 0x69, 0x6F, 0x6E, 0x61, 0x6C, 0x69};
-//        int IV_test[16] = {0x74, 0x65, 0x73, 0x74, 0x20, 0x66, 0x75, 0x6E, 0x63, 0x74, 0x69, 0x6F, 0x6E, 0x61, 0x6C, 0x69};
-        int AES128_expanded_key[AES128_KEY_SIZE + 32];
-        int AES192_expanded_key[AES192_KEY_SIZE + 32];
-        int AES256_expanded_key[AES256_KEY_SIZE + 32];
-        int test_word[4] = {0x3A, 0x65, 0x71, 0x1B};
-        int x;
-        int test_cols[4][4] = {{0x74, 0x20, 0x61, 0x73},
-                               {0x68, 0x69, 0x20, 0x74},
-                               {0x69, 0x73, 0x74, 0x2e},
-                               {0x73, 0x20, 0x65, 0x2e}};
-
-        printf("----Testing word rotate----\n");
-        printf("Original\n");
-        print_word(test_word, 4);
-        AES_word_rotate(test_word, 4, 1, false);
-        printf("\nOne rotation\n");
-        print_word(test_word, 4);
-        AES_word_rotate(test_word, 4, 1, true);
-        printf("\nOne inverse rotation\n");
-        print_word(test_word, 4);
-        AES_word_rotate(test_word, 4, 2, false);
-        printf("\nTwo rotations\n");
-        print_word(test_word, 4);
-        AES_word_rotate(test_word, 4, 2, true);
-        printf("\nTwo inverse rotations\n");
-        print_word(test_word, 4);
-        AES_word_rotate(test_word, 4, 3, false);
-        printf("\nThree rotations\n");
-        print_word(test_word, 4);
-        AES_word_rotate(test_word, 4, 3, true);
-        printf("\nThree inverse rotations\n");
-        print_word(test_word, 4);
-        printf("\n\n");
-
-        printf("----Testing S-transform----\n");
-        printf("Original\n3A\n");
-        x = AES_s_box_transform(0x3A, false);
-        printf("\nS-transformed\n%02X\n", x);
-        x = AES_s_box_transform(x, true);
-        printf("\nInverse s-transformed\n%02X\n", x);
-        printf("\n\n");
-
-        printf("----Testing key scheduler----\n");
-        printf("Original\n");
-        print_word(test_word, 4);
-        AES_key_scheduler(test_word, 1);
-        printf("\nKey scheduled with rcon = 1\n");
-        print_word(test_word, 4);
-        printf("\n\n");
-
-        // Test cols changed by key scheduler
-        test_word[0] = 0x3A;
-        test_word[1] = 0x65;
-        test_word[2] = 0x71;
-        test_word[3] = 0x1B;
-
-        printf("----Testing exponentiation starting from 1----\n01 ");
-        x = 1;
-        for (i = 0; i < 20; i++)
-            printf("%02X ", x = AES_exp_2(x));
-        printf("\n\n\n");
-
-        printf("----Testing key expansion----\n");
-        printf("AES128 expanded key\n");
-        AES_key_expansion(AES128, AES128_expanded_key, AES128_user_key);
-        print_expanded_key(AES128, AES128_expanded_key);
-        printf("AES192 expanded key\n");
-        AES_key_expansion(AES192, AES192_expanded_key, AES192_user_key);
-        print_expanded_key(AES192, AES192_expanded_key);
-        printf("AES256 expanded key\n");
-        AES_key_expansion(AES256, AES256_expanded_key, AES256_user_key);
-        print_expanded_key(AES256, AES256_expanded_key);
-        printf("\n");
-
-        printf("----Testing substitute bytes----\n");
-        printf("Original\n");
-        print_block(test_cols);
-        AES_sub_bytes(test_cols, false);
-        printf("Sub bytes\n");
-        print_block(test_cols);
-        AES_sub_bytes(test_cols, true);
-        printf("Inverse sub bytes should be same as original\n");
-        print_block(test_cols);
-        printf("\n");
-
-        printf("----Testing shift rows----\n");
-        printf("Original\n");
-        print_block(test_cols);
-        AES_shift_rows(test_cols, false);
-        printf("Shift rows\n");
-        print_block(test_cols);
-        AES_shift_rows(test_cols, true);
-        printf("Inverse shift rows should be same as original\n");
-        print_block(test_cols);
-        printf("\n");
-
-        printf("----Testing dot product----\n");
-        printf("57 dot 83 = ");
-        x = AES_dot_product(0x57, 0x83);
-        printf("%02X\n", x);
-        printf("83 dot 57 = ");
-        x = AES_dot_product(0x83, 0x57);
-        printf("%02X\n\n\n", x);
-
-        printf("----Testing mix cols----\n");
-        printf("Original\n");
-        print_block(test_cols);
-        AES_mix_cols(test_cols, false);
-        printf("Mix cols\n");
-        print_block(test_cols);
-        AES_mix_cols(test_cols, true);
-        printf("Inverse mix cols should be same as original\n");
-        print_block(test_cols);
-        printf("\n");
-
-        printf("----Testing add round key----\n");
-        printf("Original\n");
-        print_block(test_cols);
-        AES_add_round_key(test_cols, AES128_expanded_key, 0);
-        printf("Key added\n");
-        print_block(test_cols);
-        AES_add_round_key(test_cols, AES128_expanded_key, 0);
-        printf("Key added again should be same as original\n");
-        print_block(test_cols);
-        printf("\n");
-
-        printf("----Testing AES128----\n");
-        printf("Original\n");
-        print_block(test_cols);
-        AES_encrypt(AES128, test_cols, AES128_expanded_key);
-        printf("Encrypted\n");
-        print_block(test_cols);
-        AES_decrypt(AES128, test_cols, AES128_expanded_key);
-        printf("Decrypted should be same as before\n");
-        print_block(test_cols);
-        printf("\n");
-
-        printf("----Testing AES192----\n");
-        printf("Original\n");
-        print_block(test_cols);
-        AES_encrypt(AES192, test_cols, AES192_expanded_key);
-        printf("Encrypted\n");
-        print_block(test_cols);
-        AES_decrypt(AES192, test_cols, AES192_expanded_key);
-        printf("Decrypted should be same as before\n");
-        print_block(test_cols);
-        printf("\n");
-
-        printf("----Testing AES256----\n");
-        printf("Original\n");
-        print_block(test_cols);
-        AES_encrypt(AES256, test_cols, AES256_expanded_key);
-        printf("Encrypted\n");
-        print_block(test_cols);
-        AES_decrypt(AES256, test_cols, AES256_expanded_key);
-        printf("Decrypted should be same as before\n");
-        print_block(test_cols);
-
+        test_functionality( );
         return EXIT_SUCCESS;
-        // */ **** TESTING PURPOSES ****
     }
 
     if (!args[4])
     {
-        printf("The initialization vector was not set\nUsing the user key as the initialization vector\n");
+        printf("The initialization vector was not set, using the user key as the initialization vector\n");
         for (i = 0; i < 16; i++)
             IV[i] = user_key[i];
     }
 
     if (!args[6] && file_output)
     {
-        printf("The output file is not specified\nUsing default value of \"output.txt\"\n");
+        printf("The output file is not specified, using default value of \"output.txt\"\n");
         output_file_name = (char *) malloc(11 * sizeof(char));
         strcpy(output_file_name, "output.txt");
     }
@@ -594,7 +429,6 @@ int main(int argc, char *argv[])
     // MAIN PROGRAM
     printf("\n\n");
 
-
     if (operation) // Decrypt
     {
         printf("Decryption in process...\n\n");
@@ -606,7 +440,7 @@ int main(int argc, char *argv[])
 
         if (file_output)
         {
-            // Will print trailing zeroes, no way to tell how many since there can be zeroes in the file
+            // Will write trailing zeroes, no way to tell how many since there can be zeroes in the file
             // Doesn't seem to be a problem, but file size may be slightly larger this way
             write_to_file(output_file_name, message, message_len);
             printf("Plaintext file output: \"%s\"\n", output_file_name);
@@ -641,7 +475,7 @@ int main(int argc, char *argv[])
         else
         {
             printf("Encrypted (HEX):\n");
-            print_c_string(message, message_len, true);
+            print_hex_string(message, message_len);
             printf("\n\n");
         }
     }
@@ -719,17 +553,12 @@ void print_expanded_key(int width, int expanded_key[])
 }
 
 
-// Print a c-string up to a certain length
-void print_c_string(unsigned char message[], int message_len, bool hex)
+// Print a c-string up to a certain length in hex
+void print_hex_string(unsigned char message[], int message_len)
 {
     int i;
     for (i = 0; i < message_len; i++)
-    {
-        if (hex) // Print as hexadecimal
-            printf("%02X", message[i]);
-        else // Print as ASCII character
-            printf("%c", message[i]);
-    }
+        printf("%02X", message[i]);
 }
 
 
@@ -1341,4 +1170,177 @@ bool CFB_decrypt(int width, unsigned char message[], int message_len, int CFB_le
     }
 
     return EXIT_SUCCESS;
+}
+
+
+// Print out various tests to test the functionality of the other functions
+void test_functionality( )
+{
+    //    **** TESTING PURPOSES **** /*
+    int i;
+    int AES128_user_key[AES128_USER_KEY_SIZE] = {0x74, 0x65, 0x73, 0x74, 0x20, 0x66, 0x75, 0x6E, 0x63, 0x74, 0x69, 0x6F,
+                                                 0x6E, 0x61, 0x6C, 0x69};
+    int AES192_user_key[AES192_USER_KEY_SIZE] = {0x74, 0x65, 0x73, 0x74, 0x20, 0x66, 0x75, 0x6E, 0x63, 0x74, 0x69, 0x6F,
+                                                 0x6E, 0x61, 0x6C, 0x69, 0x74, 0x65, 0x73, 0x74, 0x20, 0x66, 0x75, 0x6E};
+    int AES256_user_key[AES256_USER_KEY_SIZE] = {0x74, 0x65, 0x73, 0x74, 0x20, 0x66, 0x75, 0x6E, 0x63, 0x74, 0x69, 0x6F,
+                                                 0x6E, 0x61, 0x6C, 0x69, 0x74, 0x65, 0x73, 0x74, 0x20, 0x66, 0x75, 0x6E,
+                                                 0x63, 0x74, 0x69, 0x6F, 0x6E, 0x61, 0x6C, 0x69};
+    int AES128_expanded_key[AES128_KEY_SIZE + 32];
+    int AES192_expanded_key[AES192_KEY_SIZE + 32];
+    int AES256_expanded_key[AES256_KEY_SIZE + 32];
+    int test_word[4] = {0x3A, 0x65, 0x71, 0x1B};
+    int x;
+    int test_cols[4][4] = {{0x74, 0x20, 0x61, 0x73},
+                           {0x68, 0x69, 0x20, 0x74},
+                           {0x69, 0x73, 0x74, 0x2E},
+                           {0x73, 0x20, 0x65, 0x2E}};
+
+    printf("----Testing word rotate----\n");
+    printf("Original\n");
+    print_word(test_word, 4);
+    AES_word_rotate(test_word, 4, 1, false);
+    printf("\nOne rotation\n");
+    print_word(test_word, 4);
+    AES_word_rotate(test_word, 4, 1, true);
+    printf("\nOne inverse rotation\n");
+    print_word(test_word, 4);
+    AES_word_rotate(test_word, 4, 2, false);
+    printf("\nTwo rotations\n");
+    print_word(test_word, 4);
+    AES_word_rotate(test_word, 4, 2, true);
+    printf("\nTwo inverse rotations\n");
+    print_word(test_word, 4);
+    AES_word_rotate(test_word, 4, 3, false);
+    printf("\nThree rotations\n");
+    print_word(test_word, 4);
+    AES_word_rotate(test_word, 4, 3, true);
+    printf("\nThree inverse rotations\n");
+    print_word(test_word, 4);
+    printf("\n\n");
+
+    printf("----Testing S-transform----\n");
+    printf("Original\n3A\n");
+    x = AES_s_box_transform(0x3A, false);
+    printf("\nS-transformed\n%02X\n", x);
+    x = AES_s_box_transform(x, true);
+    printf("\nInverse s-transformed\n%02X\n", x);
+    printf("\n\n");
+
+    printf("----Testing key scheduler----\n");
+    printf("Original\n");
+    print_word(test_word, 4);
+    AES_key_scheduler(test_word, 1);
+    printf("\nKey scheduled with rcon = 1\n");
+    print_word(test_word, 4);
+    printf("\n\n");
+
+    // Test cols changed by key scheduler
+    test_word[0] = 0x3A;
+    test_word[1] = 0x65;
+    test_word[2] = 0x71;
+    test_word[3] = 0x1B;
+
+    printf("----Testing exponentiation starting from 1----\n01 ");
+    x = 1;
+    for (i = 0; i < 20; i++)
+        printf("%02X ", x = AES_exp_2(x));
+    printf("\n\n\n");
+
+    printf("----Testing key expansion----\n");
+    printf("AES128 expanded key\n");
+    AES_key_expansion(AES128, AES128_expanded_key, AES128_user_key);
+    print_expanded_key(AES128, AES128_expanded_key);
+    printf("AES192 expanded key\n");
+    AES_key_expansion(AES192, AES192_expanded_key, AES192_user_key);
+    print_expanded_key(AES192, AES192_expanded_key);
+    printf("AES256 expanded key\n");
+    AES_key_expansion(AES256, AES256_expanded_key, AES256_user_key);
+    print_expanded_key(AES256, AES256_expanded_key);
+    printf("\n");
+
+    printf("----Testing substitute bytes----\n");
+    printf("Original\n");
+    print_block(test_cols);
+    AES_sub_bytes(test_cols, false);
+    printf("Sub bytes\n");
+    print_block(test_cols);
+    AES_sub_bytes(test_cols, true);
+    printf("Inverse sub bytes should be same as original\n");
+    print_block(test_cols);
+    printf("\n");
+
+    printf("----Testing shift rows----\n");
+    printf("Original\n");
+    print_block(test_cols);
+    AES_shift_rows(test_cols, false);
+    printf("Shift rows\n");
+    print_block(test_cols);
+    AES_shift_rows(test_cols, true);
+    printf("Inverse shift rows should be same as original\n");
+    print_block(test_cols);
+    printf("\n");
+
+    printf("----Testing dot product----\n");
+    printf("57 dot 83 = ");
+    x = AES_dot_product(0x57, 0x83);
+    printf("%02X\n", x);
+    printf("83 dot 57 = ");
+    x = AES_dot_product(0x83, 0x57);
+    printf("%02X\n\n\n", x);
+
+    printf("----Testing mix cols----\n");
+    printf("Original\n");
+    print_block(test_cols);
+    AES_mix_cols(test_cols, false);
+    printf("Mix cols\n");
+    print_block(test_cols);
+    AES_mix_cols(test_cols, true);
+    printf("Inverse mix cols should be same as original\n");
+    print_block(test_cols);
+    printf("\n");
+
+    printf("----Testing add round key----\n");
+    printf("Original\n");
+    print_block(test_cols);
+    AES_add_round_key(test_cols, AES128_expanded_key, 0);
+    printf("Key added\n");
+    print_block(test_cols);
+    AES_add_round_key(test_cols, AES128_expanded_key, 0);
+    printf("Key added again should be same as original\n");
+    print_block(test_cols);
+    printf("\n");
+
+    printf("----Testing AES128----\n");
+    printf("Original\n");
+    print_block(test_cols);
+    AES_encrypt(AES128, test_cols, AES128_expanded_key);
+    printf("Encrypted\n");
+    print_block(test_cols);
+    AES_decrypt(AES128, test_cols, AES128_expanded_key);
+    printf("Decrypted should be same as before\n");
+    print_block(test_cols);
+    printf("\n");
+
+    printf("----Testing AES192----\n");
+    printf("Original\n");
+    print_block(test_cols);
+    AES_encrypt(AES192, test_cols, AES192_expanded_key);
+    printf("Encrypted\n");
+    print_block(test_cols);
+    AES_decrypt(AES192, test_cols, AES192_expanded_key);
+    printf("Decrypted should be same as before\n");
+    print_block(test_cols);
+    printf("\n");
+
+    printf("----Testing AES256----\n");
+    printf("Original\n");
+    print_block(test_cols);
+    AES_encrypt(AES256, test_cols, AES256_expanded_key);
+    printf("Encrypted\n");
+    print_block(test_cols);
+    AES_decrypt(AES256, test_cols, AES256_expanded_key);
+    printf("Decrypted should be same as before\n");
+    print_block(test_cols);
+
+    // */ **** TESTING PURPOSES ****
 }
