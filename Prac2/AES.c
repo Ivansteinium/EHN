@@ -182,6 +182,7 @@ int main(int argc, char *argv[])
                     char current_number[2];
                     for (pos = 0; pos < message_len; pos++)
                     {
+                        // TODO: has a small chance to malfunction for no apparent reason
                         strncpy(current_number, parameter, 2); // Retrieve one byte (two hex chars)
                         message[pos] = (unsigned char) strtol(current_number, NULL, 16); // Get the integer value from the byte
                         parameter += 2; // Move to the next byte
@@ -422,7 +423,6 @@ int main(int argc, char *argv[])
         printf("The CFB stream length is not specified, using default value of 8-bits\n");
         CFB_len = CFB8;
     }
-
 
     // TODO: print all the other stuff he wants for some reason
 
