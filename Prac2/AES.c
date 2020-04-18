@@ -18,24 +18,24 @@ int main(int argc, char *argv[])
     int user_key[32];
 
     char help_message[] = "\t./AES -arg1 value1 -arg2 value2...\n"
-                        "\t\n"
-                        "\tThe following parameters should then be given in this order:\n"
-                        "\t-e (encryption), or\n"
-                        "\t-d (decryption)\n"
-                        "\t-cbc <len> (Ciphen Block Chaining, <len> either 128, 192 or 256), or\n"
-                        "\t-cfb <len> (Cipher Feedback, <len> either 128, 192 or 256)\n"
-                        "\t-t <text to decrypt>\n"
-                        "\t-key <password>\n"
-                        "\t-iv <initialization vector>\n"
-                        "\t-fi <input file>\n"
-                        "\t-fo <output file>\n"
-                        "\t-streamlen <len> (length of the CFB stream if '-cfb' is given, either 8, 64 or 128)\n"
-                        "\t-h help (will show this message)\n\n"
-                        "\tExample usage:\n"
-                        "\t1.\t./AES -e -cbc 128 -fi \"input.txt\" -fo \"output.txt\" -key \"Very strong password\" -iv \"Initialization vector\"\n"
-                        "\t2.\t./AES -d -cbc 192 -fi \"encrypted.jpg\" -fo \"image.jpg\" -key \"Very strong password\" -iv \"Initialization vector\"\n"
-                        "\t3.\t./AES -e -cfb 256 -t \"Text to encrypt\" -key \"Very strong password\" -iv \"Initialization vector\" -streamlen 64\n"
-                        "\t4.\t./AES -d -cfb 128 -t D5BF47B56DD1EEC3ABF4B5E0CA5741020FBE6228F3E15FF16F -key \"Very strong password\" -iv \"Initialization vector\" -streamlen 8\n";
+                          "\t\n"
+                          "\tThe following parameters should then be given in this order:\n"
+                          "\t-e (encryption), or\n"
+                          "\t-d (decryption)\n"
+                          "\t-cbc <len> (Ciphen Block Chaining, <len> either 128, 192 or 256), or\n"
+                          "\t-cfb <len> (Cipher Feedback, <len> either 128, 192 or 256)\n"
+                          "\t-t <text to decrypt>\n"
+                          "\t-key <password>\n"
+                          "\t-iv <initialization vector>\n"
+                          "\t-fi <input file>\n"
+                          "\t-fo <output file>\n"
+                          "\t-streamlen <len> (length of the CFB stream if '-cfb' is given, either 8, 64 or 128)\n"
+                          "\t-h help (will show this message)\n\n"
+                          "\tExample usage:\n"
+                          "\t1.\t./AES -e -cbc 128 -fi \"input.txt\" -fo \"encrypted.enc\" -key \"Very strong password\" -iv \"Initialization vector\"\n"
+                          "\t2.\t./AES -d -cbc 192 -fi \"encrypted.jpg\" -fo \"image.jpg\" -key \"Very strong password\" -iv \"Initialization vector\"\n"
+                          "\t3.\t./AES -e -cfb 256 -t \"Text to encrypt\" -key \"Very strong password\" -iv \"Initialization vector\" -streamlen 64\n"
+                          "\t4.\t./AES -d -cfb 128 -t D5BF47B56DD1EEC3ABF4B5E0CA5741020FBE6228F3E15FF16F -key \"Very strong password\" -iv \"Initialization vector\" -streamlen 8\n";
 
     // Greeting
     printf("\nEHN 410 Group 12 Practical 2\n\n");
@@ -51,15 +51,18 @@ int main(int argc, char *argv[])
             {
                 width = AES128;
                 printf("AES128 with CBC selected\n");
-            } else if (!strcmp(argv[i + 1], "192"))
+            }
+            else if (!strcmp(argv[i + 1], "192"))
             {
                 width = AES192;
                 printf("AES192 with CBC selected\n");
-            } else if (!strcmp(argv[i + 1], "256"))
+            }
+            else if (!strcmp(argv[i + 1], "256"))
             {
                 width = AES256;
                 printf("AES256 with CBC selected\n");
-            } else
+            }
+            else
             {
                 printf("Parameter '%s' is not a valid length\n", argv[i + 1]);
                 printf("Valid parameters are '128', '192' and '256'\n");
@@ -77,15 +80,18 @@ int main(int argc, char *argv[])
             {
                 width = AES128;
                 printf("AES128 with CFB selected\n");
-            } else if (!strcmp(argv[i + 1], "192"))
+            }
+            else if (!strcmp(argv[i + 1], "192"))
             {
                 width = AES192;
                 printf("AES192 with CFB selected\n");
-            } else if (!strcmp(argv[i + 1], "256"))
+            }
+            else if (!strcmp(argv[i + 1], "256"))
             {
                 width = AES256;
                 printf("AES256 with CFB selected\n");
-            } else
+            }
+            else
             {
                 printf("Parameter '%s' is not a valid length\n", argv[i + 1]);
                 printf("Valid parameters are '128', '192' and '256'\n");
@@ -93,17 +99,20 @@ int main(int argc, char *argv[])
             }
 
             i++; // Skip over the value parameter that follows this parameter
-        } else if (strstr(argv[i], "-e") != NULL) // Set operation encrypt
+        }
+        else if (strstr(argv[i], "-e") != NULL) // Set operation encrypt
         {
             args[1] = true;
             operation = false;
             printf("Encryption selected\n");
-        } else if (strstr(argv[i], "-d") != NULL) // Set operation decrypt
+        }
+        else if (strstr(argv[i], "-d") != NULL) // Set operation decrypt
         {
             args[1] = true;
             operation = true;
             printf("Decryption selected\n");
-        } else if (strstr(argv[i], "-key") != NULL) // Set the user key
+        }
+        else if (strstr(argv[i], "-key") != NULL) // Set the user key
         {
             args[2] = true;
 
@@ -112,7 +121,8 @@ int main(int argc, char *argv[])
                 printf("The AES length must be specified before the key is given\n");
                 printf("Specify this with '-cbc <length>' or '-cfb <length>'\n");
                 return EXIT_FAILURE;
-            } else
+            }
+            else
             {
                 int user_key_size;
 
@@ -137,7 +147,8 @@ int main(int argc, char *argv[])
                 printf("Key (ASCII): \"%s\"\n", key);
                 i++; // Skip over the value parameter that follows this parameter
             }
-        } else if (strstr(argv[i], "-t") != NULL) // Set the input message
+        }
+        else if (strstr(argv[i], "-t") != NULL) // Set the input message
         {
             args[3] = true;
 
@@ -146,7 +157,8 @@ int main(int argc, char *argv[])
                 printf("The operation type must be specified before the message is given\n");
                 printf("Specify this with '-e' for encryption or '-d' for decryption\n");
                 return EXIT_FAILURE;
-            } else if (operation == false) // Encrypt
+            }
+            else if (operation == false) // Encrypt
             {
                 // Take message as ASCII input
                 message_len = strlen(argv[i + 1]);
@@ -154,7 +166,8 @@ int main(int argc, char *argv[])
                 {
                     printf("The message is too long, a maximum of %d bytes may be given with '-t'\n", MAX_REQ_LEN);
                     return EXIT_FAILURE;
-                } else
+                }
+                else
                 {
                     message = (unsigned char *) malloc((message_len + 17) * sizeof(unsigned char)); // + 17 if incomplete block to pad with zeroes
 
@@ -165,17 +178,19 @@ int main(int argc, char *argv[])
                     strcpy((char *) message, argv[i + 1]); // Copy the message input
                     printf("Plaintext message (ASCII): \"%s\"\n", message);
                 }
-            } else // Deprypt
+            }
+            else // Deprypt
             {
                 // Take message as hex input
-                char * parameter = argv[i + 1];
+                char *parameter = argv[i + 1];
                 message_len = strlen(parameter) / 2; // 2 hex chars = 1 byte
 
                 if (message_len > MAX_REQ_LEN)
                 {
                     printf("The message is too long, a maximum of %d bytes may be given with '-t'\n", MAX_REQ_LEN);
                     return EXIT_FAILURE;
-                } else
+                }
+                else
                 {
                     message = (unsigned char *) malloc((message_len + 17) * sizeof(unsigned char)); // + 17 if incomplete block to pad with zeroes
 
@@ -199,7 +214,8 @@ int main(int argc, char *argv[])
             }
 
             i++; // Skip over the value parameter that follows this parameter
-        } else if (strstr(argv[i], "-iv") != NULL) // Set the initialization vector
+        }
+        else if (strstr(argv[i], "-iv") != NULL) // Set the initialization vector
         {
             args[4] = true;
             char iv[17]; // +1 for null terminator
@@ -215,7 +231,8 @@ int main(int argc, char *argv[])
 
             printf("Initialization Vector (ASCII): \"%s\"\n", iv);
             i++; // Skip over the value parameter that follows this parameter
-        } else if (strstr(argv[i], "-fi") != NULL) // Read the input file
+        }
+        else if (strstr(argv[i], "-fi") != NULL) // Read the input file
         {
             args[5] = true;
 
@@ -224,7 +241,8 @@ int main(int argc, char *argv[])
                 printf("The operation type must be specified before the input file is given\n");
                 printf("Specify this with '-e' for encryption or '-d' for decryption\n");
                 return EXIT_FAILURE;
-            } else
+            }
+            else
             {
                 FILE *inputfileptr;
 
@@ -232,9 +250,9 @@ int main(int argc, char *argv[])
 
                 if (inputfileptr == NULL)
                 {
-                    printf("The input file specified could not be opened. "
+                    printf("The input file specified \"%s\" could not be opened. "
                            "Make sure the file name and path is correct and that the file exists\n"
-                           "Give the input file in the following format: -fi <valid path to the existing file>\n");
+                           "Give the input file in the following format: -fi <valid path to the existing file>\n", argv[i + 1]);
                     return EXIT_FAILURE;
                 }
 
@@ -267,7 +285,8 @@ int main(int argc, char *argv[])
                         printf("Plaintext file input: \"%s\"\n", argv[i + 1]);
 
                     fclose(inputfileptr);
-                } else
+                }
+                else
                 {
                     printf("The file is too large, a maximum of %d bytes may be given with '-fi'\n", MAX_REQ_LEN);
                     fclose(inputfileptr);
@@ -276,51 +295,69 @@ int main(int argc, char *argv[])
             }
 
             i++; //skip over the value parameter that follows this parameter
-        } else if (strstr(argv[i], "-fo") != NULL) // Set the output file name
+        }
+        else if (strstr(argv[i], "-fo") != NULL) // Set the output file name
         {
             args[6] = true;
 
+            char *temp_path = argv[i + 1];
+            char *output_file_path = NULL;
+
+            output_file_path = (char *) malloc((strlen(argv[i + 1]) + 1) * sizeof(char));
+
+            int pos = 0;
+            while (strrchr(temp_path, '/') != NULL)
+            {
+                output_file_path[pos++] = temp_path[0]; // Retrieve the file path
+                temp_path++; // Move to next char
+            }
+
+            // temp_path now contains the output filename
+            free(output_file_path); // Discard the file path if one is given
             if (method == -1)
             {
                 printf("The chaining method must be specified before the output file is given\n");
                 printf("Specify this with '-cbc' for Cipher Block Chaining or '-cfb' for Cipher Feedback\n");
                 return EXIT_FAILURE;
-            } else if (method) // CFB
+            }
+            else if (method) // CFB
             {
-//                if (strstr(argv[i + 1], "/CFB output/") == NULL) // Add file path if not included
-//                {
-//                    output_file_name = (char *) malloc((strlen(argv[i + 1]) + 13) * sizeof(char));
-//                    strcpy(output_file_name, "/CFB output/");
-//                    strcat(output_file_name, argv[i + 1]);
-//                } else
-                {
-                    output_file_name = (char *) malloc((strlen(argv[i + 1]) + 1) * sizeof(char));
-                    strcpy(output_file_name, argv[i + 1]); // TODO: fix spaces in path problem
-                }
-
-                struct stat st = {0};
-                if (stat("/CFB output/", &st) == -1) // Make the output directory if it does not exits
-                    mkdir("/CFB output/", 0700);
-            } else // CBC
+                output_file_path = (char *) malloc(11 * sizeof(char));
+                strcpy(output_file_path, "CFB output");
+            }
+            else // CBC
             {
-//                if (strstr(argv[i + 1], "/CBC output/") == NULL) // Add file path if not included
-//                {
-//                    output_file_name = (char *) malloc((strlen(argv[i + 1]) + 13) * sizeof(char));
-//                    strcpy(output_file_name, "/CBC output/");
-//                    strcat(output_file_name, argv[i + 1]);
-//                } else
-                {
-                    output_file_name = (char *) malloc((strlen(argv[i + 1]) + 1) * sizeof(char));
-                    strcpy(output_file_name, argv[i + 1]); // TODO: fix spaces in path problem
-                }
-
-                struct stat st = {0};
-                if (stat("/CBC output/", &st) == -1) // Make the output directory if it does not exits
-                    mkdir("/CBC output/", 0700);
+                output_file_path = (char *) malloc(11 * sizeof(char));
+                strcpy(output_file_path, "CBC output");
             }
 
+            struct stat st = {0};
+            int mkdir_result = 0;
+            if (stat(output_file_path, &st) == -1) // Check if directory exists
+                mkdir_result = mkdir(output_file_path, 0700); // Attempt to create directory if not existing
+
+            if (mkdir_result < 0) // Could not create path
+            {
+                printf("The output directory \"%s\" could not be accessed\n"
+                       "This program does not have sufficient privileges to create directories, "
+                       "so the output will appear in the same directory as the executable\n", output_file_path);
+
+                output_file_name = (char *) malloc((strlen(temp_path) + 1) * sizeof(char));
+                strcpy(output_file_name, temp_path); // Copy only the filename
+            }
+            else // Path exists
+            {
+                int len = strlen(output_file_path) + strlen(temp_path) + 2;
+                output_file_name = (char *) malloc(len * sizeof(char));
+                strcpy(output_file_name, output_file_path); // Copy the path
+                strcat(output_file_name, "/");
+                strcat(output_file_name, temp_path); // Copy the filename
+            }
+
+            free(output_file_path);
             i++; //skip over the value parameter that follows this parameter
-        } else if (strstr(argv[i], "-streamlen") != NULL) // Set the stream length for CFB
+        }
+        else if (strstr(argv[i], "-streamlen") != NULL) // Set the stream length for CFB
         {
             args[7] = true;
 
@@ -328,15 +365,18 @@ int main(int argc, char *argv[])
             {
                 CFB_len = CFB8;
                 printf("8-bit CFB selected\n");
-            } else if (!strcmp(argv[i + 1], "64"))
+            }
+            else if (!strcmp(argv[i + 1], "64"))
             {
                 CFB_len = CFB64;
                 printf("64-bit CFB selected\n");
-            } else if (!strcmp(argv[i + 1], "128"))
+            }
+            else if (!strcmp(argv[i + 1], "128"))
             {
                 CFB_len = CFB128;
                 printf("128-bit CFB selected\n");
-            } else
+            }
+            else
             {
                 printf("Parameter '%s' is not a valid stream length\n", argv[i + 1]);
                 printf("Valid parameters for '-streamlen' are '8', '64' and '128'\n");
@@ -344,11 +384,13 @@ int main(int argc, char *argv[])
             }
 
             i++; //skip over the value parameter that follows this parameter
-        } else if (strstr(argv[i], "-h") != NULL) // Show help
+        }
+        else if (strstr(argv[i], "-h") != NULL) // Show help
         {
             printf("\nUsage:\n%s", help_message);
             return EXIT_SUCCESS;
-        } else
+        }
+        else
             printf("Invalid parameter: %s\n", argv[i]);
     }
 
@@ -536,23 +578,8 @@ int main(int argc, char *argv[])
     if (!args[6] && file_output)
     {
         printf("The output file is not specified\nUsing default value of \"output.txt\"\n");
-        output_file_name = (char *) malloc(23 * sizeof(char));
-
-//        if (method) // CFB
-//        {
-//            strcpy(output_file_name, "/CFB output/output.txt");
-//            struct stat st = {0};
-//            if (stat("/CFB output/", &st) == -1) // Make the output directory if it does not exits
-//                mkdir("/CFB output/", 0700);
-//        }
-//        else // CBC
-//        {
-//            strcpy(output_file_name, "/CBC output/output.txt");
-//            struct stat st = {0};
-//            if (stat("/CBC output/", &st) == -1) // Make the output directory if it does not exits
-//                mkdir("/CBC output/", 0700);
-//        }
-        strcpy(output_file_name, "output.txt"); // TODO: fix spaces in path problem
+        output_file_name = (char *) malloc(11 * sizeof(char));
+        strcpy(output_file_name, "output.txt");
     }
 
     if (!args[7] && method)
@@ -581,7 +608,8 @@ int main(int argc, char *argv[])
             {
                 write_to_file(output_file_name, message, message_len);
                 printf("Plaintext file output: \"%s\"\n", output_file_name);
-            } else
+            }
+            else
             {
                 printf("Decrypted (ASCII):\n\"");
                 print_c_string(message, message_len, false);
@@ -602,7 +630,8 @@ int main(int argc, char *argv[])
             {
                 write_to_file(output_file_name, message, num_blocks * CFB_len);
                 printf("Encrypted file output: \"%s\"\n", output_file_name);
-            } else
+            }
+            else
             {
                 printf("Encrypted (HEX):\n");
                 print_c_string(message, num_blocks * CFB_len, true);
@@ -624,7 +653,8 @@ int main(int argc, char *argv[])
             {
                 write_to_file(output_file_name, message, message_len);
                 printf("Plaintext file output: \"%s\"\n", output_file_name);
-            } else
+            }
+            else
             {
                 printf("Decrypted (ASCII):\n\"");
                 print_c_string(message, message_len, false);
@@ -645,7 +675,8 @@ int main(int argc, char *argv[])
             {
                 write_to_file(output_file_name, message, num_blocks * 16);
                 printf("Encrypted file output: \"%s\"\n", output_file_name);
-            } else
+            }
+            else
             {
                 printf("Encrypted (HEX):\n");
                 print_c_string(message, num_blocks * 16, true);
@@ -948,7 +979,7 @@ int AES_dot_product(int a, int b)
      * XOR pairs to put together, i.e.
      * 0b101101 = x^5 + x^3 + x^2 + 1
      */
-    
+
     int i;
     int result = 0;
 
@@ -1143,7 +1174,7 @@ bool AES_decrypt(int width, int current_block[4][4], int expanded_key[])
 bool CBC_encrypt(int width, unsigned char message[], int message_len, int IV[16], int user_key[])
 {
     int key_size;
-    
+
     if (width == AES128)
         key_size = AES128_KEY_SIZE;
     else if (width == AES192)
@@ -1152,16 +1183,16 @@ bool CBC_encrypt(int width, unsigned char message[], int message_len, int IV[16]
         key_size = AES256_KEY_SIZE;
     else
         return EXIT_FAILURE;
-    
-    int expanded_key[key_size  + 32]; // Allocate more space since AES_key_expansion deliberately writes out of bounds
+
+    int expanded_key[key_size + 32]; // Allocate more space since AES_key_expansion deliberately writes out of bounds
     AES_key_expansion(width, expanded_key, user_key);
-    
+
     int i;
     int current_block[4][4];
     int current_vector[16];
 
     // Copy IV to not change its contents
-    for (i = 0; i < 16; i ++)
+    for (i = 0; i < 16; i++)
         current_vector[i] = IV[i];
 
     int message_pos;
@@ -1205,7 +1236,7 @@ bool CBC_decrypt(int width, unsigned char message[], int message_len, int IV[16]
 
     int expanded_key[key_size + 32]; // Allocate more space since AES_key_expansion deliberately writes out of bounds
     AES_key_expansion(width, expanded_key, user_key);
-    
+
     int i;
     int current_block[4][4];
     int current_vector[2][16]; // current_vector[vector] => current, current_vector[!vector] => old
