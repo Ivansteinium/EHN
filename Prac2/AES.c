@@ -9,7 +9,7 @@ int main(int argc, char *argv[])
     int method = -1; // CBC if false, CFB if true
     int operation = -1; // encrypt if false, decrypt if true
     int width = -1; // AES128, AES192, AES256 macros
-    int CFB_len = -1; // CFB8 (default), CFB64 , CFB128 marcos
+    int block_len = 16; // CFB8 , CFB64 , CFB128 (default) marcos
     bool file_output = false;
     int message_len = 0;
     unsigned char *message = NULL;
@@ -182,9 +182,8 @@ int main(int argc, char *argv[])
                     char current_number[2];
                     for (pos = 0; pos < message_len; pos++)
                     {
-                        // TODO: has a small chance to malfunction for no apparent reason
                         strncpy(current_number, parameter, 2); // Retrieve one byte (two hex chars)
-                        message[pos] = (unsigned char) strtol(current_number, NULL, 16); // Get the integer value from the byte
+                        message[pos] = (unsigned char) hex_convert(current_number, 2); // Get the integer value from the byte
                         parameter += 2; // Move to the next byte
                     }
 
@@ -253,7 +252,7 @@ int main(int argc, char *argv[])
 
                 if (inputfileptr == NULL)
                 {
-                    printf("The input file specified \"%s\" could not be opened. "
+                    printf("The input file specified \"%s\" could not be opened\n"
                            "Make sure the file name and path is correct and that the file exists\n"
                            "Give the input file in the following format: -fi <valid path to the existing file>\n", argv[i + 1]);
                     return EXIT_FAILURE;
@@ -303,61 +302,72 @@ int main(int argc, char *argv[])
         {
             args[6] = true;
 
-            char *temp_path = argv[i + 1];
-            char *output_file_path = NULL;
-
-            output_file_path = (char *) malloc((strlen(argv[i + 1]) + 1) * sizeof(char));
-
-            int pos = 0;
-            while (strrchr(temp_path, '/') != NULL)
-            {
-                output_file_path[pos++] = temp_path[0]; // Retrieve the file path
-                temp_path++; // Move to next char
-            }
-            // temp_path now contains the output filename
-
-            free(output_file_path); // Discard the file path if one is given
             if (method == -1)
             {
                 printf("The chaining method must be specified before the output file is given\n");
                 printf("Specify this with '-cbc' for Cipher Block Chaining or '-cfb' for Cipher Feedback\n");
                 return EXIT_FAILURE;
             }
-            else if (method) // CFB
+            else
             {
-                output_file_path = (char *) malloc(11 * sizeof(char));
-                strcpy(output_file_path, "CFB output");
-            }
-            else // CBC
-            {
-                output_file_path = (char *) malloc(11 * sizeof(char));
-                strcpy(output_file_path, "CBC output");
+                char *temp_path = argv[i + 1];
+                char *output_file_path = NULL;
+
+                output_file_path = (char *) malloc((strlen(argv[i + 1]) + 1) * sizeof(char));
+                output_file_path[0] = '\0';
+
+                int pos = 0;
+                while (strrchr(temp_path, '/') != NULL)
+                {
+                    output_file_path[pos++] = temp_path[0]; // Retrieve the file path
+                    temp_path++; // Move to next char
+                }
+                // temp_path now contains the output filename
+
+                if (output_file_path[0] != '\0')
+                {
+                    printf("\nWARNING: A path was given with the output filename and will be discarded\n"
+                           "You can find the output file in one of the output directories created\n\n");
+                }
+                free(output_file_path); // Discard the file path if one is given
+
+                if (method) // CFB
+                {
+                    output_file_path = (char *) malloc(11 * sizeof(char));
+                    strcpy(output_file_path, "CFB output");
+                }
+                else // CBC
+                {
+                    output_file_path = (char *) malloc(11 * sizeof(char));
+                    strcpy(output_file_path, "CBC output");
+                }
+
+                struct stat st = {0};
+                int mkdir_result = 0;
+                if (stat(output_file_path, &st) == -1) // Check if directory exists
+                    mkdir_result = mkdir(output_file_path, 0700); // Attempt to create directory if not existing
+
+                if (mkdir_result < 0) // Could not create path
+                {
+                    printf("\nERROR: The output directory \"%s\" could not be accessed\n"
+                           "It seems that this program does not have sufficient privileges to create directories, "
+                           "so the output will appear in the same directory as the executable\n\n", output_file_path);
+
+                    output_file_name = (char *) malloc((strlen(temp_path) + 1) * sizeof(char));
+                    strcpy(output_file_name, temp_path); // Copy only the filename
+                }
+                else // Path exists
+                {
+                    int len = strlen(output_file_path) + strlen(temp_path) + 2;
+                    output_file_name = (char *) malloc(len * sizeof(char));
+                    strcpy(output_file_name, output_file_path); // Copy the path
+                    strcat(output_file_name, "/");
+                    strcat(output_file_name, temp_path); // Copy the filename
+                }
+
+                free(output_file_path);
             }
 
-            struct stat st = {0};
-            int mkdir_result = 0;
-            if (stat(output_file_path, &st) == -1) // Check if directory exists
-                mkdir_result = mkdir(output_file_path, 0700); // Attempt to create directory if not existing
-
-            if (mkdir_result < 0) // Could not create path
-            {
-                printf("The output directory \"%s\" could not be accessed\n"
-                       "This program does not have sufficient privileges to create directories, "
-                       "so the output will appear in the same directory as the executable\n", output_file_path);
-
-                output_file_name = (char *) malloc((strlen(temp_path) + 1) * sizeof(char));
-                strcpy(output_file_name, temp_path); // Copy only the filename
-            }
-            else // Path exists
-            {
-                int len = strlen(output_file_path) + strlen(temp_path) + 2;
-                output_file_name = (char *) malloc(len * sizeof(char));
-                strcpy(output_file_name, output_file_path); // Copy the path
-                strcat(output_file_name, "/");
-                strcat(output_file_name, temp_path); // Copy the filename
-            }
-
-            free(output_file_path);
             i++; //skip over the value parameter that follows this parameter
         }
         else if (strstr(argv[i], "-streamlen") != NULL) // Set the stream length for CFB
@@ -366,17 +376,17 @@ int main(int argc, char *argv[])
 
             if (!strcmp(argv[i + 1], "8"))
             {
-                CFB_len = CFB8;
+                block_len = CFB8;
                 printf("8-bit CFB selected\n");
             }
             else if (!strcmp(argv[i + 1], "64"))
             {
-                CFB_len = CFB64;
+                block_len = CFB64;
                 printf("64-bit CFB selected\n");
             }
             else if (!strcmp(argv[i + 1], "128"))
             {
-                CFB_len = CFB128;
+                block_len = CFB128;
                 printf("128-bit CFB selected\n");
             }
             else
@@ -399,7 +409,7 @@ int main(int argc, char *argv[])
 
     if (!args[0] || !args[1] || !args[2] || message == NULL)
     {
-        printf("All parameters are not given\n\nUsage:\n%s\n\nPerforming tests:\n\n", help_message);
+        printf("All needed parameters are not given\n\nUsage:\n%s\n\nPerforming tests:\n\n", help_message);
         test_functionality( );
         return EXIT_SUCCESS;
     }
@@ -413,18 +423,20 @@ int main(int argc, char *argv[])
 
     if (!args[6] && file_output)
     {
-        printf("The output file is not specified, using default value of \"output.txt\"\n");
-        output_file_name = (char *) malloc(11 * sizeof(char));
-        strcpy(output_file_name, "output.txt");
+        output_file_name = (char *) malloc(14 * sizeof(char));
+
+        if (operation) // Decrypt
+            strcpy(output_file_name, "decrypted.txt");
+        else // Encrypt
+            strcpy(output_file_name, "encrypted.enc");
+
+        printf("The output file is not specified, using default value of \"%s\"\n", output_file_name);
     }
 
     if (!args[7] && method)
-    {
-        printf("The CFB stream length is not specified, using default value of 8-bits\n");
-        CFB_len = CFB8;
-    }
+        printf("The CFB stream length is not specified, using default value of 128-bits\n");
 
-    // TODO: print all the other stuff he wants for some reason
+    // TODO: Add verbose mode
 
     // MAIN PROGRAM
     printf("\n\n");
@@ -434,14 +446,16 @@ int main(int argc, char *argv[])
         printf("Decryption in process...\n\n");
 
         if (method) // CFB
-            CFB_decrypt(width, message, message_len, CFB_len, IV, user_key);
+            CFB_decrypt(width, message, message_len, block_len, IV, user_key);
         else // CBC
             CBC_decrypt(width, message, message_len, IV, user_key);
 
         if (file_output)
         {
-            // Will write trailing zeroes, no way to tell how many since there can be zeroes in the file
-            // Doesn't seem to be a problem, but file size may be slightly larger this way
+            // Remove trailing zeroes which could have been added in padding during encryption
+            while (message[message_len] == '\0')
+                message_len--;
+            message_len++; // Re-add null terminator
             write_to_file(output_file_name, message, message_len);
             printf("Plaintext file output: \"%s\"\n", output_file_name);
         }
@@ -451,13 +465,9 @@ int main(int argc, char *argv[])
     else // Encrypt
     {
         printf("Encryption in process...\n\n");
-        int block_len = 16;
 
         if (method) // CFB
-        {
-            CFB_encrypt(width, message, message_len, CFB_len, IV, user_key);
-            block_len = CFB_len;
-        }
+            CFB_encrypt(width, message, message_len, block_len, IV, user_key);
         else // CBC
             CBC_encrypt(width, message, message_len, IV, user_key);
 
@@ -1170,6 +1180,56 @@ bool CFB_decrypt(int width, unsigned char message[], int message_len, int CFB_le
     }
 
     return EXIT_SUCCESS;
+}
+
+
+// Convert hex to int, done because the system hex converter is unreliable
+int hex_convert(char hex_string[], int length)
+{
+    int result = 0;
+    int base = 1;
+
+    int i;
+    for (i = 0; i < length - 1; i++)
+        base *= 16;
+
+    for (i = 0; i < length; i++)
+    {
+        switch (hex_string[i])
+        {
+            case '0': {break;}
+            case '1': {result += base * 1; break;}
+            case '2': {result += base * 2; break;}
+            case '3': {result += base * 3; break;}
+            case '4': {result += base * 4; break;}
+            case '5': {result += base * 5; break;}
+            case '6': {result += base * 6; break;}
+            case '7': {result += base * 7; break;}
+            case '8': {result += base * 8; break;}
+            case '9': {result += base * 9; break;}
+            case 'A': {result += base * 10; break;}
+            case 'B': {result += base * 11; break;}
+            case 'C': {result += base * 12; break;}
+            case 'D': {result += base * 13; break;}
+            case 'E': {result += base * 14; break;}
+            case 'F': {result += base * 15; break;}
+            case 'a': {result += base * 10; break;}
+            case 'b': {result += base * 11; break;}
+            case 'c': {result += base * 12; break;}
+            case 'd': {result += base * 13; break;}
+            case 'e': {result += base * 14; break;}
+            case 'f': {result += base * 15; break;}
+            default:
+                {
+                    printf("The input given (\'%c\') is not a valid HEX character\nTerminating...\n", hex_string[i]);
+                    exit(EXIT_FAILURE);
+                }
+        }
+
+        base /= 16;
+    }
+
+    return result;
 }
 
 

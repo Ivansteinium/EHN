@@ -9,7 +9,7 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 
-#define MAX_REQ_LEN 104857600 // 100 MB, pfft daar is baie memory
+#define MAX_REQ_LEN 104857600 // 100 MiB
 
 // AES constants
 #define AES128 0
@@ -30,9 +30,9 @@
 #define AES128_SUB_EXPANSION 3
 #define AES192_SUB_EXPANSION 5
 #define AES256_SUB_EXPANSION 7
-#define CFB8 1 // Default
+#define CFB8 1
 #define CFB64 8
-#define CFB128 16
+#define CFB128 16 // Default
 
 
 const int S_BOX[2][16][16] = {{{0x63, 0x7C, 0x77, 0x7B, 0xF2, 0x6B, 0x6F, 0xC5, 0x30, 0x01, 0x67, 0x2B, 0xFE, 0xD7, 0xAB, 0x76}, // Forward
@@ -309,6 +309,15 @@ bool CFB_encrypt(int width, unsigned char message[], int message_len, int CFB_le
  * @return Successful execution.
  */
 bool CFB_decrypt(int width, unsigned char message[], int message_len, int CF_Blen, int IV[16], int user_key[]);
+
+
+/**
+ * Convert hex to int, done because the system hex converter is unreliable
+ * @param hex_string The hex string to be converted.
+ * @param length The length of the hex string.
+ * @return The converted value.
+ */
+int hex_convert(char hex_string[], int length);
 
 
 /**
