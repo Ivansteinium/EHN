@@ -10,6 +10,7 @@
 #include <sys/stat.h>
 
 #define MAX_REQ_LEN 104857600 // 100 MiB
+#define VERBOSE 1
 
 // AES constants
 #define AES128 0
@@ -78,9 +79,10 @@ const int PRIME_MATRIX[2][4][4] = {{{2, 3, 1, 1}, // Forward
                                     {11, 13,  9, 14}}};
 
 
-// TODO: update once done
+
 /**
- * The main function.
+ * The main function. Arguments as described in thr README is passed to this function.
+ * This function then uses the arguments to either encrypt or decrypt some input.
  * @param argc The number of arguments passed.
  * @param argv The arguments as C-strings.
  * @return Successful execution.
@@ -311,18 +313,29 @@ bool CFB_encrypt(int width, unsigned char message[], int message_len, int CFB_le
 bool CFB_decrypt(int width, unsigned char message[], int message_len, int CF_Blen, int IV[16], int user_key[]);
 
 
-/**
- * Convert hex to int, done because the system hex converter is unreliable
- * @param hex_string The hex string to be converted.
- * @param length The length of the hex string.
- * @return The converted value.
- */
+#if VERBOSE
+bool AES_encrypt_verbose(int width, int current_block[4][4], int expanded_key[]);
+
+
+bool AES_decrypt_verbose(int width, int current_block[4][4], int expanded_key[]);
+
+
+bool CBC_encrypt_verbose(int width, unsigned char message[], int message_len, int IV[16], int user_key[]);
+
+
+bool CBC_decrypt_verbose(int width, unsigned char message[], int message_len, int IV[16], int user_key[]);
+
+
+bool CFB_encrypt_verbose(int width, unsigned char message[], int message_len, int CFB_len, int IV[16], int user_key[]);
+
+
+bool CFB_decrypt_verbose(int width, unsigned char message[], int message_len, int CF_Blen, int IV[16], int user_key[]);
+#endif
+
+
 int hex_convert(char hex_string[], int length);
 
 
-/**
- * Print out various tests to test the functionality of the other functions.
- */
 void test_functionality( );
 
 

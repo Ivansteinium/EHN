@@ -11,6 +11,9 @@ int main(int argc, char *argv[])
     int width = -1; // AES128, AES192, AES256 macros
     int block_len = 16; // CFB8 , CFB64 , CFB128 (default) marcos
     bool file_output = false;
+#if VERBOSE
+    bool verbose = false; // Show all steps if true
+#endif
     int message_len = 0;
     unsigned char *message = NULL;
     char *output_file_name = NULL;
@@ -30,8 +33,11 @@ int main(int argc, char *argv[])
                           "\t-fi <input file>\n"
                           "\t-fo <output file>\n"
                           "\t-streamlen <len> (length of the CFB stream if '-cfb' is given, either 8, 64 or 128)\n"
-                          "\t-h help (will show this message)\n\n"
-                          "\tExample usage:\n"
+                          "\t-h help (will show this message)\n"
+#if VERBOSE
+                          "\t-verbose (will show all steps in the AES process)\n"
+#endif
+                          "\t\nExample usage:\n"
                           "\t1.\t./AES -e -cbc 128 -fi \"input.txt\" -fo \"encrypted.enc\" -key \"Very strong password\" -iv \"Initialization vector\"\n"
                           "\t2.\t./AES -d -cbc 192 -fi \"encrypted.jpg\" -fo \"image.jpg\" -key \"Very strong password\" -iv \"Initialization vector\"\n"
                           "\t3.\t./AES -e -cfb 256 -t \"Text to encrypt\" -key \"Very strong password\" -iv \"Initialization vector\" -streamlen 64\n"
@@ -403,6 +409,13 @@ int main(int argc, char *argv[])
             printf("\nUsage:\n%s", help_message);
             return EXIT_SUCCESS;
         }
+#if VERBOSE
+        else if (strstr(argv[i], "-verbose") != NULL) // Enable verbose mode
+        {
+            verbose = true;
+            printf("\nVerbose mode activated\nAll steps in the AES process will now be shown\n\n");
+        }
+#endif
         else
             printf("Invalid parameter: %s\n", argv[i]);
     }
@@ -436,8 +449,6 @@ int main(int argc, char *argv[])
     if (!args[7] && method)
         printf("The CFB stream length is not specified, using default value of 128-bits\n");
 
-    // TODO: Add verbose mode
-
     // MAIN PROGRAM
     printf("\n\n");
 
@@ -446,8 +457,18 @@ int main(int argc, char *argv[])
         printf("Decryption in process...\n\n");
 
         if (method) // CFB
-            CFB_decrypt(width, message, message_len, block_len, IV, user_key);
+#if VERBOSE
+            if (verbose)
+                CFB_decrypt_verbose(width, message, message_len, block_len, IV, user_key);
+            else
+#endif
+                CFB_decrypt(width, message, message_len, block_len, IV, user_key);
         else // CBC
+#if VERBOSE
+        if (verbose)
+            CBC_decrypt_verbose(width, message, message_len, IV, user_key);
+        else
+#endif
             CBC_decrypt(width, message, message_len, IV, user_key);
 
         if (file_output)
@@ -467,9 +488,19 @@ int main(int argc, char *argv[])
         printf("Encryption in process...\n\n");
 
         if (method) // CFB
-            CFB_encrypt(width, message, message_len, block_len, IV, user_key);
+#if VERBOSE
+            if (verbose)
+                CFB_encrypt_verbose(width, message, message_len, block_len, IV, user_key);
+            else
+#endif
+                CFB_encrypt(width, message, message_len, block_len, IV, user_key);
         else // CBC
-            CBC_encrypt(width, message, message_len, IV, user_key);
+#if VERBOSE
+            if (verbose)
+                CBC_encrypt_verbose(width, message, message_len, IV, user_key);
+            else
+#endif
+                CBC_encrypt(width, message, message_len, IV, user_key);
 
         // Determine the new message length
         int num_blocks = message_len / block_len;
@@ -912,8 +943,8 @@ bool AES_encrypt(int width, int current_block[4][4], int expanded_key[])
     key_index += 16; // Move to the last section
     AES_sub_bytes(current_block, false); // Substitute bytes
     AES_shift_rows(current_block, false); // Shift rows
-    AES_add_round_key(current_block, expanded_key, key_index); // Add round key
     // No mix columns
+    AES_add_round_key(current_block, expanded_key, key_index); // Add round key
 
     return EXIT_SUCCESS;
 }
@@ -1181,6 +1212,392 @@ bool CFB_decrypt(int width, unsigned char message[], int message_len, int CFB_le
 
     return EXIT_SUCCESS;
 }
+
+#if VERBOSE
+// The AES encryption algorithm, but all steps will be printed
+bool AES_encrypt_verbose(int width, int current_block[4][4], int expanded_key[])
+{
+    int number_of_rounds;
+
+    if (width == AES128)
+        number_of_rounds = AES128_ROUNDS;
+    else if (width == AES192)
+        number_of_rounds = AES192_ROUNDS;
+    else if (width == AES256)
+        number_of_rounds = AES256_ROUNDS;
+    else
+        return EXIT_FAILURE;
+
+    int key_index = 0; // Start at the beginning of the key and work forwards
+
+    printf("\n~~~~AES encrypt input block:~~~~\n");
+    print_block(current_block);
+
+    // Initial round, add round key
+    AES_add_round_key(current_block, expanded_key, key_index);
+    printf("Add round key (initial):\n");
+    print_block(current_block);
+
+    // Perform the normal rounds
+    int round;
+    for (round = 0; round < number_of_rounds - 1; round++)
+    {
+        key_index += 16; // Move to next section
+        printf("\n----Round %d:----\n", round + 1);
+
+        AES_sub_bytes(current_block, false); // Substitute bytes
+        printf("Substitute bytes step:\n");
+        print_block(current_block);
+
+        AES_shift_rows(current_block, false); // Shift rows
+        printf("Shift rows step:\n");
+        print_block(current_block);
+
+        AES_mix_cols(current_block, false); // Mix columns
+        printf("Mix columns step:\n");
+        print_block(current_block);
+
+        AES_add_round_key(current_block, expanded_key, key_index); // Add round key
+        printf("Add round key step:\n");
+        print_block(current_block);
+    }
+
+    // Last round is a special case
+    key_index += 16; // Move to the last section
+    printf("\n----Last round:----\n");
+
+    AES_sub_bytes(current_block, false); // Substitute bytes
+    printf("Substitute bytes step:\n");
+    print_block(current_block);
+
+    AES_shift_rows(current_block, false); // Shift rows
+    printf("Shift rows step:\n");
+    print_block(current_block);
+
+    // No mix columns
+    printf("No mix columns step in the last round\n\n");
+
+    AES_add_round_key(current_block, expanded_key, key_index); // Add round key
+    printf("Add round key step:\n");
+    print_block(current_block);
+
+    return EXIT_SUCCESS;
+}
+
+
+// The AES decryption algorithm, but all steps will be printed
+bool AES_decrypt_verbose(int width, int current_block[4][4], int expanded_key[])
+{
+    int number_of_rounds;
+    int key_size;
+
+    if (width == AES128)
+    {
+        number_of_rounds = AES128_ROUNDS;
+        key_size = AES128_KEY_SIZE;
+    }
+    else if (width == AES192)
+    {
+        number_of_rounds = AES192_ROUNDS;
+        key_size = AES192_KEY_SIZE;
+    }
+    else if (width == AES256)
+    {
+        number_of_rounds = AES256_ROUNDS;
+        key_size = AES256_KEY_SIZE;
+    }
+    else
+        return EXIT_FAILURE;
+
+    int key_index = key_size - 16; // Start at the end of the key and work backwards
+
+    printf("\n~~~~AES decrypt input block:~~~~\n");
+    print_block(current_block);
+
+    // Initial round, add round key
+    AES_add_round_key(current_block, expanded_key, key_index);
+    printf("Add round key (initial):\n");
+    print_block(current_block);
+
+    // Perform the normal rounds
+    int round;
+    for (round = 0; round < number_of_rounds - 1; round++)
+    {
+        key_index -= 16; // Move to previous section
+        printf("\n----Round %d:----\n", round + 1);
+
+        AES_shift_rows(current_block, true); // Inverse shift rows
+        printf("Inverse shift rows step:\n");
+        print_block(current_block);
+
+        AES_sub_bytes(current_block, true); // Inverse substitute bytes
+        printf("Inverse substitute bytes step:\n");
+        print_block(current_block);
+
+        AES_add_round_key(current_block, expanded_key, key_index); // Add round key
+        printf("Add round key step:\n");
+        print_block(current_block);
+
+        AES_mix_cols(current_block, true); // Inverse mix columns
+        printf("Inverse mix columns step:\n");
+        print_block(current_block);
+    }
+
+    // Last round is a special case
+    key_index -= 16; // Move to the first section
+    printf("\n----Last round:----\n");
+
+    AES_shift_rows(current_block, true); // Inverse shift rows
+    printf("Inverse shift rows step:\n");
+    print_block(current_block);
+
+    AES_sub_bytes(current_block, true); // Inverse substitute bytes
+    printf("Inverse substitute bytes step:\n");
+    print_block(current_block);
+
+    AES_add_round_key(current_block, expanded_key, key_index); // Add round key
+    printf("Add round key step:\n");
+    print_block(current_block);
+
+    // No mix columns
+    printf("No inverse mix columns step in the last round\n\n");
+
+    return EXIT_SUCCESS;
+}
+
+
+// The Cipher Block Chaining encryption
+bool CBC_encrypt_verbose(int width, unsigned char message[], int message_len, int IV[16], int user_key[])
+{
+    int key_size;
+
+    if (width == AES128)
+        key_size = AES128_KEY_SIZE;
+    else if (width == AES192)
+        key_size = AES192_KEY_SIZE;
+    else if (width == AES256)
+        key_size = AES256_KEY_SIZE;
+    else
+        return EXIT_FAILURE;
+
+    int expanded_key[key_size + 32]; // Allocate more space since AES_key_expansion deliberately writes out of bounds
+    AES_key_expansion(width, expanded_key, user_key);
+
+    int i;
+    int current_block[4][4];
+    int current_vector[16];
+
+    // Copy IV to not change its contents
+    for (i = 0; i < 16; i++)
+        current_vector[i] = IV[i];
+
+    int message_pos;
+    for (message_pos = 0; message_pos < message_len; message_pos += 16)
+    {
+        printf("\n\n\n********Block %d:********\n", (message_pos / 16) + 1);
+
+        // XOR current vector with plaintext
+        for (i = 0; i < 16; i++)
+            message[message_pos + i] ^= current_vector[i];
+
+        // Convert the encryption input to a block
+        char_blockify(message, current_block, message_pos);
+
+        // Encrypt to produce ciphertext block
+        AES_encrypt_verbose(width, current_block, expanded_key);
+
+        // Convert the block back to the string
+        char_unblockify(message, current_block, message_pos);
+
+        // Update current vector with ciphertext values
+        for (i = 0; i < 16; i++)
+            current_vector[i] = message[message_pos + i];
+    }
+
+    printf("\n\n********Expanded key:********\n");
+    print_expanded_key(width, expanded_key);
+
+    return EXIT_SUCCESS;
+}
+
+
+// The Cipher Block Chaining decryption
+bool CBC_decrypt_verbose(int width, unsigned char message[], int message_len, int IV[16], int user_key[])
+{
+    int key_size;
+
+    if (width == AES128)
+        key_size = AES128_KEY_SIZE;
+    else if (width == AES192)
+        key_size = AES192_KEY_SIZE;
+    else if (width == AES256)
+        key_size = AES256_KEY_SIZE;
+    else
+        return EXIT_FAILURE;
+
+    int expanded_key[key_size + 32]; // Allocate more space since AES_key_expansion deliberately writes out of bounds
+    AES_key_expansion(width, expanded_key, user_key);
+
+    int i;
+    int current_block[4][4];
+    int current_vector[2][16]; // current_vector[vector] => current, current_vector[!vector] => old
+    bool vector = false; // For array switching, no array copy needed then
+
+    // Copy IV to not change its contents
+    for (i = 0; i < 16; i++)
+        current_vector[vector][i] = IV[i];
+
+    int message_pos;
+    for (message_pos = 0; message_pos < message_len; message_pos += 16)
+    {
+        printf("\n\n\n********Block %d:********\n", (message_pos / 16) + 1);
+
+        // Copy current ciphertext values to the old vector
+        for (i = 0; i < 16; i++)
+            current_vector[!vector][i] = message[message_pos + i];
+
+        // Convert the decryption input to a block
+        char_blockify(message, current_block, message_pos);
+
+        // Decrypt the block
+        AES_decrypt_verbose(width, current_block, expanded_key);
+
+        // Convert the block back to the string
+        char_unblockify(message, current_block, message_pos);
+
+        // XOR current vector with decrypted text to produce plaintext
+        for (i = 0; i < 16; i++)
+            message[message_pos + i] ^= current_vector[vector][i];
+
+        vector = !vector; // Switch the arrays so that the old vector becomes the current one
+    }
+
+    printf("\n\n********Expanded key:********\n");
+    print_expanded_key(width, expanded_key);
+
+    return EXIT_SUCCESS;
+}
+
+
+// The Cipher Feedback encryption algorithm
+bool CFB_encrypt_verbose(int width, unsigned char message[], int message_len, int CFB_len, int IV[16], int user_key[])
+{
+    int key_size;
+
+    if (width == AES128)
+        key_size = AES128_KEY_SIZE;
+    else if (width == AES192)
+        key_size = AES192_KEY_SIZE;
+    else if (width == AES256)
+        key_size = AES256_KEY_SIZE;
+    else
+        return EXIT_FAILURE;
+
+    int expanded_key[key_size + 32]; // Allocate more space since AES_key_expansion deliberately writes out of bounds
+    AES_key_expansion(width, expanded_key, user_key);
+
+    int i;
+    int CFB_back = 16 - CFB_len; // Length from the back
+    int current_block[4][4];
+    int current_vector[16]; // AES requires 128 bit input
+    unsigned char current_string[16];
+
+    // Copy IV to not change its contents
+    for (i = 0; i < 16; i++)
+        current_vector[i] = IV[i];
+
+    int message_pos;
+    for (message_pos = 0; message_pos < message_len; message_pos += CFB_len)
+    {
+        printf("\n\n\n********Block %d:********\n", (message_pos / CFB_len) + 1);
+
+        // Convert the encryption input to a block
+        hex_blockify(current_vector, current_block);
+
+        // Encrypt the block
+        AES_encrypt_verbose(width, current_block, expanded_key);
+
+        // Take first CFB_len bytes in the block and XOR with the plaintext bytes to get the ciphertext bytes
+        char_unblockify(current_string, current_block, 0);
+        for (i = 0; i < CFB_len; i++)
+            message[message_pos + i] ^= current_string[i];
+        // Discard the rest of the block
+
+        // Shift the current vector to the left by CFB_len bytes
+        for (i = 0; i < CFB_back; i++)
+            current_vector[i] = current_vector[i + CFB_len];
+
+        // Put the ciphertext bytes in the last CFB_len bytes
+        for (i = 0; i < CFB_len; i++)
+            current_vector[i + CFB_back] = message[message_pos + i];
+    }
+
+    printf("\n\n********Expanded key:********\n");
+    print_expanded_key(width, expanded_key);
+
+    return EXIT_SUCCESS;
+}
+
+
+// The Cipher Feedback decryption algorithm
+bool CFB_decrypt_verbose(int width, unsigned char message[], int message_len, int CFB_len, int IV[16], int user_key[])
+{
+    int key_size;
+
+    if (width == AES128)
+        key_size = AES128_KEY_SIZE;
+    else if (width == AES192)
+        key_size = AES192_KEY_SIZE;
+    else if (width == AES256)
+        key_size = AES256_KEY_SIZE;
+    else
+        return EXIT_FAILURE;
+
+    int expanded_key[key_size + 32]; // Allocate more space since AES_key_expansion deliberately writes out of bounds
+    AES_key_expansion(width, expanded_key, user_key);
+
+    int i;
+    int CFB_back = 16 - CFB_len;
+    int current_block[4][4];
+    int current_vector[16]; // AES requires 128 bit input
+    unsigned char current_string[16];
+
+    // Copy IV to not change its contents
+    for (i = 0; i < 16; i++)
+        current_vector[i] = IV[i];
+
+    int message_pos;
+    for (message_pos = 0; message_pos < message_len; message_pos += CFB_len)
+    {
+        printf("\n\n\n********Block %d:********\n", (message_pos / CFB_len) + 1);
+
+        // Convert the encryption input to a block
+        hex_blockify(current_vector, current_block);
+
+        // Encrypt the block
+        AES_encrypt_verbose(width, current_block, expanded_key);
+
+        // Shift the current vector to the left by CFB_len bytes
+        for (i = 0; i < CFB_back; i++)
+            current_vector[i] = current_vector[i + CFB_len];
+
+        // Put the ciphertext bytes in the last CFB_len bytes
+        for (i = 0; i < CFB_len; i++)
+            current_vector[i + CFB_back] = message[message_pos + i];
+
+        // Take first CFB_len bytes in the block and XOR with the ciphertext bytes to get the plaintext bytes
+        char_unblockify(current_string, current_block, 0);
+        for (i = 0; i < CFB_len; i++)
+            message[message_pos + i] ^= current_string[i];
+        // Discard the rest of the block
+    }
+
+    printf("\n\n********Expanded key:********\n");
+    print_expanded_key(width, expanded_key);
+
+    return EXIT_SUCCESS;
+}
+#endif
 
 
 // Convert hex to int, done because the system hex converter is unreliable
