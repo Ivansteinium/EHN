@@ -104,7 +104,7 @@ void char_blockify(unsigned char message[], int current_block[4][4], int start_p
  * @param message An integer array containing the values to be converted.
  * @param current_block The output as a 4x4 integer array.
  */
-void hex_blockify(int message[16], int current_block[4][4]);
+void int_blockify(int message[16], int current_block[4][4]);
 
 
 /**
@@ -132,10 +132,10 @@ void print_expanded_key(int width, int expanded_key[]);
 
 /**
  * Print a c-string up to a certain length in hex.
- * @param message The message to be printed.
+ * @param hex_string The hex string to be printed.
  * @param message_len The length of the message.
  */
-void print_hex_string(unsigned char message[], int message_len);
+void print_hex_string(unsigned char hex_string[], int message_len);
 
 
 /**

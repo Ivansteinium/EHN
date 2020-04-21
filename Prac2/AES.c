@@ -47,79 +47,80 @@ int main(int argc, char *argv[])
     // Greeting
     printf("\nEHN 410 Group 12 Practical 2\n\n");
 
-    for (i = 1; i < argc; i++)
+    int arg;
+    for (arg = 1; arg < argc; arg++)
     {
-        if (strstr(argv[i], "-cbc") != NULL) // Set chaining method to CBC and length
+        if (strstr(argv[arg], "-cbc") != NULL) // Set chaining method to CBC and length
         {
             args[0] = true;
             method = false; //set the chaining method
 
-            if (!strcmp(argv[i + 1], "128"))
+            if (!strcmp(argv[arg + 1], "128"))
             {
                 width = AES128;
                 printf("AES128 with CBC selected\n");
             }
-            else if (!strcmp(argv[i + 1], "192"))
+            else if (!strcmp(argv[arg + 1], "192"))
             {
                 width = AES192;
                 printf("AES192 with CBC selected\n");
             }
-            else if (!strcmp(argv[i + 1], "256"))
+            else if (!strcmp(argv[arg + 1], "256"))
             {
                 width = AES256;
                 printf("AES256 with CBC selected\n");
             }
             else
             {
-                printf("Parameter '%s' is not a valid length\n", argv[i + 1]);
+                printf("Parameter '%s' is not a valid length\n", argv[arg + 1]);
                 printf("Valid parameters are '128', '192' and '256'\n");
                 return EXIT_FAILURE;
             }
 
-            i++; // Skip over the value parameter that follows this parameter
+            arg++; // Skip over the value parameter that follows this parameter
         }
-        else if (strstr(argv[i], "-cfb") != NULL) // Set chaining method to CFB and length
+        else if (strstr(argv[arg], "-cfb") != NULL) // Set chaining method to CFB and length
         {
             args[0] = true;
             method = true; //set the chaining method
 
-            if (!strcmp(argv[i + 1], "128"))
+            if (!strcmp(argv[arg + 1], "128"))
             {
                 width = AES128;
                 printf("AES128 with CFB selected\n");
             }
-            else if (!strcmp(argv[i + 1], "192"))
+            else if (!strcmp(argv[arg + 1], "192"))
             {
                 width = AES192;
                 printf("AES192 with CFB selected\n");
             }
-            else if (!strcmp(argv[i + 1], "256"))
+            else if (!strcmp(argv[arg + 1], "256"))
             {
                 width = AES256;
                 printf("AES256 with CFB selected\n");
             }
             else
             {
-                printf("Parameter '%s' is not a valid length\n", argv[i + 1]);
+                printf("Parameter '%s' is not a valid length\n", argv[arg + 1]);
                 printf("Valid parameters are '128', '192' and '256'\n");
                 return EXIT_FAILURE;
             }
 
-            i++; // Skip over the value parameter that follows this parameter
+            arg++; // Skip over the value parameter that follows this parameter
         }
-        else if (strstr(argv[i], "-e") != NULL) // Set operation encrypt
+        else if (strstr(argv[arg], "-e") != NULL) // Set operation encrypt
         {
             args[1] = true;
             operation = false;
             printf("Encryption selected\n");
         }
-        else if (strstr(argv[i], "-d") != NULL) // Set operation decrypt
+        else if (strstr(argv[arg], "-d") != NULL) // Set operation decrypt
         {
             args[1] = true;
             operation = true;
             printf("Decryption selected\n");
         }
-        else if (strstr(argv[i], "-key") != NULL) // Set the user key
+        else if (strstr(argv[arg], "-key") != NULL) // Set the user key
         {
             args[2] = true;
 
@@ -141,21 +142,21 @@ int main(int argc, char *argv[])
                     user_key_size = AES256_USER_KEY_SIZE;
 
                 char key[user_key_size + 1]; // +1 for null terminator
-                int pos;
-                for (pos = 0; pos < user_key_size + 1; pos++) // Fill with zeroes to pad if needed + null terminator
-                    key[pos] = '\0';
 
-                strncpy(key, argv[i + 1], user_key_size); // Copy the user key input
+                for (i = 0; i < user_key_size + 1; i++) // Fill with zeroes to pad if needed + null terminator
+                    key[i] = '\0';
+
+                strncpy(key, argv[arg + 1], user_key_size); // Copy the user key input
 
                 // Convert from ASCII string to int array
-                for (pos = 0; pos < user_key_size; pos++)
-                    user_key[pos] = (unsigned char) key[pos]; // Get the integer value from the byte
+                for (i = 0; i < user_key_size; i++)
+                    user_key[i] = (unsigned char) key[i]; // Get the integer value from the byte
 
                 printf("Key (ASCII): \"%s\"\n", key);
-                i++; // Skip over the value parameter that follows this parameter
+                arg++; // Skip over the value parameter that follows this parameter
             }
         }
-        else if (strstr(argv[i], "-t") != NULL) // Set the input message
+        else if (strstr(argv[arg], "-t") != NULL) // Set the input message
         {
             args[3] = true;
 
@@ -168,7 +169,7 @@ int main(int argc, char *argv[])
             else if (operation) // Decrypt
             {
                 // Take message as hex input
-                char *parameter = argv[i + 1];
+                char *parameter = argv[arg + 1];
                 message_len = strlen(parameter) / 2; // 2 hex chars = 1 byte
 
                 if (message_len > MAX_REQ_LEN)
@@ -180,16 +181,15 @@ int main(int argc, char *argv[])
                 {
                     message = (unsigned char *) malloc((message_len + 17) * sizeof(unsigned char)); // + 17 if incomplete block to pad with zeroes
 
-                    int pos;
-                    for (pos = message_len; pos < message_len + 17; pos++) // Fill with zeroes to pad if needed + null terminator
-                        message[pos] = '\0';
+                    for (i = message_len; i < message_len + 17; i++) // Fill with zeroes to pad if needed + null terminator
+                        message[i] = '\0';
 
                     // Convert from hex string to int array
                     char current_number[2];
-                    for (pos = 0; pos < message_len; pos++)
+                    for (i = 0; i < message_len; i++)
                     {
                         strncpy(current_number, parameter, 2); // Retrieve one byte (two hex chars)
-                        message[pos] = (unsigned char) hex_convert(current_number, 2); // Get the integer value from the byte
+                        message[i] = (unsigned char) hex_convert(current_number, 2); // Get the integer value from the byte
                         parameter += 2; // Move to the next byte
                     }
 
@@ -202,7 +202,7 @@ int main(int argc, char *argv[])
             else // Encrypt
             {
                 // Take message as ASCII input
-                message_len = strlen(argv[i + 1]);
+                message_len = strlen(argv[arg + 1]);
                 if (message_len > MAX_REQ_LEN)
                 {
                     printf("The message is too long, a maximum of %d bytes may be given with '-t'\n", MAX_REQ_LEN);
@@ -212,35 +212,34 @@ int main(int argc, char *argv[])
                 {
                     message = (unsigned char *) malloc((message_len + 17) * sizeof(unsigned char)); // + 17 if incomplete block to pad with zeroes
 
-                    int pos;
-                    for (pos = message_len; pos < message_len + 17; pos++) // Fill with zeroes to pad if needed + null terminator
-                        message[pos] = '\0';
+                    for (i = message_len; i < message_len + 17; i++) // Fill with zeroes to pad if needed + null terminator
+                        message[i] = '\0';
 
-                    strcpy((char *) message, argv[i + 1]); // Copy the message input
+                    strcpy((char *) message, argv[arg + 1]); // Copy the message input
                     printf("Plaintext message (ASCII): \"%s\"\n", message);
                 }
             }
 
-            i++; // Skip over the value parameter that follows this parameter
+            arg++; // Skip over the value parameter that follows this parameter
         }
-        else if (strstr(argv[i], "-iv") != NULL) // Set the initialization vector
+        else if (strstr(argv[arg], "-iv") != NULL) // Set the initialization vector
         {
             args[4] = true;
             char iv[17]; // +1 for null terminator
-            int pos;
-            for (pos = 0; pos < 17; pos++) // Fill with zeroes to pad if needed + null terminator
-                iv[pos] = '\0';
 
-            strncpy(iv, argv[i + 1], 16); // Copy the initialization vector input
+            for (i = 0; i < 17; i++) // Fill with zeroes to pad if needed + null terminator
+                iv[i] = '\0';
+
+            strncpy(iv, argv[arg + 1], 16); // Copy the initialization vector input
 
             // Convert from ASCII string to int array
-            for (pos = 0; pos < 16; pos++)
-                IV[pos] = (unsigned char) iv[pos]; // Get the integer value from the byte
+            for (i = 0; i < 16; i++)
+                IV[i] = (unsigned char) iv[i]; // Get the integer value from the byte
 
             printf("Initialization Vector (ASCII): \"%s\"\n", iv);
-            i++; // Skip over the value parameter that follows this parameter
+            arg++; // Skip over the value parameter that follows this parameter
         }
-        else if (strstr(argv[i], "-fi") != NULL) // Read the input file
+        else if (strstr(argv[arg], "-fi") != NULL) // Read the input file
         {
             args[5] = true;
 
@@ -254,13 +253,13 @@ int main(int argc, char *argv[])
             {
                 FILE *inputfileptr;
 
-                inputfileptr = fopen(argv[i + 1], "rb");
+                inputfileptr = fopen(argv[arg + 1], "rb");
 
                 if (inputfileptr == NULL)
                 {
                     printf("The input file specified \"%s\" could not be opened\n"
                            "Make sure the file name and path is correct and that the file exists\n"
-                           "Give the input file in the following format: -fi <valid path to the existing file>\n", argv[i + 1]);
+                           "Give the input file in the following format: -fi <valid path to the existing file>\n", argv[arg + 1]);
                     return EXIT_FAILURE;
                 }
 
@@ -275,22 +274,22 @@ int main(int argc, char *argv[])
 
                     message = (unsigned char *) malloc((message_len + 17) * sizeof(unsigned char)); // + 17 if incomplete block to pad with zeroes
 
-                    int pos;
-                    for (pos = message_len; pos < message_len + 17; pos++) // Fill with zeroes to pad if needed + null terminator
-                        message[pos] = '\0';
+                    for (i = message_len; i < message_len + 17; i++) // Fill with zeroes to pad if needed + null terminator
+                        message[i] = '\0';
 
                     // Take message as ASCII input
                     int temp;
-                    for (pos = 0; pos < message_len; pos++)
+                    for (i = 0; i < message_len; i++)
                     {
+                        // fread( ) takes a void * as the first argument, int * has the same size as void * so read into an int and cast it to char
                         fread(&temp, sizeof(unsigned char), 1, inputfileptr); // Read one byte from the file
-                        message[pos] = temp; // Write the byte to the message
+                        message[i] = (unsigned char) temp; // Write the byte to the message
                     }
 
                     if (operation) // Decrypt
-                        printf("Encrypted file input: \"%s\"\n", argv[i + 1]);
+                        printf("Encrypted file input: \"%s\"\n", argv[arg + 1]);
                     else // Encrypt
-                        printf("Plaintext file input: \"%s\"\n", argv[i + 1]);
+                        printf("Plaintext file input: \"%s\"\n", argv[arg + 1]);
 
                     fclose(inputfileptr);
                 }
@@ -302,9 +301,9 @@ int main(int argc, char *argv[])
                 }
             }
 
-            i++; //skip over the value parameter that follows this parameter
+            arg++; //skip over the value parameter that follows this parameter
         }
-        else if (strstr(argv[i], "-fo") != NULL) // Set the output file name
+        else if (strstr(argv[arg], "-fo") != NULL) // Set the output file name
         {
             args[6] = true;
 
@@ -316,10 +315,10 @@ int main(int argc, char *argv[])
             }
             else
             {
-                char *temp_path = argv[i + 1];
+                char *temp_path = argv[arg + 1];
                 char *output_file_path = NULL;
 
-                output_file_path = (char *) malloc((strlen(argv[i + 1]) + 1) * sizeof(char));
+                output_file_path = (char *) malloc((strlen(argv[arg + 1]) + 1) * sizeof(char));
                 output_file_path[0] = '\0';
 
                 int pos = 0;
@@ -374,50 +373,50 @@ int main(int argc, char *argv[])
                 free(output_file_path);
             }
 
-            i++; //skip over the value parameter that follows this parameter
+            arg++; //skip over the value parameter that follows this parameter
         }
-        else if (strstr(argv[i], "-streamlen") != NULL) // Set the stream length for CFB
+        else if (strstr(argv[arg], "-streamlen") != NULL) // Set the stream length for CFB
         {
             args[7] = true;
 
-            if (!strcmp(argv[i + 1], "8"))
+            if (!strcmp(argv[arg + 1], "8"))
             {
                 block_len = CFB8;
                 printf("8-bit CFB selected\n");
             }
-            else if (!strcmp(argv[i + 1], "64"))
+            else if (!strcmp(argv[arg + 1], "64"))
             {
                 block_len = CFB64;
                 printf("64-bit CFB selected\n");
             }
-            else if (!strcmp(argv[i + 1], "128"))
+            else if (!strcmp(argv[arg + 1], "128"))
             {
                 block_len = CFB128;
                 printf("128-bit CFB selected\n");
             }
             else
             {
-                printf("Parameter '%s' is not a valid stream length\n", argv[i + 1]);
+                printf("Parameter '%s' is not a valid stream length\n", argv[arg + 1]);
                 printf("Valid parameters for '-streamlen' are '8', '64' and '128'\n");
                 return EXIT_FAILURE;
             }
 
-            i++; //skip over the value parameter that follows this parameter
+            arg++; //skip over the value parameter that follows this parameter
         }
-        else if (strstr(argv[i], "-h") != NULL) // Show help
+        else if (strstr(argv[arg], "-h") != NULL) // Show help
         {
             printf("\nUsage:\n%s", help_message);
             return EXIT_SUCCESS;
         }
 #if VERBOSE
-        else if (strstr(argv[i], "-verbose") != NULL) // Enable verbose mode
+        else if (strstr(argv[arg], "-verbose") != NULL) // Enable verbose mode
         {
             verbose = true;
             printf("\nVerbose mode activated\nAll steps in the AES process will now be shown\n\n");
         }
 #endif
         else
-            printf("Invalid parameter: %s\n", argv[i]);
+            printf("Invalid parameter: %s\n", argv[arg]);
     }
 
     if (!args[0] || !args[1] || !args[2] || message == NULL)
@@ -465,11 +464,11 @@ int main(int argc, char *argv[])
                 CFB_decrypt(width, message, message_len, block_len, IV, user_key);
         else // CBC
 #if VERBOSE
-        if (verbose)
-            CBC_decrypt_verbose(width, message, message_len, IV, user_key);
-        else
+            if (verbose)
+                CBC_decrypt_verbose(width, message, message_len, IV, user_key);
+            else
 #endif
-            CBC_decrypt(width, message, message_len, IV, user_key);
+                CBC_decrypt(width, message, message_len, IV, user_key);
 
         if (file_output)
         {
@@ -542,7 +541,7 @@ void char_blockify(unsigned char message[], int current_block[4][4], int start_p
 
 
 // Convert an integer array to 4x4 block of hex
-void hex_blockify(int message[16], int current_block[4][4])
+void int_blockify(int message[16], int current_block[4][4])
 {
     int row, col;
     for (col = 0; col < 4; col++)
@@ -595,11 +594,11 @@ void print_expanded_key(int width, int expanded_key[])
 
 
 // Print a c-string up to a certain length in hex
-void print_hex_string(unsigned char message[], int message_len)
+void print_hex_string(unsigned char hex_string[], int message_len)
 {
     int i;
     for (i = 0; i < message_len; i++)
-        printf("%02X", message[i]);
+        printf("%02X", hex_string[i]);
 }
 
 
@@ -613,7 +612,8 @@ void write_to_file(char filename[], unsigned char message[], int message_len)
     int temp;
     for (i = 0; i < message_len; i++)
     {
-        temp = message[i]; // Get one char from the message
+        // fwrite( ) takes a void * as the first argument, int * has the same size as void * so cast the char to int to be written
+        temp = (int) message[i]; // Get one char from the message
         fwrite(&temp, sizeof(unsigned char), 1, outputfileptr); // Write one byte to the file
     }
 
@@ -1135,7 +1135,7 @@ bool CFB_encrypt(int width, unsigned char message[], int message_len, int CFB_le
     for (message_pos = 0; message_pos < message_len; message_pos += CFB_len)
     {
         // Convert the encryption input to a block
-        hex_blockify(current_vector, current_block);
+        int_blockify(current_vector, current_block);
 
         // Encrypt the block
         AES_encrypt(width, current_block, expanded_key);
@@ -1190,7 +1190,7 @@ bool CFB_decrypt(int width, unsigned char message[], int message_len, int CFB_le
     for (message_pos = 0; message_pos < message_len; message_pos += CFB_len)
     {
         // Convert the encryption input to a block
-        hex_blockify(current_vector, current_block);
+        int_blockify(current_vector, current_block);
 
         // Encrypt the block
         AES_encrypt(width, current_block, expanded_key);
@@ -1512,7 +1512,7 @@ bool CFB_encrypt_verbose(int width, unsigned char message[], int message_len, in
         printf("\n\n\n********Block %d:********\n", (message_pos / CFB_len) + 1);
 
         // Convert the encryption input to a block
-        hex_blockify(current_vector, current_block);
+        int_blockify(current_vector, current_block);
 
         // Encrypt the block
         AES_encrypt_verbose(width, current_block, expanded_key);
@@ -1572,7 +1572,7 @@ bool CFB_decrypt_verbose(int width, unsigned char message[], int message_len, in
         printf("\n\n\n********Block %d:********\n", (message_pos / CFB_len) + 1);
 
         // Convert the encryption input to a block
-        hex_blockify(current_vector, current_block);
+        int_blockify(current_vector, current_block);
 
         // Encrypt the block
         AES_encrypt_verbose(width, current_block, expanded_key);
