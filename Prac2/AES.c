@@ -428,9 +428,9 @@ int main(int argc, char *argv[])
 
     if (!args[4])
     {
-        printf("The initialization vector was not set, using the user key as the initialization vector\n");
+        printf("The initialization vector was not set, setting to all zeroes\n");
         for (i = 0; i < 16; i++)
-            IV[i] = user_key[i];
+            IV[i] = 0;
     }
 
     if (!args[6] && file_output)
@@ -530,7 +530,7 @@ int main(int argc, char *argv[])
 
     // Calculate time elapsed in ms and print
     int elapsed_time = (int) (1000.0 * (end_time.time - start_time.time) + (end_time.millitm - start_time.millitm));
-    printf("Operation took %u milliseconds\n", elapsed_time);
+    printf("Operation took %u milliseconds\n\n", elapsed_time);
 
     // Free dynamically allocated memory
     free(message);
