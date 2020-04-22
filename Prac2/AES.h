@@ -8,11 +8,14 @@
 #include <stdbool.h>
 #include <sys/types.h>
 #include <sys/stat.h>
+#include <sys/timeb.h>
 
+/// The maximum length of an input to be hadled.
 #define MAX_REQ_LEN 104857600 // 100 MiB
+/// Activate or deactivate verbose mode capabilities
 #define VERBOSE 1
 
-// AES constants
+// Constants
 #define AES128 0
 #define AES192 1
 #define AES256 2
@@ -36,6 +39,7 @@
 #define CFB128 16 // Default
 
 
+/// Provides a one-to-one mapping for the non-linear substitution of a byte.
 const int S_BOX[2][16][16] = {{{0x63, 0x7C, 0x77, 0x7B, 0xF2, 0x6B, 0x6F, 0xC5, 0x30, 0x01, 0x67, 0x2B, 0xFE, 0xD7, 0xAB, 0x76}, // Forward
                                {0xCA, 0x82, 0xC9, 0x7D, 0xFA, 0x59, 0x47, 0xF0, 0xAD, 0xD4, 0xA2, 0xAF, 0x9C, 0xA4, 0x72, 0xC0},
                                {0xB7, 0xFD, 0x93, 0x26, 0x36, 0x3F, 0xF7, 0xCC, 0x34, 0xA5, 0xE5, 0xF1, 0x71, 0xD8, 0x31, 0x15},
@@ -69,6 +73,7 @@ const int S_BOX[2][16][16] = {{{0x63, 0x7C, 0x77, 0x7B, 0xF2, 0x6B, 0x6F, 0xC5, 
                                {0xA0, 0xE0, 0x3B, 0x4D, 0xAE, 0x2A, 0xF5, 0xB0, 0xC8, 0xEB, 0xBB, 0x3C, 0x83, 0x53, 0x99, 0x61},
                                {0x17, 0x2B, 0x04, 0x7E, 0xBA, 0x77, 0xD6, 0x26, 0xE1, 0x69, 0x14, 0x63, 0x55, 0x21, 0x0C, 0x7D}}};
 
+/// Used for the transformation of a column in the mix columns operation.
 const int PRIME_MATRIX[2][4][4] = {{{2, 3, 1, 1}, // Forward
                                     {1, 2, 3, 1},
                                     {1, 1, 2, 3},
@@ -77,7 +82,6 @@ const int PRIME_MATRIX[2][4][4] = {{{2, 3, 1, 1}, // Forward
                                     { 9, 14, 11, 13},
                                     {13,  9, 14, 11},
                                     {11, 13,  9, 14}}};
-
 
 
 /**
@@ -130,20 +134,11 @@ void print_block(int current_block[4][4]);
 void print_expanded_key(int width, int expanded_key[]);
 
 
-/**
- * Print a c-string up to a certain length in hex.
- * @param hex_string The hex string to be printed.
- * @param message_len The length of the message.
- */
+// Print a c-string up to a certain length in hex
 void print_hex_string(unsigned char hex_string[], int message_len);
 
 
-/**
- * Write a message to a file.
- * @param filename The name of the output file.
- * @param message The message to be written.
- * @param message_len The length of the message.
- */
+ // Write a message to a file
 void write_to_file(char filename[], unsigned char message[], int message_len);
 
 
@@ -333,9 +328,11 @@ bool CFB_decrypt_verbose(int width, unsigned char message[], int message_len, in
 #endif
 
 
+// Convert hex to int, done because the system hex converter is unreliable
 int hex_convert(char hex_string[], int length);
 
 
+// Print out various tests to test the functionality of the other functions
 void test_functionality( );
 
 

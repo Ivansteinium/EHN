@@ -450,10 +450,12 @@ int main(int argc, char *argv[])
 
     // MAIN PROGRAM
     printf("\n\n");
+    struct timeb start_time, end_time;
 
     if (operation) // Decrypt
     {
         printf("Decryption in process...\n\n");
+        ftime(&start_time); // Get time before decryption starts
 
         if (method) // CFB
 #if VERBOSE
@@ -470,12 +472,15 @@ int main(int argc, char *argv[])
 #endif
                 CBC_decrypt(width, message, message_len, IV, user_key);
 
+        ftime(&end_time); // Get time after decryption ends
+
+        // Remove trailing zeroes which could have been added in padding during encryption
+        while (message[message_len] == '\0')
+            message_len--;
+        message_len++; // Re-add null terminator
+
         if (file_output)
         {
-            // Remove trailing zeroes which could have been added in padding during encryption
-            while (message[message_len] == '\0')
-                message_len--;
-            message_len++; // Re-add null terminator
             write_to_file(output_file_name, message, message_len);
             printf("Plaintext file output: \"%s\"\n", output_file_name);
         }
@@ -485,6 +490,7 @@ int main(int argc, char *argv[])
     else // Encrypt
     {
         printf("Encryption in process...\n\n");
+        ftime(&start_time); // Get time before encryption starts
 
         if (method) // CFB
 #if VERBOSE
@@ -500,6 +506,8 @@ int main(int argc, char *argv[])
             else
 #endif
                 CBC_encrypt(width, message, message_len, IV, user_key);
+
+        ftime(&end_time); // Get time after encryption ends
 
         // Determine the new message length
         int num_blocks = message_len / block_len;
@@ -520,6 +528,11 @@ int main(int argc, char *argv[])
         }
     }
 
+    // Calculate time elapsed in ms and print
+    int elapsed_time = (int) (1000.0 * (end_time.time - start_time.time) + (end_time.millitm - start_time.millitm));
+    printf("Operation took %u milliseconds\n", elapsed_time);
+
+    // Free dynamically allocated memory
     free(message);
     free(output_file_name);
 
@@ -1054,6 +1067,12 @@ bool CBC_encrypt(int width, unsigned char message[], int message_len, int IV[16]
 // The Cipher Block Chaining decryption
 bool CBC_decrypt(int width, unsigned char message[], int message_len, int IV[16], int user_key[])
 {
+    /* !!!! WARNING !!!!
+     * The length of the message array should be large enough to accommodate any possible expansion that could take place
+     * due to the block size requirements. It is recommended to allocate 16 extra characters at the end of message
+     * to avoid writing out of bounds.
+     */
+
     int key_size;
 
     if (width == AES128)
@@ -1162,6 +1181,12 @@ bool CFB_encrypt(int width, unsigned char message[], int message_len, int CFB_le
 // The Cipher Feedback decryption algorithm
 bool CFB_decrypt(int width, unsigned char message[], int message_len, int CFB_len, int IV[16], int user_key[])
 {
+    /* !!!! WARNING !!!!
+     * The length of the message array should be large enough to accommodate any possible expansion that could take place
+     * due to the block size requirements. It is recommended to allocate 16 extra characters at the end of message
+     * to avoid writing out of bounds.
+     */
+
     int key_size;
 
     if (width == AES128)
@@ -1424,6 +1449,12 @@ bool CBC_encrypt_verbose(int width, unsigned char message[], int message_len, in
 // The Cipher Block Chaining decryption
 bool CBC_decrypt_verbose(int width, unsigned char message[], int message_len, int IV[16], int user_key[])
 {
+    /* !!!! WARNING !!!!
+     * The length of the message array should be large enough to accommodate any possible expansion that could take place
+     * due to the block size requirements. It is recommended to allocate 16 extra characters at the end of message
+     * to avoid writing out of bounds.
+     */
+
     int key_size;
 
     if (width == AES128)
@@ -1542,6 +1573,12 @@ bool CFB_encrypt_verbose(int width, unsigned char message[], int message_len, in
 // The Cipher Feedback decryption algorithm
 bool CFB_decrypt_verbose(int width, unsigned char message[], int message_len, int CFB_len, int IV[16], int user_key[])
 {
+    /* !!!! WARNING !!!!
+     * The length of the message array should be large enough to accommodate any possible expansion that could take place
+     * due to the block size requirements. It is recommended to allocate 16 extra characters at the end of message
+     * to avoid writing out of bounds.
+     */
+
     int key_size;
 
     if (width == AES128)
