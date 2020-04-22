@@ -530,7 +530,7 @@ int main(int argc, char *argv[])
 
     // Calculate time elapsed in ms and print
     int elapsed_time = (int) (1000.0 * (end_time.time - start_time.time) + (end_time.millitm - start_time.millitm));
-    printf("Operation took %u milliseconds\n\n", elapsed_time);
+    printf("Operation took %u ms\n\n", elapsed_time);
 
     // Free dynamically allocated memory
     free(message);

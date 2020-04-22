@@ -4,6 +4,9 @@ main: AES.c AES.h
 test:
 	./Compiled/AES
 
+demo:
+	./Compiled/AES -e -cbc 128 -t "EHN 410 practica" -key "AES_encrypt"
+
 cbc128e:
 	./Compiled/AES -e -cbc 128 -t "Lorem ipsum dolor sit amet." -key "Very strong password" -iv "Initialization vector"
 
