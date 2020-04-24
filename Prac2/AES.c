@@ -27,16 +27,17 @@ int main(int argc, char *argv[])
                           "\t-d (decryption)\n"
                           "\t-cbc <len> (Ciphen Block Chaining, <len> either 128, 192 or 256), or\n"
                           "\t-cfb <len> (Cipher Feedback, <len> either 128, 192 or 256)\n"
-                          "\t-t <text to decrypt>\n"
-                          "\t-key <password>\n"
-                          "\t-iv <initialization vector>\n"
-                          "\t-fi <input file>\n"
+                          "\t-t <text to encrypt in ASCII or text to decrypt in HEX>, or\n"
+                          "\t-fi <input file> and\n"
                           "\t-fo <output file>\n"
+                          "\t-key <password in ASCII>\n"
+                          "\t-iv <initialization vector in ASCII>\n"
                           "\t-streamlen <len> (length of the CFB stream if '-cfb' is given, either 8, 64 or 128)\n"
                           "\t-h help (will show this message)\n"
 #if VERBOSE
                           "\t-verbose (will show all steps in the AES process)\n"
 #endif
+                          "\t\nRemember to add \"double quotes\" to ASCII inputs if spaces are present in the string\n"
                           "\t\nExample usage:\n"
                           "\t1.\t./AES -e -cbc 128 -fi \"input.txt\" -fo \"encrypted.enc\" -key \"Very strong password\" -iv \"Initialization vector\"\n"
                           "\t2.\t./AES -d -cbc 192 -fi \"encrypted.jpg\" -fo \"image.jpg\" -key \"Very strong password\" -iv \"Initialization vector\"\n"
@@ -421,8 +422,16 @@ int main(int argc, char *argv[])
 
     if (!args[0] || !args[1] || !args[2] || message == NULL)
     {
-        printf("All needed parameters are not given\n\nUsage:\n%s\n\nPerforming tests:\n\n", help_message);
-        test_functionality( );
+        printf("All needed parameters are not given\n\nUsage:\n%s\n\n", help_message);
+
+        printf("Do you want to perform tests? (y/n)  ");
+        char c[2];
+        scanf("%s", c);
+        printf("\n\n");
+
+        if (c[0] == 'y')
+            test_functionality( );
+
         return EXIT_SUCCESS;
     }
 
@@ -1644,12 +1653,9 @@ int hex_convert(char hex_string[], int length)
     int base = 1;
 
     int i;
-    for (i = 0; i < length - 1; i++)
-        base *= 16;
-
-    for (i = 0; i < length; i++)
+    for (i = length; i > 0; i--)
     {
-        switch (hex_string[i])
+        switch (hex_string[i - 1])
         {
             case '0': {break;}
             case '1': {result += base * 1; break;}
@@ -1680,7 +1686,7 @@ int hex_convert(char hex_string[], int length)
                 }
         }
 
-        base /= 16;
+        base *= 16;
     }
 
     return result;
