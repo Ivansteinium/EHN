@@ -40,8 +40,8 @@ int main(int argc, char *argv[])
                           "\t\nRemember to add \"double quotes\" to ASCII inputs if spaces are present in the string\n"
                           "\t\nExample usage:\n"
                           "\t1.\t./AES -e -cbc 128 -fi \"input.txt\" -fo \"encrypted.enc\" -key \"Very strong password\" -iv \"Initialization vector\"\n"
-                          "\t2.\t./AES -d -cbc 192 -fi \"encrypted.jpg\" -fo \"image.jpg\" -key \"Very strong password\" -iv \"Initialization vector\"\n"
-                          "\t3.\t./AES -e -cfb 256 -t \"Text to encrypt\" -key \"Very strong password\" -iv \"Initialization vector\" -streamlen 64\n"
+                          "\t2.\t./AES -d -cfb 192 -fi \"encrypted.jpg\" -fo \"image.jpg\" -key \"Very strong password\" -iv \"Initialization vector\" -streamlen 64\n"
+                          "\t3.\t./AES -e -cbc 256 -t \"Text to encrypt\" -key \"Very strong password\" -iv \"Initialization vector\"\n"
                           "\t4.\t./AES -d -cfb 128 -t C7D3CAAFEE6137 -key \"Very strong password\" -iv \"Initialization vector\" -streamlen 8\n";
     //                                                ^^^^^^^^^^^^^^ "Success"
 

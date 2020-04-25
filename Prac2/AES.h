@@ -85,7 +85,7 @@ const int PRIME_MATRIX[2][4][4] = {{{2, 3, 1, 1}, // Forward
 
 
 /**
- * The main function. Arguments as described in thr README is passed to this function.
+ * The main function. Arguments as described in the README is passed to this function.
  * This function then uses the arguments to either encrypt or decrypt some input.
  * @param argc The number of arguments passed.
  * @param argv The arguments as C-strings.

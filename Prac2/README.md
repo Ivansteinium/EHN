@@ -1,18 +1,17 @@
 # EHN 410 Group 12 Practical 2
 
-This software was developed by EHN 410 group 12 and is a tool that can be used to encrypt or decrypt data using the super-secure Advanced Encryption Standard (AES) algorithm developed from first principles.
+This software was developed by EHN 410 group 12 and is a tool that can be used to encrypt or decrypt data using the 
+super-secure Advanced Encryption Standard (AES) algorithm implemented from first principles.
 
 
-
-## The main features include:
+## The main features are:
   - AES 128, AES 192 and AES 256 support.
   - Cipher Block Chaining support.
   - Cipher Feedback support for a stream of 8, 64 and 128-bits.
   - Text and file input/output support.
   - Step-by-step verbose mode.
-  
-  
-  
+
+
 ## Compilation
 
 Use the standard **gcc** compiler available on most builds of **Linux**.
@@ -21,16 +20,14 @@ This command should be run in a terminal window in the same folder as **AES.c** 
 
     $ gcc AES.c -o AES
 
-
 Only standard libraries are used, so no packages need to be installed separately.
 
 Compilation was tested on **Linux Ubuntu 18.04.4 LTS**.
 
 
-
 ## Usage
 
-The following should be run in a terminal window in the same folder where the executable is located:
+A command in the following format should be run in a terminal window in the same folder where the executable is located:
 
     $ ./AES -arg1 value1 -arg2 value2...
 
@@ -56,30 +53,35 @@ The following arguments should then be given in this order:
     
     -verbose (will show all steps in the AES process)
 
+These arguments **are** required:
+  - The operation (**-e** or **-d**).
+  - The chaining mode (**-cbc** or **-cfb**) and the corresponding AES width.
+  - The input (**-t** or **-fi**).
+  - The user key (**-key**).
+  
+These arguments **are not** required:
+  - The output file (**-fo**) (default value of "encrypted.enc" or "decrypted.txt" will be used if not specified).
+  - The initialization vector (**-iv**) (will be set to all zeroes if not specified).
+  - The CFB stream length (**-streamlen**) (will be set to 128-bits if not specified).
+  - The help screen (**-h**).
+  - The verbose mode (**-verbose**).
+  
+### Attention: please take special note of the following:
+ 
+  - Remember to add <b>"double quotes"</b> to **ASCII** inputs if **spaces** are present in the string.<br>
+If this is **not** done, only the **first word** in the string will be processed.
+  - The expected input length for the **-key** argument is **16** characters for AES 128, **24** characters for AES 192 and **32** characters for AES256.<br>
+If an ASCII string with **less** characters are given, the key will be **padded with zeroes** at the end.
+If an ASCII string with **more** characters are given, the **trailing characters** will be **discarded**.    
+  - The expected input length for the **-iv** argument is **16** characters.<br>
+The **same** rules for the **-key** argument apply here.
 
-The following arguments are required:
-  - The operation (-e or -d).
-  - The chaining mode (-cbc or -cfb) and the corresponding AES width.
-  - The input (-t or -fi).
-  - The user key (-key).
-  
-The following arguments are not required:
-  - The output file (-fo) (default value of "encrypted.enc" or "decrypted.txt" will be used if not specified).
-  - The initialization vector (-iv) (will be set to all zeroes if not specified).
-  - The CFB stream length (-streamlen) (will be set to 128-bits if not specified).
-  - The help screen (-h).
-  - The verbose mode (-verbose)
-  
-### Attention: Remember to add "double quotes" to ASCII inputs if spaces are present in the string.
 
-If this is not done, only the first word in the string will be processed.
-  
-  
 ## Example usage
 
 ### Example 1
 
-The following command will **encrypt** a **file** called **"input.txt"** (in the same folder) using **AES 128** in **Cipher Block Chaining** mode:
+The following command will **encrypt** a **file** called <b>"input.txt"</b> (in the same folder) using **AES 128** in **Cipher Block Chaining** mode:
 
     $ ./AES -e -cbc 128 -fi "input.txt" -fo "encrypted.enc" -key "Very strong password" -iv "Initialization vector"
     
@@ -96,7 +98,7 @@ The following output is expected:
     
     Encrypted file output: "CBC output/encrypted.enc"
     
-The file "encrypted.enc" can be found in the folder "CBC output" in the same folder as the executable. 
+The file "encrypted.enc" can be found in the folder "CBC output" located in the same folder as the executable. 
 
 If the output folder does not exist, the program will attempt to create it. 
 
@@ -104,44 +106,47 @@ If the program does not have sufficient permissions to create folders, the file 
     
 ### Example 2
 
-The following command will **decrypt** a **file** called **"encrypted.jpg"** using **AES 192** in **Cipher Block Chaining** mode:
+The following command will **decrypt** a **file** called <b>"encrypted.jpg"</b> using **AES 192** in **Cipher Feedback** mode with a stream length of **64-bits**:
 
-    $ ./AES -d -cbc 192 -fi "encrypted.jpg" -fo "image.jpg" -key "Very strong password" -iv "Initialization vector"
+    $ ./AES -d -cfb 192 -fi "encrypted.jpg" -fo "image.jpg" -key "Very strong password" -iv "Initialization vector" -streamlen 64
     
 The following output is expected:
 
     Decryption selected
-    AES192 with CBC selected
+    AES192 with CFB selected
     Encrypted file input: "encrypted.jpg"
     Key (ASCII): "Very strong password"
     Initialization Vector (ASCII): "Initialization v"
+    64-bit CFB selected
     
     
     Decryption in process...
     
-    Plaintext file output: "CBC output/image.jpg"
+    Plaintext file output: "CFB output/image.jpg"
+
+The file "image.jpg" can be found in the folder "CFB output" located in the same folder as the executable.
+
+The same conditions mentioned in Example 1 apply here. 
       
 ### Example 3
 
-The following command will **encrypt** the **ASCII** string **"Text to encrypt"** using **AES 256** in **Cipher Feedback** mode with a stream length of **64-bits**:
+The following command will **encrypt** the **ASCII** string <b>"Text to encrypt"</b> using **AES 256** in **Cipher Block Chaining** mode:
 
-    $ ./AES -e -cfb 256 -t "Text to encrypt" -key "Very strong password" -iv "Initialization vector" -streamlen 64
+    $ ./AES -e -cbc 256 -t "Text to encrypt" -key "Very strong password" -iv "Initialization vector"
     
 The following output is expected:
 
      Encryption selected
-     AES256 with CFB selected
+     AES256 with CBC selected
      Plaintext message (ASCII): "Text to encrypt"
      Key (ASCII): "Very strong password"
      Initialization Vector (ASCII): "Initialization v"
-     64-bit CFB selected
      
      
      Encryption in process...
      
      Encrypted (HEX):
-     5837B335B96569F23E467BECCF3BFCE6
-
+     CCBD19AB3022404EFDC9804AD802936B
 
 ### Example 4
 
@@ -166,7 +171,7 @@ The following output is expected:
 
 ### Example 5
 
-The following command will **encrypt** the **ASCII** string **"Test"** using **AES 128** in **Cipher Block Chaining** mode with **verbose output**:
+The following command will **encrypt** the **ASCII** string <b>"Test"</b> using **AES 128** in **Cipher Block Chaining** mode with **verbose output**:
 
     $ ./AES -e -cbc 128 -t "Verbose" -key "Very strong password" -verbose
 
