@@ -36,7 +36,7 @@ The following arguments should then be given in this order:
     -e (encryption), or
     -d (decryption)
     
-    -cbc <len> (Ciphen Block Chaining, <len> either 128, 192 or 256), or
+    -cbc <len> (Cipher Block Chaining, <len> either 128, 192 or 256), or
     -cfb <len> (Cipher Feedback, <len> either 128, 192 or 256)
     
     -t <text to encrypt in ASCII or text to decrypt in HEX>, or

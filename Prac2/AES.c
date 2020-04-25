@@ -25,7 +25,7 @@ int main(int argc, char *argv[])
                           "\tThe following arguments should then be given in this order:\n\n"
                           "\t-e (encryption), or\n"
                           "\t-d (decryption)\n\n"
-                          "\t-cbc <len> (Ciphen Block Chaining, <len> either 128, 192 or 256), or\n"
+                          "\t-cbc <len> (Cipher Block Chaining, <len> either 128, 192 or 256), or\n"
                           "\t-cfb <len> (Cipher Feedback, <len> either 128, 192 or 256)\n\n"
                           "\t-t <text to encrypt in ASCII or text to decrypt in HEX>, or\n"
                           "\t-fi <input file> and\n"
