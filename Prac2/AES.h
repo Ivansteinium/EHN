@@ -309,21 +309,74 @@ bool CFB_decrypt(int width, unsigned char message[], int message_len, int CF_Ble
 
 
 #if VERBOSE
+/**
+ * The verbose version of the AES encryption algorithm. Prints out intermediate results in the encryption
+ * process.
+ * @param width Use the macros AES128, AES192 or AES256 to select which width to use.
+ * @param current_block The block to be encrypted, also the output.
+ * @param expanded_key The expanded key to be used.
+ * @return Successful execution.
+ */
 bool AES_encrypt_verbose(int width, int current_block[4][4], int expanded_key[]);
 
-
+/**
+ * The verbose version of the AES decryption algorithm. Prints out intermediate results in the decryption
+ * process.
+ * @param width Use the macros AES128, AES192 or AES256 to select which width to use.
+ * @param current_block The block to be decrypted, also the output.
+ * @param expanded_key The expanded key to be used.
+ * @return Successful execution.
+ */
 bool AES_decrypt_verbose(int width, int current_block[4][4], int expanded_key[]);
 
-
+/**
+ * The verbose version of the Cipher Block Chaining encryption algorithm. Prints out intermediate results in
+ * the encryption process.
+ * @param width Use the macros AES128, AES192 or AES256 to select which width to use.
+ * @param message The message to be encrypted, also the output.
+ * @param message_len The length of the message.
+ * @param IV The initialization vector to be used.
+ * @param user_key The user key to be used.
+ * @return Successful execution.
+ */
 bool CBC_encrypt_verbose(int width, unsigned char message[], int message_len, int IV[16], int user_key[]);
 
-
+/**
+ * The verbose version of the Cipher Block Chaining decryption algorithm. Prints out intermediate results
+ * in the decryption process.
+ * @param width Use the macros AES128, AES192 or AES256 to select which width to use.
+ * @param message The message to be decrypted, also the output.
+ * @param message_len The length of the message.
+ * @param IV The initialization vector to be used.
+ * @param user_key The user key to be used.
+ * @return Successful execution.
+ */
 bool CBC_decrypt_verbose(int width, unsigned char message[], int message_len, int IV[16], int user_key[]);
 
-
+/**
+ * The verbose version of the Cipher Feedback encryption algorithm. Prints out intermediate results in the encryption
+ * process.
+ * @param width Use the macros AES128, AES192 or AES256 to select which width to use.
+ * @param message The stream to be encrypted, also the output.
+ * @param message_len The length of the message.
+ * @param CFB_len The length of the chain to use.
+ * @param IV The initialization vector to be used.
+ * @param user_key The user key to be used.
+ * @return Successful execution.
+ */
 bool CFB_encrypt_verbose(int width, unsigned char message[], int message_len, int CFB_len, int IV[16], int user_key[]);
 
-
+/**
+ * The verbose version of the Cipher Feedback decryption algorithm. Prints out intermediate results in the decryption
+ * process.
+ * @param width Use the macros AES128, AES192 or AES256 to select which width to use.
+ * @param message The stream to be decrypted, also the output.
+ * @param message_len The length of the message.
+ * @param CFB_len The length of the chain to use.
+ * @param IV The initialization vector to be used.
+ * @param user_key The user key to be used.
+ * @return Successful execution.
+ */
 bool CFB_decrypt_verbose(int width, unsigned char message[], int message_len, int CF_Blen, int IV[16], int user_key[]);
 #endif
 

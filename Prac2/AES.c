@@ -308,7 +308,8 @@ int main(int argc, char *argv[])
         {
             args[6] = true;
 
-            if (method == -1)
+            if (method == -1) // method not specified yet, thus the arguments are in an invalid order or an argument
+                // is missing
             {
                 printf("The chaining method must be specified before the output file is given\n");
                 printf("Specify this with '-cbc' for Cipher Block Chaining or '-cfb' for Cipher Feedback\n");
@@ -316,6 +317,7 @@ int main(int argc, char *argv[])
             }
             else
             {
+                file_output = true;
                 char *temp_path = argv[arg + 1];
                 char *output_file_path = NULL;
 
@@ -364,6 +366,7 @@ int main(int argc, char *argv[])
                 }
                 else // Path exists
                 {
+                    // setup the path and filename for the desired output
                     int len = strlen(output_file_path) + strlen(temp_path) + 2;
                     output_file_name = (char *) malloc(len * sizeof(char));
                     strcpy(output_file_name, output_file_path); // Copy the path
@@ -865,33 +868,6 @@ int AES_dot_product(int a, int b)
 
     return result; // Remainder after long division was done
 }
-
-
-// Recursive multiplication of the column value and prime matrix
-//int AES_dot_product(int prime, int current) // Checked
-//{
-//    if (prime == 2)
-//    {
-//        bool flag = current > 127;
-//        current = (current << 1) & 0b011111111;
-//        if (flag)
-//            return current ^ 0b00011011;
-//        else
-//            return current;
-//    } else if (prime == 3) // 2 + 1 = 3
-//        return AES_dot_product(2, current) ^ current;
-//    else if (prime == 9) // 2 x 2 x 2 + 1 = 9
-//        return AES_dot_product(2, AES_dot_product(2, AES_dot_product(2, current))) ^ current;
-//    else if (prime == 11) // 2 x (2 x 2 + 1) + 1 = 11
-//        return AES_dot_product(2, AES_dot_product(2, AES_dot_product(2, current)) ^ current) ^ current;
-//    else if (prime == 13) // 2 x 2 x (2 + 1) + 1 = 13
-//        return AES_dot_product(2, AES_dot_product(2, AES_dot_product(2, current) ^ current)) ^ current;
-//    else if (prime == 14) // 2 x ((2 x (2 + 1) + 1) = 14
-//        return AES_dot_product(2, AES_dot_product(2, AES_dot_product(2, current) ^ current) ^ current);
-//    else // prime == 1
-//        return current;
-//}
-
 
 // Perform the dot product of the block and the prime matrix
 void AES_mix_cols(int current_block[4][4], bool inverse)
