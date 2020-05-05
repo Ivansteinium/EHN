@@ -10,8 +10,8 @@
 #include <sys/stat.h>
 #include <sys/timeb.h>
 
-/// The maximum length of an input to be hadled.
-#define MAX_REQ_LEN 104857600 // 100 MiB
+/// The maximum length of an input to be handled.
+#define MAX_REQ_LEN 104857600 // 100 MiB = 104857600 Bytes
 /// Activate or deactivate verbose mode capabilities
 #define VERBOSE 1
 
@@ -141,6 +141,9 @@ void print_hex_string(unsigned char hex_string[], int message_len);
  // Write a message to a file
 void write_to_file(char filename[], unsigned char message[], int message_len);
 
+
+// Create the output directory and return the full file path
+char *create_path(int method, char *file_name);
 
 /**
  * Convert block back to c-string.

@@ -308,8 +308,7 @@ int main(int argc, char *argv[])
         {
             args[6] = true;
 
-            if (method == -1) // method not specified yet, thus the arguments are in an invalid order or an argument
-                // is missing
+            if (method == -1) // Method not specified yet
             {
                 printf("The chaining method must be specified before the output file is given\n");
                 printf("Specify this with '-cbc' for Cipher Block Chaining or '-cfb' for Cipher Feedback\n");
@@ -318,19 +317,19 @@ int main(int argc, char *argv[])
             else
             {
                 file_output = true;
-                char *temp_path = argv[arg + 1];
+                char *file_name = argv[arg + 1];
                 char *output_file_path = NULL;
 
                 output_file_path = (char *) malloc((strlen(argv[arg + 1]) + 1) * sizeof(char));
                 output_file_path[0] = '\0';
 
                 int pos = 0;
-                while (strrchr(temp_path, '/') != NULL)
+                while (strrchr(file_name, '/') != NULL)
                 {
-                    output_file_path[pos++] = temp_path[0]; // Retrieve the file path
-                    temp_path++; // Move to next char
+                    output_file_path[pos++] = file_name[0]; // Retrieve the file path
+                    file_name++; // Move to next char
                 }
-                // temp_path now contains the output filename
+                // file_name now contains the output filename
 
                 if (output_file_path[0] != '\0')
                 {
@@ -339,42 +338,8 @@ int main(int argc, char *argv[])
                 }
                 free(output_file_path); // Discard the file path if one is given
 
-                if (method) // CFB
-                {
-                    output_file_path = (char *) malloc(11 * sizeof(char));
-                    strcpy(output_file_path, "CFB output");
-                }
-                else // CBC
-                {
-                    output_file_path = (char *) malloc(11 * sizeof(char));
-                    strcpy(output_file_path, "CBC output");
-                }
-
-                struct stat st = {0};
-                int mkdir_result = 0;
-                if (stat(output_file_path, &st) == -1) // Check if directory exists
-                    mkdir_result = mkdir(output_file_path, 0700); // Attempt to create directory if not existing
-
-                if (mkdir_result < 0) // Could not create path
-                {
-                    printf("\nERROR: The output directory \"%s\" could not be accessed\n"
-                           "It seems that this program does not have sufficient privileges to create directories, "
-                           "so the output will appear in the same directory as the executable\n\n", output_file_path);
-
-                    output_file_name = (char *) malloc((strlen(temp_path) + 1) * sizeof(char));
-                    strcpy(output_file_name, temp_path); // Copy only the filename
-                }
-                else // Path exists
-                {
-                    // setup the path and filename for the desired output
-                    int len = strlen(output_file_path) + strlen(temp_path) + 2;
-                    output_file_name = (char *) malloc(len * sizeof(char));
-                    strcpy(output_file_name, output_file_path); // Copy the path
-                    strcat(output_file_name, "/");
-                    strcat(output_file_name, temp_path); // Copy the filename
-                }
-
-                free(output_file_path);
+                output_file_name = create_path(method, file_name); // Attempt to create the output directory
+                // output_file_name now contains the file name + the output directory, must be freed later
             }
 
             arg++; //skip over the value parameter that follows this parameter
@@ -447,12 +412,15 @@ int main(int argc, char *argv[])
 
     if (!args[6] && file_output)
     {
-        output_file_name = (char *) malloc(14 * sizeof(char));
+        char file_name[14];
 
         if (operation) // Decrypt
-            strcpy(output_file_name, "decrypted.txt");
+            strcpy(file_name, "decrypted.txt");
         else // Encrypt
-            strcpy(output_file_name, "encrypted.enc");
+            strcpy(file_name, "encrypted.enc");
+
+        output_file_name = create_path(method, file_name); // Attempt to create the output directory
+        // output_file_name now contains the file name + the output directory, must be freed later
 
         printf("The output file is not specified, using default value of \"%s\"\n", output_file_name);
     }
@@ -643,6 +611,44 @@ void write_to_file(char filename[], unsigned char message[], int message_len)
     }
 
     fclose(outputfileptr);
+}
+
+// Create the output directory and return the full file path
+char *create_path(int method, char *file_name)
+{
+    char output_file_path[11];
+    char *output_file_name;
+
+    if (method) // CFB
+        strcpy(output_file_path, "CFB output");
+    else // CBC
+        strcpy(output_file_path, "CBC output");
+
+    struct stat st = {0};
+    int mkdir_result = 0;
+    if (stat(output_file_path, &st) == -1) // Check if directory exists
+        mkdir_result = mkdir(output_file_path, 0700); // Attempt to create directory if not existing
+
+    if (mkdir_result < 0) // Could not create path
+    {
+        printf("\nERROR: The output directory \"%s\" could not be accessed\n"
+               "It seems that this program does not have sufficient privileges to create directories, "
+               "so the output will appear in the same directory as the executable\n\n", output_file_path);
+
+        output_file_name = (char *) malloc((strlen(file_name) + 1) * sizeof(char));
+        strcpy(output_file_name, file_name); // Copy only the filename
+    }
+    else // Path exists
+    {
+        // setup the path and filename for the desired output
+        int len = strlen(output_file_path) + strlen(file_name) + 2;
+        output_file_name = (char *) malloc(len * sizeof(char));
+        strcpy(output_file_name, output_file_path); // Copy the path
+        strcat(output_file_name, "/");
+        strcat(output_file_name, file_name); // Copy the filename
+    }
+
+    return output_file_name;
 }
 
 
@@ -869,6 +875,7 @@ int AES_dot_product(int a, int b)
     return result; // Remainder after long division was done
 }
 
+
 // Perform the dot product of the block and the prime matrix
 void AES_mix_cols(int current_block[4][4], bool inverse)
 {
@@ -1002,6 +1009,12 @@ bool AES_decrypt(int width, int current_block[4][4], int expanded_key[])
 // The Cipher Block Chaining encryption
 bool CBC_encrypt(int width, unsigned char message[], int message_len, int IV[16], int user_key[])
 {
+    /* !!!! WARNING !!!!
+     * The length of the message array should be large enough to accommodate any possible expansion that could take place
+     * due to the block size requirements. It is recommended to allocate 16 extra characters at the end of message
+     * to avoid writing out of bounds.
+     */
+
     int key_size;
 
     if (width == AES128)
@@ -1052,12 +1065,6 @@ bool CBC_encrypt(int width, unsigned char message[], int message_len, int IV[16]
 // The Cipher Block Chaining decryption
 bool CBC_decrypt(int width, unsigned char message[], int message_len, int IV[16], int user_key[])
 {
-    /* !!!! WARNING !!!!
-     * The length of the message array should be large enough to accommodate any possible expansion that could take place
-     * due to the block size requirements. It is recommended to allocate 16 extra characters at the end of message
-     * to avoid writing out of bounds.
-     */
-
     int key_size;
 
     if (width == AES128)
@@ -1111,6 +1118,12 @@ bool CBC_decrypt(int width, unsigned char message[], int message_len, int IV[16]
 // The Cipher Feedback encryption algorithm
 bool CFB_encrypt(int width, unsigned char message[], int message_len, int CFB_len, int IV[16], int user_key[])
 {
+    /* !!!! WARNING !!!!
+     * The length of the message array should be large enough to accommodate any possible expansion that could take place
+     * due to the block size requirements. It is recommended to allocate 16 extra characters at the end of message
+     * to avoid writing out of bounds.
+     */
+
     int key_size;
 
     if (width == AES128)
@@ -1166,12 +1179,6 @@ bool CFB_encrypt(int width, unsigned char message[], int message_len, int CFB_le
 // The Cipher Feedback decryption algorithm
 bool CFB_decrypt(int width, unsigned char message[], int message_len, int CFB_len, int IV[16], int user_key[])
 {
-    /* !!!! WARNING !!!!
-     * The length of the message array should be large enough to accommodate any possible expansion that could take place
-     * due to the block size requirements. It is recommended to allocate 16 extra characters at the end of message
-     * to avoid writing out of bounds.
-     */
-
     int key_size;
 
     if (width == AES128)
@@ -1379,6 +1386,12 @@ bool AES_decrypt_verbose(int width, int current_block[4][4], int expanded_key[])
 // The Cipher Block Chaining encryption
 bool CBC_encrypt_verbose(int width, unsigned char message[], int message_len, int IV[16], int user_key[])
 {
+    /* !!!! WARNING !!!!
+     * The length of the message array should be large enough to accommodate any possible expansion that could take place
+     * due to the block size requirements. It is recommended to allocate 16 extra characters at the end of message
+     * to avoid writing out of bounds.
+     */
+
     int key_size;
 
     if (width == AES128)
@@ -1434,12 +1447,6 @@ bool CBC_encrypt_verbose(int width, unsigned char message[], int message_len, in
 // The Cipher Block Chaining decryption
 bool CBC_decrypt_verbose(int width, unsigned char message[], int message_len, int IV[16], int user_key[])
 {
-    /* !!!! WARNING !!!!
-     * The length of the message array should be large enough to accommodate any possible expansion that could take place
-     * due to the block size requirements. It is recommended to allocate 16 extra characters at the end of message
-     * to avoid writing out of bounds.
-     */
-
     int key_size;
 
     if (width == AES128)
@@ -1498,6 +1505,12 @@ bool CBC_decrypt_verbose(int width, unsigned char message[], int message_len, in
 // The Cipher Feedback encryption algorithm
 bool CFB_encrypt_verbose(int width, unsigned char message[], int message_len, int CFB_len, int IV[16], int user_key[])
 {
+    /* !!!! WARNING !!!!
+     * The length of the message array should be large enough to accommodate any possible expansion that could take place
+     * due to the block size requirements. It is recommended to allocate 16 extra characters at the end of message
+     * to avoid writing out of bounds.
+     */
+
     int key_size;
 
     if (width == AES128)
@@ -1558,12 +1571,6 @@ bool CFB_encrypt_verbose(int width, unsigned char message[], int message_len, in
 // The Cipher Feedback decryption algorithm
 bool CFB_decrypt_verbose(int width, unsigned char message[], int message_len, int CFB_len, int IV[16], int user_key[])
 {
-    /* !!!! WARNING !!!!
-     * The length of the message array should be large enough to accommodate any possible expansion that could take place
-     * due to the block size requirements. It is recommended to allocate 16 extra characters at the end of message
-     * to avoid writing out of bounds.
-     */
-
     int key_size;
 
     if (width == AES128)

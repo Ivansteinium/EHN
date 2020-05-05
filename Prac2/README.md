@@ -70,11 +70,56 @@ These arguments **are not** required:
  
   - Remember to add <b>"double quotes"</b> to **ASCII** inputs if **spaces** are present in the string.<br>
 If this is **not** done, only the **first word** in the string will be processed.
+  - By default, the **maximum size** of in **input file** is **100 MiB**. <br>
+This can be enlarged by changing the value of **MAX_REQ_LEN** in **AES.h** and then recompiling the program. <br>
+**Warning:** Enlarging the value too much may produce errors in the program.
   - The expected input length for the **-key** argument is **16** characters for AES 128, **24** characters for AES 192 and **32** characters for AES256.<br>
 If an ASCII string with **less** characters are given, the key will be **padded with zeroes** at the end.
 If an ASCII string with **more** characters are given, the **trailing characters** will be **discarded**.    
   - The expected input length for the **-iv** argument is **16** characters.<br>
 The **same** rules for the **-key** argument apply here.
+
+
+## Makefile usage
+
+A **Makefile** is provided with the source code to allow for easy setup and demo usage.
+
+Open a **terminal window** in the **same folder** as the Makefile to use it.
+
+The following command will build the executable:
+
+    $ make
+    
+The following command will run the provided demo test:
+
+    $ make demo
+    
+The following output is expected:
+
+    EHN 410 Group 12 Practical 2
+    
+    Encryption selected
+    AES128 with CBC selected
+    Plaintext message (ASCII): "EHN 410 practica"
+    Key (ASCII): "AES_encrypt"
+    The initialization vector was not set, setting to all zeroes
+    
+    
+    Encryption in process...
+    
+    Encrypted (HEX):
+    76E64EF4BCEC28126E25F8402CA3FB26
+    
+~output omitted~ 
+
+    Plaintext message (ASCII): "l 2 "
+    
+~output omitted~ 
+    
+    Encrypted (HEX):
+    3B49232A49112E2C8171E8469B9B04D8
+
+Many other demo examples are included in the Makefile and are run in the same manner. 
 
 
 ## Example usage
