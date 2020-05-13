@@ -58,3 +58,26 @@ int main(int argc, char *argv[])
         }
     }
 }
+
+
+
+void setseed(struct rsactx_t *rsa_k, int same_key){
+    if (same_key){
+        rsa_k->seed[0] = 0x01;
+        rsa_k->seed[1] = 0x23;
+        rsa_k->seed[2] = 0x45;
+        rsa_k->seed[3] = 0x67;
+        rsa_k->seed[4] = 0x89;
+        rsa_k->seed[5] = 0xAB;
+        rsa_k->seed[6] = 0xCD;
+        rsa_k->seed[7] = 0xEF;
+    } else {
+        // find random value
+    }
+}
+
+void getprime(struct rsactx_t *rsa_k, mpz_t p, int num_bits){
+    setseed(rsa_k, 1);
+    rc4_init(&RC4_RNG, rsa_k->seed, 8);
+
+}
