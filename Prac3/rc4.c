@@ -46,7 +46,7 @@ int main(int argc, char *argv[])
 {
     char *input_file_name = NULL;
     char *output_file_name = NULL;
-    char key[RC4_MAX_KEY_LEN + 1];
+    unsigned char key[RC4_MAX_KEY_LEN + 1];
     int keylen;
     char *key_file_name = NULL;
     bool args[3] = {false, false, false};
@@ -118,19 +118,24 @@ int main(int argc, char *argv[])
     }
 
     int i;
+    char buffer[RC4_MAX_KEY_LEN + 1];
     for (i = 0; i < RC4_MAX_KEY_LEN + 2; i++)
-        key[i] = '\0';
+        buffer[i] = '\0';
     if (!args[2])
     {
         printf("Please enter the key that should be used to encrypt/decrypt the input file:");
-        fgets(key,RC4_MAX_KEY_LEN,stdin);
-        printf("\n%s will be used as the key.\n",key);
-        keylen = (int)strlen(key);
+        fgets(buffer, RC4_MAX_KEY_LEN, stdin);
+        printf("\n%s will be used as the key.\n", key);
+        keylen = (int) strlen(buffer) / 2;
+        for (i = 0; i < keylen; i++)
+        {
+            key[i] = strtol((char *) (buffer[2 * i] + buffer[2 * i + 1]), NULL, 16);
+        }  //TODO possibly fix this
     }
     else
     {
-        FILE * keyfile;
-        keyfile = fopen(key_file_name,"r");
+        FILE *keyfile;
+        keyfile = fopen(key_file_name, "r");
         if (keyfile == NULL)
         {
             printf("The key file could not be opened, please check that the name of the file is correct\n");
@@ -138,16 +143,30 @@ int main(int argc, char *argv[])
         }
         else
         {
-                fscanf(keyfile,"%d", &keylen);
-                if (keylen < 1 || keylen > RC4_MAX_KEY_LEN)
-                {
-                    printf("The input key file did not contain a valid key length");
-                    return EXIT_FAILURE;
-                }
-                char format[4];
-                sprintf(format,"%%%ds",keylen);
-                fscanf(keyfile,format,key); // only read keylen number of characters
-
+            fscanf(keyfile, "%d", &keylen);
+            if (keylen < 1 || keylen > RC4_MAX_KEY_LEN)
+            {
+                printf("The input key file did not contain a valid key length");
+                return EXIT_FAILURE;
+            }
+            char format[4];
+            sprintf(format, "%%%ds", keylen);
+            fscanf(keyfile, format, buffer); // only read keylen number of characters
+            for (i = 0; i < keylen; i++)
+            {
+                key[i] = strtol((char *) (buffer[2 * i] + buffer[2 * i + 1]), NULL, 16);
+            }
+            printf("%s will be used as the key.\n", key);
         }
     }
+
+    FILE *infile;
+    infile = fopen(input_file_name, "r");
+    if (infile == NULL)
+    {
+        printf("The input file could not be opened, please check that the name of the file is correct\n");
+        return EXIT_FAILURE;
+    }
+
+
 }
