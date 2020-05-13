@@ -5,6 +5,11 @@
 // Body
 int main(int argc, char *argv[])
 {
+    struct rsactx_t rsa;
+    mpz_t large_prime;
+    mpz_init(large_prime);
+    getprime(&rsa, large_prime, 15);
+    int x = 1;
     int num_bits = -1;
     char *private_key_file_name = NULL;
     char *public_key_file_name = NULL;
@@ -77,7 +82,26 @@ void setseed(struct rsactx_t *rsa_k, int same_key){
 }
 
 void getprime(struct rsactx_t *rsa_k, mpz_t p, int num_bits){
+    unsigned long result = 1;
+    mpz_t not_prime;
+    int num_rand_bytes = (num_bits-1)/8;
+    unsigned int temp;
+    int remain = (num_bits-1)%8;
     setseed(rsa_k, 1);
     rc4_init(&RC4_RNG, rsa_k->seed, 8);
 
+    // Loop until right length
+    for (int i = 0; i < num_rand_bytes; ++i){
+        result = result<<8;
+        result = result | rc4_getbyte(&RC4_RNG);
+    }
+
+    if (remain>0){
+        temp = rc4_getbyte(&RC4_RNG)>>(8-remain);
+        result = result<<remain;
+        result = result | temp;
+    }
+
+    mpz_init_set_ui (not_prime, result);
+    mpz_nextprime(p, not_prime);
 }
