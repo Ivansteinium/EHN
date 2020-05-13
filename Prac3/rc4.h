@@ -4,19 +4,19 @@
 #include "prac3.h"
 #define U8 unsigned char
 
-// Body
-struct rc4ctx_t {
-    int S[256];
-    int T[256];
-    int K[256];
-    int idx_1;
-    int idx_2;
-//    int keylen;
-}; // Storing RC4 context
+#define RC4_MAX_KEY_LEN 16
 
-void rc4_init(struct rc4ctx_t* rc4c, U8* key, int keylen); // Initialize rc4
-void swap(int* S, int idx_1, int idx_2); // Swap 2 values in S array
-U8 rc4_getbyte(struct rc4ctx_t* rc4c); // Retrive byte to xor
+//Body
+struct rc4info_t
+{
+    int S[255];
+    int i,j;
+};
 
-#endif //EHN_PRAC3_RC4_H
+void swap(int *a, int *b);
+void rc4_init(struct rc4info_t *rc4i, unsigned char *key, int keylen);
+unsigned char rc4_getbyte(struct rc4info_t *rc4i);
+
+
+#endif//EHN_PRAC3_RC4_H
 

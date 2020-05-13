@@ -10,6 +10,7 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <sys/timeb.h>
+#include <ctype.h>
 
 // Common defines
 
