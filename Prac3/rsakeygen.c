@@ -11,7 +11,7 @@ int main(int argc, char *argv[])
     mpz_t large_prime;
     mpz_init(large_prime);
     //getprime(&rsa, large_prime, 15);
-    getkeys(&rsa, 128, 2);
+    getkeys(&rsa, 256, 2);
 
     int x = 1;
     int num_bits = -1;
@@ -116,8 +116,31 @@ void getkeys(struct rsactx_t *rsa_k, int key_len, int e_selection){
     unsigned long i_1 = 1;
     int p_q_bit_len = (key_len)/2;
     unsigned long e[3] = {3, 17, 65537};
+//    mpz_init(rsa_k->p);
+//    mpz_init(rsa_k->q);
+//    mpz_init(rsa_k->n);
+//    mpz_init(p_1);
+//    mpz_init(q_1);
+//    mpz_init_set_ui (rsa_k->e, e[e_selection]);
+//    mpz_init_set_ui (val_1, i_1);
+//    mpz_init(phi);
+//    mpz_init(phi_1);
+//    mpz_init(rsa_k->d);
+//    mpz_init(remain);
 
     do {
+//        mpz_clear(rsa_k->p);
+//        mpz_clear(rsa_k->q);
+//        mpz_clear(rsa_k->n);
+//        mpz_clear(p_1);
+//        mpz_clear(q_1);
+//        mpz_clear(rsa_k->e);
+//        mpz_clear(val_1);
+//        mpz_clear(phi);
+//        mpz_clear(phi_1);
+//        mpz_clear(rsa_k->d);
+//        mpz_clear(remain);
+
         do {
             mpz_init(rsa_k->p);
             getprime(rsa_k, rsa_k->p, p_q_bit_len);
@@ -149,9 +172,16 @@ void getkeys(struct rsactx_t *rsa_k, int key_len, int e_selection){
 
         mpz_init(rsa_k->d);
         mpz_init(remain);
-        mpz_cdiv_q(rsa_k->d, phi_1, rsa_k->e);
-        mpz_mod (remain, phi_1, rsa_k->d);
-    } while ((mpz_get_ui(remain) != 0) || (mpz_get_ui(rsa_k->d) > mpz_get_ui(phi)));
+        mpz_tdiv_qr(rsa_k->d, remain, phi_1, rsa_k->e);
+//        mpz_mod (remain, phi_1, rsa_k->d);
+    } while ((mpz_get_ui(remain) != 0) || (mpz_cmp(rsa_k->d, phi) >= 0));
+
+    mpz_out_str(stdout, 10, phi_1);
+    printf("\n");
+    mpz_out_str(stdout, 10, rsa_k->d);
+    printf("\n");
+    printf("phi: %lu\n", mpz_get_ui(phi_1));
+    printf("d: %lu\n", mpz_get_ui(rsa_k->d));
     unsigned long temp = 14851388866727294549;
     int x = temp % 65537;
 }
