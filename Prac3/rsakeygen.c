@@ -5,13 +5,13 @@
 // Body
 int main(int argc, char *argv[])
 {
-    struct rsactx_t rsa;
-    setseed(&rsa, 1);
-    rc4_init(&RC4_RNG, rsa.seed, 8);
-    mpz_t large_prime;
-    mpz_init(large_prime);
+//    struct rsactx_t rsa;
+//    setseed(&rsa, 1);
+//    rc4_init(&RC4_RNG, rsa.seed, 8);
+//    mpz_t large_prime;
+//    mpz_init(large_prime);
     //getprime(&rsa, large_prime, 15);
-    getkeys(&rsa, 18, 1);
+
 
     int x = 1;
     int num_bits = -1;
@@ -28,7 +28,7 @@ int main(int argc, char *argv[])
                           "The private_key_file is the filename to which the private key should be written.\n";
                           // from guide, refine/change if necessary
 
-    if (argc < 8)
+    if (argc < 6)
     {
         printf("Too few arguments were supplied\n");
         printf("Proper use of the program is as follows:\n \n %s \n",help_message);
@@ -59,12 +59,82 @@ int main(int argc, char *argv[])
             printf("%i bits will be generated\n");
             arg++; // Skip over the value parameter that follows this parameter
         }
+        else if (strstr(argv[arg], "-KU") != NULL) // Set the name of the output file
+        {
+            args[1] = true;
+            if (arg + 1 >= argc)
+            {
+                printf("Too few arguments were supplied\n");
+                return EXIT_FAILURE;
+            }
+
+            public_key_file_name = argv[arg + 1];
+            printf("Using %s as the public key file\n", public_key_file_name);
+            arg++; // Skip over the value parameter that follows this parameter
+        }
+        else if (strstr(argv[arg], "-KR") != NULL) // Set the name of the output file
+        {
+            args[2] = true;
+            if (arg + 1 >= argc)
+            {
+                printf("Too few arguments were supplied\n");
+                return EXIT_FAILURE;
+            }
+
+            private_key_file_name = argv[arg + 1];
+            printf("Using %s as the private key file\n", private_key_file_name);
+            arg++; // Skip over the value parameter that follows this parameter
+        }
         else
         {
             printf("Invalid parameter supplied: %s\n",argv[arg]);
             printf("Proper use of the program is as follows:\n %s \n",help_message);
             return EXIT_FAILURE;
         }
+    }
+
+    // set the RSA key
+    struct rsactx_t rsa;
+    int e_val = 2;  // maybe change to 1/0 if the key is too small.
+
+
+    /* Needs key */
+    setseed(&rsa, 1);
+    rc4_init(&RC4_RNG, rsa.seed, 8);
+    getkeys(&rsa, num_bits, e_val);
+
+    unsigned char temp = '\n';
+
+    // open the public key file to be written
+    FILE *kufile;
+    kufile = fopen(public_key_file_name, "w");
+    if (kufile == NULL) // output file could not be created
+    {
+        printf("The public key file could not be opened, please make sure the program has write privileges\n");
+        fclose(kufile);
+        return EXIT_FAILURE;
+    } else {
+        mpz_out_str(kufile, 10, rsa.n);
+        fwrite(&temp, 1, 1, kufile);
+        mpz_out_str(kufile, 10, rsa.e);
+        fwrite(&temp, 1, 1, kufile);
+        fclose(kufile);
+    }
+
+    // open the private key file to be written
+    FILE *krfile;
+    krfile = fopen(private_key_file_name, "w");
+    if (krfile == NULL) // output file could not be created
+    {
+        printf("The private key file could not be opened, please make sure the program has write privileges\n");
+        fclose(krfile);
+        return EXIT_FAILURE;
+    } else {
+        mpz_out_str(krfile, 10, rsa.n);
+        fwrite(&temp, 1, 1, krfile);
+        mpz_out_str(krfile, 10, rsa.d);
+        fwrite(&temp, 1, 1, krfile);
+        fclose(krfile);
     }
 }
 
