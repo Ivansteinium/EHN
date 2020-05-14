@@ -1,7 +1,6 @@
 #include <obstack.h>
 #include "rsakeygen.h"
 
-
 // Body
 int main(int argc, char *argv[])
 {
@@ -19,6 +18,8 @@ int main(int argc, char *argv[])
     char *public_key_file_name = NULL;
     int key[16];
     bool args[4] = {false, false, false, false};
+    int message_len = 0;
+    unsigned char *message = NULL;
 
     char help_message[] = "rsakeygen -b bits -KU public_key_file -KR private_key_file -key key\n \n"
                           "The bits specify the number of bits that need to be generated for the given key. \n"
@@ -85,6 +86,39 @@ int main(int argc, char *argv[])
             printf("Using %s as the private key file\n", private_key_file_name);
             arg++; // Skip over the value parameter that follows this parameter
         }
+        else if (strstr(argv[arg], "-key") != NULL) // Set the input message
+        {
+            args[3] = true;
+            if (arg + 1 >= argc)
+            {
+                printf("Too few arguments were supplied\n");
+                return EXIT_FAILURE;
+            }
+
+            // Take message as hex input
+            char *parameter = argv[arg + 1];
+            message_len = strlen(parameter) / 2; // 2 hex chars = 1 byte
+
+            message = (unsigned char *) malloc((message_len + 17) * sizeof(unsigned char)); // + 17 if incomplete block to pad with zeroes
+
+            for (int i = message_len; i < message_len + 17; i++) // Fill with zeroes to pad if needed + null terminator
+                message[i] = '\0';
+
+            // Convert from hex string to int array
+            char current_number[2];
+            for (int i = 0; i < message_len; i++)
+            {
+                strncpy(current_number, parameter, 2); // Retrieve one byte (two hex chars)
+                message[i] = (unsigned char) hex_convert(current_number, 2); // Get the integer value from the byte
+                parameter += 2; // Move to the next byte
+            }
+
+            printf("Seed key value (HEX): ");
+            print_hex_string(message, message_len);
+            printf("\n");
+            arg++; // Skip over the value parameter that follows this parameter
+        }
+
         else
         {
             printf("Invalid parameter supplied: %s\n",argv[arg]);
@@ -100,7 +134,12 @@ int main(int argc, char *argv[])
 
     /* Needs key */
     setseed(&rsa, 1);
-    rc4_init(&RC4_RNG, rsa.seed, 8);
+    if (args[3]){
+        rc4_init(&RC4_RNG, message, 8);
+    } else{
+        rc4_init(&RC4_RNG, rsa.seed, 8);
+    }
+
     getkeys(&rsa, num_bits, e_val);
 
     unsigned char temp = '\n';
@@ -262,4 +301,58 @@ void getkeys(struct rsactx_t *rsa_k, int key_len, int e_selection){
     printf("d: %lu\n", mpz_get_ui(rsa_k->d));
     unsigned long temp = 14851388866727294549;
     int x = temp % 65537;
+}
+
+// Print a c-string up to a certain length in hex
+void print_hex_string(unsigned char hex_string[], int message_len)
+{
+    int i;
+    for (i = 0; i < message_len; i++)
+        printf("%02X", hex_string[i]);
+}
+
+// Convert hex to int, done because the system hex converter is unreliable
+int hex_convert(char hex_string[], int length)
+{
+    int result = 0;
+    int base = 1;
+
+    int i;
+    for (i = length; i > 0; i--)
+    {
+        switch (hex_string[i - 1])
+        {
+            case '0': {break;}
+            case '1': {result += base * 1; break;}
+            case '2': {result += base * 2; break;}
+            case '3': {result += base * 3; break;}
+            case '4': {result += base * 4; break;}
+            case '5': {result += base * 5; break;}
+            case '6': {result += base * 6; break;}
+            case '7': {result += base * 7; break;}
+            case '8': {result += base * 8; break;}
+            case '9': {result += base * 9; break;}
+            case 'A': {result += base * 10; break;}
+            case 'B': {result += base * 11; break;}
+            case 'C': {result += base * 12; break;}
+            case 'D': {result += base * 13; break;}
+            case 'E': {result += base * 14; break;}
+            case 'F': {result += base * 15; break;}
+            case 'a': {result += base * 10; break;}
+            case 'b': {result += base * 11; break;}
+            case 'c': {result += base * 12; break;}
+            case 'd': {result += base * 13; break;}
+            case 'e': {result += base * 14; break;}
+            case 'f': {result += base * 15; break;}
+            default:
+            {
+                printf("The input given (\'%c\') is not a valid HEX character\nTerminating...\n", hex_string[i]);
+                exit(EXIT_FAILURE);
+            }
+        }
+
+        base *= 16;
+    }
+
+    return result;
 }
