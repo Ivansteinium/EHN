@@ -42,6 +42,18 @@
 //    return rc4i->S[t];
 //}
 
+void dotest(unsigned char *key, int keylen)
+{
+    int i;
+    struct rc4info_t rc4Info;
+    rc4_init(&rc4Info,key,keylen);
+    for(i=0; i< 8; i++)
+    {
+        printf("%X ",rc4_getbyte(&rc4Info));
+    }
+    printf("\n");
+}
+
 int main(int argc, char *argv[])
 {
     char *input_file_name = NULL;
@@ -73,10 +85,10 @@ int main(int argc, char *argv[])
             }
 
             input_file_name = argv[arg + 1];
-            printf("Using %s as the input file", input_file_name);
+            printf("Using %s as the input file\n", input_file_name);
             arg++; // Skip over the value parameter that follows this parameter
         }
-        if (strstr(argv[arg], "-fo") != NULL) // Set the name of the output file
+        else if (strstr(argv[arg], "-fo") != NULL) // Set the name of the output file
         {
             args[1] = true;
             if (arg + 1 >= argc)
@@ -86,10 +98,10 @@ int main(int argc, char *argv[])
             }
 
             output_file_name = argv[arg + 1];
-            printf("Using %s as the output file", output_file_name);
+            printf("Using %s as the output file\n", output_file_name);
             arg++; // Skip over the value parameter that follows this parameter
         }
-        if (strstr(argv[arg], "-kf") != NULL) // Set the name of the file containing the key
+        else if (strstr(argv[arg], "-kf") != NULL) // Set the name of the file containing the key
         {
             args[2] = true;
             if (arg + 1 >= argc)
@@ -99,7 +111,7 @@ int main(int argc, char *argv[])
             }
 
             key_file_name = argv[arg + 1];
-            printf("Using %s as the key file", key_file_name);
+            printf("Using %s as the key file\n", key_file_name);
             arg++; // Skip over the value parameter that follows this parameter
         }
         else
@@ -118,19 +130,23 @@ int main(int argc, char *argv[])
     }
 
     int i;
-    char buffer[RC4_MAX_KEY_LEN + 1];
-    for (i = 0; i < RC4_MAX_KEY_LEN + 2; i++)
+    char buffer[RC4_MAX_KEY_LEN + 2];
+    char currentVal[3];
+    currentVal[2] = '\0';
+    for (i = 0; i < RC4_MAX_KEY_LEN + 3; i++)
         buffer[i] = '\0';
     if (!args[2])
     {
         printf("Please enter the key that should be used to encrypt/decrypt the input file:");
-        fgets(buffer, RC4_MAX_KEY_LEN, stdin);
-        printf("\n%s will be used as the key.\n", key);
+        fgets(buffer, RC4_MAX_KEY_LEN+1, stdin);
+        printf("\n%s will be used as the key.\n", buffer);
         keylen = (int) strlen(buffer) / 2;
         for (i = 0; i < keylen; i++)
         {
-            key[i] = strtol((char *) (buffer[2 * i] + buffer[2 * i + 1]), NULL, 16);
-        }  //TODO possibly fix this
+            currentVal[0] = buffer[2*i];
+            currentVal[1] = buffer[2*i+1];
+            key[i] = strtol(currentVal, NULL, 16);
+        }
     }
     else
     {
@@ -150,15 +166,19 @@ int main(int argc, char *argv[])
                 return EXIT_FAILURE;
             }
             char format[4];
-            sprintf(format, "%%%ds", keylen);
+            sprintf(format, "%%%ds", keylen*2);
             fscanf(keyfile, format, buffer); // only read keylen number of characters
             for (i = 0; i < keylen; i++)
             {
-                key[i] = strtol((char *) (buffer[2 * i] + buffer[2 * i + 1]), NULL, 16);
+                currentVal[0] = buffer[2*i];
+                currentVal[1] = buffer[2*i+1];
+                key[i] = strtol(currentVal, NULL, 16);
             }
-            printf("%s will be used as the key.\n", key);
+            printf("%s will be used as the key.\n", buffer);
         }
     }
+
+    dotest(key,keylen);
 
     FILE *infile;
     infile = fopen(input_file_name, "r");
