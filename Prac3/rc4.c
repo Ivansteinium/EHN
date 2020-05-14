@@ -178,15 +178,40 @@ int main(int argc, char *argv[])
         }
     }
 
-    dotest(key,keylen);
-
     FILE *infile;
     infile = fopen(input_file_name, "r");
+    FILE *outfile;
+    outfile = fopen(output_file_name,"w");
+    struct rc4info_t rc4Info;
     if (infile == NULL)
     {
         printf("The input file could not be opened, please check that the name of the file is correct\n");
+        fclose(infile);
+        fclose(outfile);
         return EXIT_FAILURE;
     }
+    else if(outfile == NULL)
+    {
+        printf("The output file could not be opened, please make sure the program has write privileges\n");
+        fclose(infile);
+        fclose(outfile);
+        return EXIT_FAILURE;
+    }
+    else
+    {
+        rc4_init(&rc4Info,key,keylen);
+        unsigned char temp;
+        while(fread(&temp,1,1,infile)>0)
+        {
+            temp = temp ^ rc4_getbyte(&rc4Info);
+            fwrite(&temp,1,1,outfile);
+        }
+        fclose(infile);
+        fclose(outfile);
+    }
+
+    printf("Encryption/Decryption complete \n");
+    return EXIT_SUCCESS;
 
 
 }
