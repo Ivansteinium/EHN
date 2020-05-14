@@ -20,19 +20,17 @@ int main(int argc, char *argv[])
 
 
 
-
-
-    char *input_file_name = NULL;
+    char *public_file_name = NULL;
     char *output_file_name = NULL;
     unsigned char key[16+1];
     int keylen;
     char *key_file_name = NULL;
     bool args[3] = {false, false, false};
 
-    char help_message[] = "rc4 -fi inputfile -fo outputfile -kf keyfile";
+    char help_message[] = "rsaencrypt -key key -fo outputfile -KU public_key_file";
     // from guide, refine/change if necessary
 
-    if (argc < 4)
+    if (argc < 6)
     {
         printf("Too few arguments were supplied\n");
         printf("Proper use of the program is as follows:\n \n %s \n", help_message);
@@ -41,7 +39,7 @@ int main(int argc, char *argv[])
     int arg;
     for (arg = 1; arg < argc; arg++)
     {
-        if (strstr(argv[arg], "-fi") != NULL) // Set the name of the input file
+        if (strstr(argv[arg], "-key") != NULL) // Set the name of the file containing the key
         {
             args[0] = true;
             if (arg + 1 >= argc)
@@ -50,8 +48,8 @@ int main(int argc, char *argv[])
                 return EXIT_FAILURE;
             }
 
-            input_file_name = argv[arg + 1];
-            printf("Using %s as the input file\n", input_file_name);
+            key_file_name = argv[arg + 1];
+            printf("Using %s as the key file\n", key_file_name);
             arg++; // Skip over the value parameter that follows this parameter
         }
         else if (strstr(argv[arg], "-fo") != NULL) // Set the name of the output file
@@ -64,10 +62,10 @@ int main(int argc, char *argv[])
             }
 
             output_file_name = argv[arg + 1];
-            printf("Using %s as the output file\n", output_file_name);
+            printf("Using %s as the input file\n", output_file_name);
             arg++; // Skip over the value parameter that follows this parameter
         }
-        else if (strstr(argv[arg], "-kf") != NULL) // Set the name of the file containing the key
+        else if (strstr(argv[arg], "-KU") != NULL) // Set the name of the public key file
         {
             args[2] = true;
             if (arg + 1 >= argc)
@@ -76,14 +74,9 @@ int main(int argc, char *argv[])
                 return EXIT_FAILURE;
             }
 
-            key_file_name = argv[arg + 1];
-            printf("Using %s as the key file\n", key_file_name);
+            public_file_name = argv[arg + 1];
+            printf("Using %s as the output file\n", public_file_name);
             arg++; // Skip over the value parameter that follows this parameter
-        }
-        else if ((strstr(argv[arg], "-e") != NULL) || (strstr(argv[arg], "-d") != NULL)) // encryption and decryption
-            // follow exact same process
-        {
-            continue;
         }
         else
         {
