@@ -1,59 +1,10 @@
 #include "rc4.h"
 
-//void swap(int *a, int *b)
-//{
-//    int temp;
-//    temp = *a;
-//    *a = *b;
-//    *b = temp;
-//}
-//
-//// Body
-//void rc4_init(struct rc4info_t *rc4i, unsigned char *key, int keylen) // Set up the RC4 cipher as done in "Network
-//// Security Essentials", William stallings, page 48
-//{
-//    int i;
-//    int T[255];
-//    for (i = 0; i < 256; i++) // initialise values
-//    {
-//        rc4i->S[i] = i;
-//        T[i] = key[i % keylen];
-//    }
-//    int j = 0;
-//    for (i = 0; i < 256; i++) // do the initial permutation of S
-//    {
-//        j = (j + rc4i->S[i] + T[i]) % 256;
-//        swap(&(rc4i->S[i]), &(rc4i->S[j]));
-//    }
-//    rc4i->i = 0;
-//    rc4i->j = 0;
-//}
-//
-//unsigned char rc4_getbyte(struct rc4info_t *rc4i)// Generate a byte using the RC4 cipher as done in "Network
-//// Security Essentials", William stallings, page 48
-//{
-//    // increment the swap indexes
-//    rc4i->i = (rc4i->i + 1) % 256;
-//    rc4i->j = (rc4i->j + rc4i->S[rc4i->i]) % 256;
-//    // swap the values in the S array
-//    swap(&(rc4i->S[rc4i->i]), &(rc4i->S[rc4i->j]));
-//    // sum the swapped values
-//    int t = (rc4i->S[rc4i->i] + rc4i->S[rc4i->j]) % 256;
-//    return rc4i->S[t];
-//}
-
-void dotest(unsigned char *key, int keylen)
-{
-    int i;
-    struct rc4info_t rc4Info;
-    rc4_init(&rc4Info,key,keylen);
-    for(i=0; i< 8; i++)
-    {
-        printf("%X ",rc4_getbyte(&rc4Info));
-    }
-    printf("\n");
-}
-
+/// The main function for the RC4 encryption/decryption utility. Uses the RC4 functions in prac3.h to ecrypt/decrypt
+/// an input file using a key file, or using a key entered into the terminal.
+/// \param argc The number of arguments passed to the utility
+/// \param argv A string array of the arguments passed to the utility
+/// \return Successful execution
 int main(int argc, char *argv[])
 {
     char *input_file_name = NULL;
@@ -114,6 +65,11 @@ int main(int argc, char *argv[])
             printf("Using %s as the key file\n", key_file_name);
             arg++; // Skip over the value parameter that follows this parameter
         }
+        else if ((strstr(argv[arg], "-e") != NULL) || (strstr(argv[arg], "-d") != NULL)) // encryption and decryption
+            // follow exact same process
+        {
+            continue;
+        }
         else
         {
             printf("Invalid parameter supplied: %s\n", argv[arg]);
@@ -122,33 +78,36 @@ int main(int argc, char *argv[])
         }
     }
 
-    if (!args[0] || !args[1])
+    if (!args[0] || !args[1]) // -fi and -fo have to be specified
     {
         printf("Too few arguments were supplied\n");
         printf("Proper use of the program is as follows:\n \n %s \n", help_message);
         return EXIT_FAILURE;
     }
 
+    //create variables to read the key
     int i;
     char buffer[RC4_MAX_KEY_LEN + 2];
     char currentVal[3];
     currentVal[2] = '\0';
     for (i = 0; i < RC4_MAX_KEY_LEN + 3; i++)
         buffer[i] = '\0';
-    if (!args[2])
+
+    if (!args[2]) // read the key from the terminal if a key file is not specified
     {
         printf("Please enter the key that should be used to encrypt/decrypt the input file:");
-        fgets(buffer, RC4_MAX_KEY_LEN+1, stdin);
+        fgets(buffer, RC4_MAX_KEY_LEN*2 + 1, stdin); // read only up to the max number of characters = 2*max key
+        // length in bytes
         printf("\n%s will be used as the key.\n", buffer);
         keylen = (int) strlen(buffer) / 2;
-        for (i = 0; i < keylen; i++)
+        for (i = 0; i < keylen; i++) // convert the string key to separate key bytes
         {
-            currentVal[0] = buffer[2*i];
-            currentVal[1] = buffer[2*i+1];
+            currentVal[0] = buffer[2 * i];
+            currentVal[1] = buffer[2 * i + 1];
             key[i] = strtol(currentVal, NULL, 16);
         }
     }
-    else
+    else // read the key from the key file
     {
         FILE *keyfile;
         keyfile = fopen(key_file_name, "r");
@@ -159,59 +118,58 @@ int main(int argc, char *argv[])
         }
         else
         {
-            fscanf(keyfile, "%d", &keylen);
+            fscanf(keyfile, "%d", &keylen); // read the key length from the first line in the file
             if (keylen < 1 || keylen > RC4_MAX_KEY_LEN)
             {
                 printf("The input key file did not contain a valid key length");
                 return EXIT_FAILURE;
             }
             char format[4];
-            sprintf(format, "%%%ds", keylen*2);
-            fscanf(keyfile, format, buffer); // only read keylen number of characters
-            for (i = 0; i < keylen; i++)
+            sprintf(format, "%%%ds", keylen * 2);
+            fscanf(keyfile, format, buffer); // only read keylen*2 number of characters (equal to keylen bytes)
+            for (i = 0; i < keylen; i++) // convert the key string into separate hex bytes
             {
-                currentVal[0] = buffer[2*i];
-                currentVal[1] = buffer[2*i+1];
+                currentVal[0] = buffer[2 * i];
+                currentVal[1] = buffer[2 * i + 1];
                 key[i] = strtol(currentVal, NULL, 16);
             }
             printf("%s will be used as the key.\n", buffer);
         }
     }
 
+    // open the files to be read and written
     FILE *infile;
     infile = fopen(input_file_name, "r");
     FILE *outfile;
-    outfile = fopen(output_file_name,"w");
+    outfile = fopen(output_file_name, "w");
     struct rc4info_t rc4Info;
-    if (infile == NULL)
+    if (infile == NULL) // input file does not exist
     {
         printf("The input file could not be opened, please check that the name of the file is correct\n");
         fclose(infile);
         fclose(outfile);
         return EXIT_FAILURE;
     }
-    else if(outfile == NULL)
+    else if (outfile == NULL) // output file could not be created
     {
         printf("The output file could not be opened, please make sure the program has write privileges\n");
         fclose(infile);
         fclose(outfile);
         return EXIT_FAILURE;
     }
-    else
+    else // read a byte, encrypt, and write to output. Repeat until entire input file is read
     {
-        rc4_init(&rc4Info,key,keylen);
+        rc4_init(&rc4Info, key, keylen); // initialise the RC4 structure
         unsigned char temp;
-        while(fread(&temp,1,1,infile)>0)
+        while (fread(&temp, 1, 1, infile) > 0)// read a byte and check if input file finished reading
         {
-            temp = temp ^ rc4_getbyte(&rc4Info);
-            fwrite(&temp,1,1,outfile);
+            temp = temp ^ rc4_getbyte(&rc4Info); // xor read byte to encrypt
+            fwrite(&temp, 1, 1, outfile); // write encrypted byte
         }
-        fclose(infile);
+        fclose(infile); //close and save files
         fclose(outfile);
     }
 
     printf("Encryption/Decryption complete \n");
     return EXIT_SUCCESS;
-
-
 }
