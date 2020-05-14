@@ -6,9 +6,13 @@
 int main(int argc, char *argv[])
 {
     struct rsactx_t rsa;
+    setseed(&rsa, 1);
+    rc4_init(&RC4_RNG, rsa.seed, 8);
     mpz_t large_prime;
     mpz_init(large_prime);
-    getprime(&rsa, large_prime, 15);
+    //getprime(&rsa, large_prime, 15);
+    getkeys(&rsa, 128, 2);
+
     int x = 1;
     int num_bits = -1;
     char *private_key_file_name = NULL;
@@ -87,8 +91,6 @@ void getprime(struct rsactx_t *rsa_k, mpz_t p, int num_bits){
     int num_rand_bytes = (num_bits-1)/8;
     unsigned int temp;
     int remain = (num_bits-1)%8;
-    setseed(rsa_k, 1);
-    rc4_init(&RC4_RNG, rsa_k->seed, 8);
 
     // Loop until right length
     for (int i = 0; i < num_rand_bytes; ++i){
@@ -104,4 +106,52 @@ void getprime(struct rsactx_t *rsa_k, mpz_t p, int num_bits){
 
     mpz_init_set_ui (not_prime, result);
     mpz_nextprime(p, not_prime);
+}
+
+void getkeys(struct rsactx_t *rsa_k, int key_len, int e_selection){
+    mpz_t phi;
+    mpz_t p_1, q_1, val_1;
+    mpz_t phi_1;
+    mpz_t remain;
+    unsigned long i_1 = 1;
+    int p_q_bit_len = (key_len)/2;
+    unsigned long e[3] = {3, 17, 65537};
+
+    do {
+        do {
+            mpz_init(rsa_k->p);
+            getprime(rsa_k, rsa_k->p, p_q_bit_len);
+
+            mpz_init(rsa_k->q);
+            getprime(rsa_k, rsa_k->q, p_q_bit_len); // Random prime p and q
+        } while (mpz_get_ui(rsa_k->p) == mpz_get_ui(rsa_k->q)); // p != q
+
+        mpz_init(rsa_k->n);
+        mpz_mul(rsa_k->n, rsa_k->p, rsa_k->q); // Set n
+
+        mpz_init_set_ui (rsa_k->e, e[e_selection]); //set e from common e values
+
+        mpz_init_set_ui (val_1, i_1); // Create a mpz struct with val 1 for subtraction.
+        mpz_init(p_1);
+        mpz_sub(p_1, rsa_k->p, val_1); // (p-1)
+
+        mpz_init(q_1);
+        mpz_sub(q_1, rsa_k->q, val_1); // (q-1)
+
+        mpz_init(phi);
+        mpz_mul(phi, p_1, q_1); // phi = (p-1)(q-1)
+
+//    mpz_init(mod_out);
+//    mpz_mod (mod_out, rsa_k->e, phi); // e mod phi
+
+        mpz_init(phi_1);
+        mpz_add (phi_1, phi, val_1);
+
+        mpz_init(rsa_k->d);
+        mpz_init(remain);
+        mpz_cdiv_q(rsa_k->d, phi_1, rsa_k->e);
+        mpz_mod (remain, phi_1, rsa_k->d);
+    } while ((mpz_get_ui(remain) != 0) || (mpz_get_ui(rsa_k->d) > mpz_get_ui(phi)));
+    unsigned long temp = 14851388866727294549;
+    int x = temp % 65537;
 }

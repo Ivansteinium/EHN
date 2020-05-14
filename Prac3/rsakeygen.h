@@ -17,6 +17,7 @@ struct rsactx_t
 // Body
 void setseed(struct rsactx_t *rsa_k, int same_key); // The initial value of the RNG
 void getprime(struct rsactx_t *rsa_k, mpz_t p, int num_bits); // get a prime p of num_bits
+void getkeys(struct rsactx_t *rsa_k, int key_len, int e_selection); // fill the rsa struct with the key values.
 
 
 #endif //EHN_PRAC3_RSAKEYGEN_H
