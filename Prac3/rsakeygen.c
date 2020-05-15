@@ -231,7 +231,7 @@ void getkeys(struct rsactx_t *rsa_k, int key_len, int e_selection){
     mpz_t phi_1;
     mpz_t remain;
     unsigned long i_1 = 1;
-    int p_q_bit_len = (key_len)/2;
+    int p_q_bit_len = (key_len)*50 ;/* /2; */
     unsigned long e[3] = {3, 17, 65537};
 //    mpz_init(rsa_k->p);
 //    mpz_init(rsa_k->q);

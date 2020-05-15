@@ -6,43 +6,43 @@
 int main(int argc, char *argv[])
 {
 
-    int keylen = 5;
-    char *key = "abcde";
-    char rightlen[16];
-    for (int i = 0; i < 16; ++i) {
-        if(i < keylen){
-            rightlen[i] = key[i];
-        } else{
-            rightlen[i] = '\0';
-        }
-    }
-
-    char encodedKey[49]; //3*len(rightlen) (3 decimal positions for each character) +1 for leading 1
-    for(int i=0; i<49; i++)
-    {
-        encodedKey[i] = '\0';
-    }
-    encodedKey[0]='1'; // to preserve leading zeroes
-    char encode_temp[4];
-    for (int i = 0; i < 17; i++)
-    {
-        sprintf(encode_temp,"%03u",(unsigned)rightlen[i]);
-        strcat(encodedKey,encode_temp);
-    }
-
-    char *encodedKey_ptr = &encodedKey[1];
-    char encoded_temp[4];
-    encoded_temp[3] = '\0';
-    char decoded_plain[17];
-    for(int i=0;i<17; i++)
-    {
-        for(int j=0;j<3;j++)
-        {
-            encoded_temp[j] = encodedKey_ptr[3*i + j];
-        }
-        decoded_plain[i] = (char)atoi(encoded_temp);
-    }
-int x = 3;
+//    int keylen = 5;
+//    char *key = "abcde";
+//    char rightlen[16];
+//    for (int i = 0; i < 16; ++i) {
+//        if(i < keylen){
+//            rightlen[i] = key[i];
+//        } else{
+//            rightlen[i] = '\0';
+//        }
+//    }
+//
+//    char encodedKey[49]; //3*len(rightlen) (3 decimal positions for each character) +1 for leading 1
+//    for(int i=0; i<49; i++)
+//    {
+//        encodedKey[i] = '\0';
+//    }
+//    encodedKey[0]='1'; // to preserve leading zeroes
+//    char encode_temp[4];
+//    for (int i = 0; i < 17; i++)
+//    {
+//        sprintf(encode_temp,"%03u",(unsigned)rightlen[i]);
+//        strcat(encodedKey,encode_temp);
+//    }
+//
+//    char *encodedKey_ptr = &encodedKey[1];
+//    char encoded_temp[4];
+//    encoded_temp[3] = '\0';
+//    char decoded_plain[17];
+//    for(int i=0;i<17; i++)
+//    {
+//        for(int j=0;j<3;j++)
+//        {
+//            encoded_temp[j] = encodedKey_ptr[3*i + j];
+//        }
+//        decoded_plain[i] = (char)atoi(encoded_temp);
+//    }
+//int x = 3;
 
 
 
@@ -64,8 +64,8 @@ int x = 3;
     char *private_file_name = NULL;
     char *output_file_name = NULL;
     char *input_file_name = NULL;
-//    unsigned char key[16+1];
-//    int keylen;
+    unsigned char key[16+1];
+    int keylen;
     char *key_file_name = NULL;
     bool args[3] = {false, false, false};
 
@@ -186,9 +186,9 @@ int x = 3;
 
     int i;
     int j;
-//    char encoded_temp[4];
+    char encoded_temp[4];
     encoded_temp[3] = '\0';
-//    char decoded_plain[17];
+    char decoded_plain[17];
     for(i=0;i<17; i++)
     {
         for(j=0;j<3;j++)

@@ -154,9 +154,17 @@ int main(int argc, char *argv[])
         }
         fclose(kufile);
     }
+//    mpz_t  plain_test;
+//    mpz_init_set_str(plain_test, "10010110100101101001011010010110100101101001011010010110100101101001011010010110100101101001011010010110100101101001011010010110", 2);
 
     mpz_init(cipher);
     encrypt_rsa(plain, e, n, cipher);
+
+//    mpz_t d;
+//    mpz_init_set_str(d, "3796438167039216065323312031409113", 10);
+//    mpz_powm (plain, cipher, d, n);
+//    mpz_out_str(stdout, 2, plain);
+//    printf("\n");
 
     unsigned char new = '\n';
 
