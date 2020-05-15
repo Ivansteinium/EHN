@@ -11,12 +11,11 @@ int main(int argc, char *argv[])
     mpz_t plain, d, n, cipher;
     mpz_init(cipher);
     mpz_set_ui(cipher, i_1);
-    mpz_init(d);
-    mpz_set_ui(d, i_2);
+
     mpz_init(n);
     mpz_set_ui(n, i_3);
     mpz_init(plain);
-    decrypt_rsa(plain, d, n, cipher);
+
 
 
 
@@ -86,6 +85,71 @@ int main(int argc, char *argv[])
             return EXIT_FAILURE;
         }
     }
+
+    char temp[256];
+
+    // open the public key file to be written
+    FILE *infile;
+    infile = fopen(input_file_name, "r");
+    if (infile == NULL) // key file could not be found
+    {
+        printf("The public key file could not be opened, please make sure the program has read privileges\n");
+        fclose(infile);
+        return EXIT_FAILURE;
+    } else {
+        if( fgets (temp, 256, infile)!=NULL ) {
+            /* writing content to stdout */
+            mpz_init(cipher);
+            mpz_set_str(cipher, temp, 10);
+        }
+        fclose(infile);
+    }
+
+
+//    mpz_set_str(plain, key, 255);
+
+
+    // open the public key file to be written
+    FILE *krfile;
+    krfile = fopen(private_file_name, "r");
+    if (krfile == NULL) // key file could not be found
+    {
+        printf("The private key file could not be opened, please make sure the program has read privileges\n");
+        fclose(krfile);
+        return EXIT_FAILURE;
+    } else {
+        if( fgets (temp, 256, krfile)!=NULL ) {
+            /* writing content to stdout */
+            mpz_init(n);
+            mpz_set_str(n, temp, 10);
+        }
+        if( fgets (temp, 256, krfile)!=NULL ) {
+            /* writing content to stdout */
+            mpz_init(d);
+            mpz_set_str(d, temp, 10);
+        }
+        fclose(krfile);
+    }
+
+    mpz_init(plain);
+    decrypt_rsa(plain, d, n, cipher);
+
+    unsigned char new = '\n';
+
+    // open the public key file to be written
+    FILE *outfile;
+    outfile = fopen(output_file_name, "w");
+    if (outfile == NULL) // output file could not be created
+    {
+        printf("The output file could not be opened, please make sure the program has write privileges\n");
+        fclose(outfile);
+        return EXIT_FAILURE;
+    } else {
+        mpz_out_str(outfile, 10, plain);
+        fwrite(&new, 1, 1, outfile);
+        fclose(outfile);
+    }
+
 }
 
 void decrypt_rsa(mpz_t plain, mpz_t d, mpz_t n, mpz_t cipher){
