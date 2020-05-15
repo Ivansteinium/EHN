@@ -27,7 +27,7 @@ int main(int argc, char *argv[])
     char *key_file_name = NULL;
     bool args[3] = {false, false, false};
 
-    char help_message[] = "rsaencrypt -key key -fo outputfile -KU public_key_file";
+    char help_message[] = "rsadecrypt -fi inputfile -KR private_key_file -fo outputfile";
     // from guide, refine/change if necessary
 
     if (argc < 6)
@@ -136,7 +136,7 @@ int main(int argc, char *argv[])
 
     unsigned char new = '\n';
 
-    // open the public key file to be written
+    // open the output file to be written
     FILE *outfile;
     outfile = fopen(output_file_name, "w");
     if (outfile == NULL) // output file could not be created
@@ -145,7 +145,7 @@ int main(int argc, char *argv[])
         fclose(outfile);
         return EXIT_FAILURE;
     } else {
-        mpz_out_str(outfile, 10, plain);
+        mpz_out_str(outfile, 16, plain);
         fwrite(&new, 1, 1, outfile);
         fclose(outfile);
     }

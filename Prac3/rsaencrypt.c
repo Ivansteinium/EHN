@@ -62,7 +62,7 @@ int main(int argc, char *argv[])
             }
 
             public_file_name = argv[arg + 1];
-            printf("Using %s as the output file\n", public_file_name);
+            printf("Using %s as the rsa key file\n", public_file_name);
             arg++; // Skip over the value parameter that follows this parameter
         }
         else
@@ -109,11 +109,15 @@ int main(int argc, char *argv[])
 
     mpz_init(plain);
 //    mpz_set_ui(plain, input_key); // Sets the key plaintext?
-//    mpz_set_str(plain, hex, 0);
-    gmp_scanf("%hh", rightlen, plain);
+    mpz_set_str(plain, rightlen, 16);
+//    gmp_scanf("%hh", rightlen, plain);
 
     char temp[256];
-
+    int i;
+    for (i =0;i <257;i++)
+    {
+        temp[i] = '\0';
+    }
     // open the public key file to be written
     FILE *kufile;
     kufile = fopen(public_file_name, "r");
@@ -125,13 +129,11 @@ int main(int argc, char *argv[])
     } else {
         if( fgets (temp, 256, kufile)!=NULL ) {
             /* writing content to stdout */
-            mpz_init(n);
-            mpz_set_str(n, temp, 10);
+            mpz_init_set_str(n, temp, 10);
         }
         if( fgets (temp, 256, kufile)!=NULL ) {
             /* writing content to stdout */
-            mpz_init(e);
-            mpz_set_str(e, temp, 10);
+            mpz_init_set_str(e, temp, 10);
         }
         fclose(kufile);
     }

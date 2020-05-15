@@ -25,7 +25,7 @@ void rc4_init(struct rc4info_t *rc4i, unsigned char *key, int keylen) // Set up 
         j = (j + rc4i->S[i] + T[i]) % 256;
         swap(&(rc4i->S[i]), &(rc4i->S[j]));
     }
-    rc4i->i = 0;
+    rc4i->i = 0; // set up permutation variables in the struct
     rc4i->j = 0;
 }
 
