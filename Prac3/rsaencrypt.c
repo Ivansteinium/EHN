@@ -36,7 +36,7 @@ int main(int argc, char *argv[])
             }
             keylen = (int) strlen(argv[arg + 1]);
             key = argv[arg + 1];
-            printf("Using %s as the key file\n", key);
+            printf("Using %s as the key\n", key);
             arg++; // Skip over the value parameter that follows this parameter
         }
         else if (strstr(argv[arg], "-fo") != NULL) // Set the name of the output file
@@ -97,8 +97,9 @@ int main(int argc, char *argv[])
 //        }
 //    }
 
+    int i;
     char rightlen[16];
-    for (int i = 0; i < 16; ++i) {
+    for (i = 0; i < 16; ++i) {
         if(i < keylen){
             rightlen[i] = key[i];
         } else{
@@ -106,19 +107,35 @@ int main(int argc, char *argv[])
         }
     }
 //    rightlen[16] = '\n';
+    char encodedKey[49]; //3*len(rightlen) (3 decimal positions for each character) +1 for leading 1
+    for(i=0; i<49; i++)
+    {
+        encodedKey[i] = '\0';
+    }
+    encodedKey[0]='1'; // to preserve leading zeroes
+    char encode_temp[4];
+    for (i = 0; i < 17; i++)
+    {
+        sprintf(encode_temp,"%03u",(unsigned)rightlen[i]);
+        strcat(encodedKey,encode_temp);
+    }
 
     mpz_init(plain);
 //    mpz_set_ui(plain, input_key); // Sets the key plaintext?
-    mpz_set_str(plain, rightlen, 16);
+
+    mpz_set_str(plain, encodedKey, 10);
+    mpz_out_str(stdout,10,plain);
+    printf("\n");
+//    mpz_out_raw(stdout,plain);
+//    printf("\n");
 //    gmp_scanf("%hh", rightlen, plain);
 
     char temp[256];
-    int i;
     for (i =0;i <257;i++)
     {
         temp[i] = '\0';
     }
-    // open the public key file to be written
+    // open the public key file to be read
     FILE *kufile;
     kufile = fopen(public_file_name, "r");
     if (kufile == NULL) // key file could not be found

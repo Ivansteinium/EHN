@@ -136,6 +136,26 @@ int main(int argc, char *argv[])
 
     unsigned char new = '\n';
 
+    char encoded_plain[49];
+    mpz_get_str(encoded_plain,10,plain);
+    mpz_out_str(stdout,10,plain);
+    printf("\n");
+    char *encoded_plain_ptr = &encoded_plain[1]; //delete first char
+
+    int i;
+    int j;
+    char encoded_temp[4];
+    encoded_temp[3] = '\0';
+    char decoded_plain[17];
+    for(i=0;i<17; i++)
+    {
+        for(j=0;j<3;j++)
+        {
+            encoded_temp[j] = encoded_plain_ptr[3*i + j];
+        }
+        decoded_plain[i] = (char)atoi(encoded_temp);
+    }
+
     // open the output file to be written
     FILE *outfile;
     outfile = fopen(output_file_name, "w");

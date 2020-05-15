@@ -57,7 +57,7 @@ int main(int argc, char *argv[])
                 }
             }
             num_bits = (int) strtol(argv[arg + 1], NULL, 10);
-            printf("%i bits will be generated\n");
+            printf("%i bits will be generated\n", num_bits);
             arg++; // Skip over the value parameter that follows this parameter
         }
         else if (strstr(argv[arg], "-KU") != NULL) // Set the name of the output file
