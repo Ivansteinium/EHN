@@ -30,7 +30,7 @@ int main(int argc, char *argv[])
         strcat(encodedKey,encode_temp);
     }
 
-
+    char *encodedKey_ptr = &encodedKey[1];
     char encoded_temp[4];
     encoded_temp[3] = '\0';
     char decoded_plain[17];
@@ -38,7 +38,7 @@ int main(int argc, char *argv[])
     {
         for(int j=0;j<3;j++)
         {
-            encoded_temp[j] = encodedKey[3*i + j];
+            encoded_temp[j] = encodedKey_ptr[3*i + j];
         }
         decoded_plain[i] = (char)atoi(encoded_temp);
     }
