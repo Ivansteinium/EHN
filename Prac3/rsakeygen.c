@@ -238,7 +238,7 @@ void getkeys(struct rsactx_t *rsa_k, int key_len, int e_selection){
     mpz_t phi_1;
     mpz_t remain;
     unsigned long i_1 = 1;
-    int p_q_bit_len = (key_len)*300 ;/* /2; */
+    int p_q_bit_len = (key_len)/2;
     unsigned long e[3] = {3, 17, 65537};
 //    mpz_init(rsa_k->p);
 //    mpz_init(rsa_k->q);
@@ -296,8 +296,17 @@ void getkeys(struct rsactx_t *rsa_k, int key_len, int e_selection){
 
         mpz_init(rsa_k->d);
         mpz_init(remain);
-        mpz_tdiv_qr(rsa_k->d, remain, phi_1, rsa_k->e);
+        mpz_t count;
+        mpz_init_set_ui(count, 1);
+        do{
+            mpz_tdiv_qr(rsa_k->d, remain, phi_1, rsa_k->e);
+            mpz_add (count, count, val_1);
+            mpz_mul(phi_1, phi, count);
+            mpz_add (phi_1, phi_1, val_1);
+        }while ((mpz_get_ui(remain) != 0) && (mpz_cmp(rsa_k->d, phi) < 0));
+//        mpz_tdiv_qr(rsa_k->d, remain, phi_1, rsa_k->e);
 //        mpz_mod (remain, phi_1, rsa_k->d);
+
     } while ((mpz_get_ui(remain) != 0) || (mpz_cmp(rsa_k->d, phi) >= 0));
 
     mpz_out_str(stdout, 10, phi_1);
@@ -306,8 +315,6 @@ void getkeys(struct rsactx_t *rsa_k, int key_len, int e_selection){
     printf("\n");
     printf("phi: %lu\n", mpz_get_ui(phi_1));
     printf("d: %lu\n", mpz_get_ui(rsa_k->d));
-    unsigned long temp = 14851388866727294549;
-    int x = temp % 65537;
 }
 
 // Print a c-string up to a certain length in hex
