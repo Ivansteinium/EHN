@@ -91,7 +91,7 @@ int main(int argc, char *argv[])
             }
 
             input_file_name = argv[arg + 1];
-            printf("Using %s as the key file\n", input_file_name);
+            printf("Using %s as the input file\n", input_file_name);
             arg++; // Skip over the value parameter that follows this parameter
         }
         else if (strstr(argv[arg], "-KR") != NULL) // Set the name of the private key file
@@ -104,7 +104,7 @@ int main(int argc, char *argv[])
             }
 
             private_file_name = argv[arg + 1];
-            printf("Using %s as the input file\n", private_file_name);
+            printf("Using %s as the key file\n", private_file_name);
             arg++; // Skip over the value parameter that follows this parameter
         }
         else if (strstr(argv[arg], "-fo") != NULL) // Set the name of the output file
@@ -131,27 +131,6 @@ int main(int argc, char *argv[])
     char temp[256];
 
     // open the public key file to be written
-    FILE *infile;
-    infile = fopen(input_file_name, "r");
-    if (infile == NULL) // key file could not be found
-    {
-        printf("The public key file could not be opened, please make sure the program has read privileges\n");
-        fclose(infile);
-        return EXIT_FAILURE;
-    } else {
-        if( fgets (temp, 256, infile)!=NULL ) {
-            /* writing content to stdout */
-            mpz_init(cipher);
-            mpz_set_str(cipher, temp, 10);
-        }
-        fclose(infile);
-    }
-
-
-//    mpz_set_str(plain, key, 255);
-
-
-    // open the public key file to be written
     FILE *krfile;
     krfile = fopen(private_file_name, "r");
     if (krfile == NULL) // key file could not be found
@@ -173,44 +152,77 @@ int main(int argc, char *argv[])
         fclose(krfile);
     }
 
-    mpz_init(plain);
-    decrypt_rsa(plain, d, n, cipher);
-
-    unsigned char new = '\n';
-
-    char encoded_plain[49];
-    mpz_get_str(encoded_plain,10,plain);
-    mpz_out_str(stdout,10,plain);
-    printf("\n");
-    char *encoded_plain_ptr = &encoded_plain[1]; //delete first char
-
-    int i;
-    int j;
-    char encoded_temp[4];
-    encoded_temp[3] = '\0';
-    char decoded_plain[17];
-    for(i=0;i<17; i++)
+    // open the encrypted file
+    FILE *infile;
+    infile = fopen(input_file_name, "r");
+    if (infile == NULL) // key file could not be found
     {
-        for(j=0;j<3;j++)
+        printf("The encrypted file could not be opened, please make sure the program has read privileges\n");
+        fclose(infile);
+        return EXIT_FAILURE;
+    } else { //open output file, decrypt input and write to output
+        mpz_init(cipher);
+
+        FILE *outfile;
+        outfile = fopen(output_file_name, "w");
+        if (outfile == NULL) // output file could not be created
         {
-            encoded_temp[j] = encoded_plain_ptr[3*i + j];
+            printf("The output file could not be opened, please make sure the program has write privileges\n");
+            fclose(outfile);
+            return EXIT_FAILURE;
+        } else { // read char, decipher a char, write to output, repeat
+
+            mpz_init(plain);
+            char outchar;
+            while(fscanf(infile,"%s",temp)>0) // read
+            {
+                mpz_set_str(cipher, temp, 10);
+                decrypt_rsa(plain, d, n, cipher); //decipher
+                outchar = mpz_get_si(plain);
+//                mpz_out_str(outfile, 16, plain); // write
+                if(outchar == '\0')
+                    break;
+                fprintf(outfile,"%c",outchar);
+            }
+            fprintf(outfile,"\n");
+            fclose(infile);
+            fclose(outfile);
         }
-        decoded_plain[i] = (char)atoi(encoded_temp);
+
     }
+
+
+//    mpz_set_str(plain, key, 255);
+
+
+
+
+
+
+
+
+//    char encoded_plain[49];
+//    mpz_get_str(encoded_plain,10,plain);
+//    mpz_out_str(stdout,10,plain);
+//    printf("\n");
+//    char *encoded_plain_ptr = &encoded_plain[1]; //delete first char
+//
+//    int i;
+//    int j;
+//    char encoded_temp[4];
+//    encoded_temp[3] = '\0';
+//    char decoded_plain[17];
+//    for(i=0;i<17; i++)
+//    {
+//        for(j=0;j<3;j++)
+//        {
+//            encoded_temp[j] = encoded_plain_ptr[3*i + j];
+//        }
+//        decoded_plain[i] = (char)atoi(encoded_temp);
+//    }
 
     // open the output file to be written
-    FILE *outfile;
-    outfile = fopen(output_file_name, "w");
-    if (outfile == NULL) // output file could not be created
-    {
-        printf("The output file could not be opened, please make sure the program has write privileges\n");
-        fclose(outfile);
-        return EXIT_FAILURE;
-    } else {
-        mpz_out_str(outfile, 16, plain);
-        fwrite(&new, 1, 1, outfile);
-        fclose(outfile);
-    }
+
 
 }
 

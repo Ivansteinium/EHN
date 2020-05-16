@@ -49,7 +49,7 @@ int main(int argc, char *argv[])
             }
 
             output_file_name = argv[arg + 1];
-            printf("Using %s as the input file\n", output_file_name);
+            printf("Using %s as the output file\n", output_file_name);
             arg++; // Skip over the value parameter that follows this parameter
         }
         else if (strstr(argv[arg], "-KU") != NULL) // Set the name of the public key file
@@ -99,39 +99,40 @@ int main(int argc, char *argv[])
 
     int i;
     char rightlen[16];
-    for (i = 0; i < 16; ++i) {
-        if(i < keylen){
+    for (i = 0; i < 16; ++i)
+    {
+        if (i < keylen)
+        {
             rightlen[i] = key[i];
-        } else{
+        }
+        else
+        {
             rightlen[i] = '\0';
         }
     }
 //    rightlen[16] = '\n';
-    char encodedKey[49]; //3*len(rightlen) (3 decimal positions for each character) +1 for leading 1
-    for(i=0; i<49; i++)
-    {
-        encodedKey[i] = '\0';
-    }
-    encodedKey[0]='1'; // to preserve leading zeroes
-    char encode_temp[4];
-    for (i = 0; i < 17; i++)
-    {
-        sprintf(encode_temp,"%03u",(unsigned)rightlen[i]);
-        strcat(encodedKey,encode_temp);
-    }
+//    char encodedKey[49]; //3*len(rightlen) (3 decimal positions for each character) +1 for leading 1
+//    for(i=0; i<49; i++)
+//    {
+//        encodedKey[i] = '\0';
+//    }
+//    encodedKey[0]='1'; // to preserve leading zeroes
+//    char encode_temp[4];
+//    for (i = 0; i < 17; i++)
+//    {
+//        sprintf(encode_temp,"%03u",(unsigned)rightlen[i]);
+//        strcat(encodedKey,encode_temp);
+//    }
 
-    mpz_init(plain);
-//    mpz_set_ui(plain, input_key); // Sets the key plaintext?
 
-    mpz_set_str(plain, encodedKey, 10);
-    mpz_out_str(stdout,10,plain);
-    printf("\n");
+//    mpz_out_str(stdout,10,plain);
+//    printf("\n");
 //    mpz_out_raw(stdout,plain);
 //    printf("\n");
 //    gmp_scanf("%hh", rightlen, plain);
 
     char temp[256];
-    for (i =0;i <257;i++)
+    for (i = 0; i < 257; i++)
     {
         temp[i] = '\0';
     }
@@ -143,13 +144,15 @@ int main(int argc, char *argv[])
         printf("The public key file could not be opened, please make sure the program has read privileges\n");
         fclose(kufile);
         return EXIT_FAILURE;
-    } else {
-        if( fgets (temp, 256, kufile)!=NULL ) {
-            /* writing content to stdout */
+    }
+    else
+    {
+        if (fgets(temp, 256, kufile) != NULL)
+        {
             mpz_init_set_str(n, temp, 10);
         }
-        if( fgets (temp, 256, kufile)!=NULL ) {
-            /* writing content to stdout */
+        if (fgets(temp, 256, kufile) != NULL)
+        {
             mpz_init_set_str(e, temp, 10);
         }
         fclose(kufile);
@@ -157,8 +160,7 @@ int main(int argc, char *argv[])
 //    mpz_t  plain_test;
 //    mpz_init_set_str(plain_test, "10010110100101101001011010010110100101101001011010010110100101101001011010010110100101101001011010010110100101101001011010010110", 2);
 
-    mpz_init(cipher);
-    encrypt_rsa(plain, e, n, cipher);
+
 
 //    mpz_t d;
 //    mpz_init_set_str(d, "3796438167039216065323312031409113", 10);
@@ -176,14 +178,26 @@ int main(int argc, char *argv[])
         printf("The output file could not be opened, please make sure the program has write privileges\n");
         fclose(outfile);
         return EXIT_FAILURE;
-    } else {
-        mpz_out_str(outfile, 10, cipher);
+    }
+    else
+    {
+        mpz_init(cipher);
+        mpz_init(plain);
+
+        for(i=0; i< 16; i++)
+        {
+            mpz_set_si(plain, (int)rightlen[i]);
+            encrypt_rsa(plain, e, n, cipher);
+            mpz_out_str(outfile, 10, cipher);
+            fprintf(outfile," ");
+        }
         fwrite(&new, 1, 1, outfile);
         fclose(outfile);
     }
 
 }
 
-void encrypt_rsa(mpz_t plain, mpz_t e, mpz_t n, mpz_t cipher){
-    mpz_powm (cipher, plain, e, n);
+void encrypt_rsa(mpz_t plain, mpz_t e, mpz_t n, mpz_t cipher)
+{
+    mpz_powm(cipher, plain, e, n);
 }
