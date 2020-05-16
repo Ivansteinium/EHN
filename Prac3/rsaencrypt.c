@@ -129,7 +129,7 @@ int main(int argc, char *argv[])
 //    printf("\n");
 //    mpz_out_raw(stdout,plain);
 //    printf("\n");
-//    gmp_scanf("%hh", rightlen, plain);
+//    gmp_vsscanf(rightlen, "%Zd\n" , plain);
 
     char temp[256];
     for (i = 0; i < 257; i++)

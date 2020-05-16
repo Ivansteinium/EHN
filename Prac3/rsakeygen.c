@@ -170,11 +170,18 @@ int main(int argc, char *argv[])
         return EXIT_FAILURE;
     } else {
         mpz_out_str(krfile, 10, rsa.n);
+//        gmp_printf("n= %Zd\n", rsa.n);
         fwrite(&temp, 1, 1, krfile);
         mpz_out_str(krfile, 10, rsa.d);
         fwrite(&temp, 1, 1, krfile);
         fclose(krfile);
     }
+
+
+//    FILE *abc;
+//    abc = fopen("abc.txt", "w");
+//    mpz_out_raw(abc, rsa.n);
+//    fclose(abc);
 }
 
 
@@ -231,7 +238,7 @@ void getkeys(struct rsactx_t *rsa_k, int key_len, int e_selection){
     mpz_t phi_1;
     mpz_t remain;
     unsigned long i_1 = 1;
-    int p_q_bit_len = (key_len)*50 ;/* /2; */
+    int p_q_bit_len = (key_len)*300 ;/* /2; */
     unsigned long e[3] = {3, 17, 65537};
 //    mpz_init(rsa_k->p);
 //    mpz_init(rsa_k->q);
