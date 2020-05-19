@@ -97,6 +97,8 @@ int main(int argc, char *argv[])
 //        }
 //    }
 
+
+
     int i;
     char rightlen[16];
     for (i = 0; i < 16; ++i)
@@ -110,6 +112,18 @@ int main(int argc, char *argv[])
             rightlen[i] = '\0';
         }
     }
+
+    mpz_t temp_val, total, byte;
+    mpz_init_set_ui(total, rightlen[0]);
+    mpz_init_set_ui(byte, 256);
+    mpz_init(temp_val);
+    for (int j = 1; j < 16; ++j) {
+        mpz_mul(total, total, byte); // Shift byte
+        mpz_set_ui(temp_val, rightlen[j]);
+        mpz_add(total, total, temp_val);
+    }
+    mpz_out_str(stdout, 2, total);
+
 //    rightlen[16] = '\n';
 //    char encodedKey[49]; //3*len(rightlen) (3 decimal positions for each character) +1 for leading 1
 //    for(i=0; i<49; i++)
@@ -184,13 +198,15 @@ int main(int argc, char *argv[])
         mpz_init(cipher);
         mpz_init(plain);
 
-        for(i=0; i< 16; i++)
-        {
-            mpz_set_si(plain, (int)rightlen[i]);
-            encrypt_rsa(plain, e, n, cipher);
-            mpz_out_str(outfile, 10, cipher);
-            fprintf(outfile," ");
-        }
+//        for(i=0; i< 16; i++)
+//        {
+//            mpz_set_si(plain, (int)rightlen[i]);
+//            encrypt_rsa(plain, e, n, cipher);
+//            mpz_out_str(outfile, 10, cipher);
+//            fprintf(outfile," ");
+//        }
+        encrypt_rsa(total, e, n, cipher);
+        mpz_out_str(outfile, 10, cipher);
         fwrite(&new, 1, 1, outfile);
         fclose(outfile);
     }

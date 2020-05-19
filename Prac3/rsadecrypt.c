@@ -152,6 +152,11 @@ int main(int argc, char *argv[])
         fclose(krfile);
     }
 
+    char out_text[16];
+    mpz_t temp_val, shift, val_2;
+    mpz_init_set_ui(val_2, 2);
+    mpz_init(temp_val);
+    mpz_init(shift);
     // open the encrypted file
     FILE *infile;
     infile = fopen(input_file_name, "r");
@@ -171,19 +176,31 @@ int main(int argc, char *argv[])
             fclose(outfile);
             return EXIT_FAILURE;
         } else { // read char, decipher a char, write to output, repeat
-
-            mpz_init(plain);
-            char outchar;
-            while(fscanf(infile,"%s",temp)>0) // read
-            {
+            if( fgets (temp, 256, krfile)!=NULL ) {
+                /* writing content to stdout */
+                mpz_init(cipher);
                 mpz_set_str(cipher, temp, 10);
-                decrypt_rsa(plain, d, n, cipher); //decipher
-                outchar = mpz_get_si(plain);
-//                mpz_out_str(outfile, 16, plain); // write
-                if(outchar == '\0')
-                    break;
-                fprintf(outfile,"%c",outchar);
             }
+            decrypt_rsa(plain, d, n, cipher); //decipher
+            for (int i = 0; i < 16; ++i) {
+                mpz_pow_ui(shift, val_2, 8*(15-i));
+                mpz_tdiv_q(temp_val, plain, shift);
+                out_text[i] = mpz_get_ui(temp_val);
+                mpz_mul(temp_val, temp_val, shift);
+                mpz_sub(plain, plain, temp_val);
+            }
+            fputs(out_text, outfile);
+//            char outchar;
+//            while(fscanf(infile,"%s",temp)>0) // read
+//            {
+//                mpz_set_str(cipher, temp, 10);
+//                decrypt_rsa(plain, d, n, cipher); //decipher
+//                outchar = mpz_get_si(plain);
+////                mpz_out_str(outfile, 16, plain); // write
+//                if(outchar == '\0')
+//                    break;
+//                fprintf(outfile,"%c",outchar);
+//            }
             fprintf(outfile,"\n");
             fclose(infile);
             fclose(outfile);
