@@ -198,7 +198,6 @@ int main(int argc, char *argv[])
                     print_hex_string(message, message_len);
                     printf("\n");
                 }
-
             }
             else // Encrypt
             {

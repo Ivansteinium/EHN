@@ -1,7 +1,6 @@
-#include <obstack.h>
 #include "rsakeygen.h"
 
-// Body
+
 int main(int argc, char *argv[])
 {
 //    struct rsactx_t rsa;
@@ -27,12 +26,12 @@ int main(int argc, char *argv[])
                           "hexadecimal numbers in the command-line parameters.\n"
                           "The public_key_file is the filename to which the public key should be written. \n"
                           "The private_key_file is the filename to which the private key should be written.\n";
-                          // from guide, refine/change if necessary
+    // from guide, refine/change if necessary
 
     if (argc < 6)
     {
         printf("Too few arguments were supplied\n");
-        printf("Proper use of the program is as follows:\n \n %s \n",help_message);
+        printf("Proper use of the program is as follows:\n \n %s \n", help_message);
         return EXIT_FAILURE;
     }
     int arg;
@@ -121,8 +120,8 @@ int main(int argc, char *argv[])
 
         else
         {
-            printf("Invalid parameter supplied: %s\n",argv[arg]);
-            printf("Proper use of the program is as follows:\n %s \n",help_message);
+            printf("Invalid parameter supplied: %s\n", argv[arg]);
+            printf("Proper use of the program is as follows:\n %s \n", help_message);
             return EXIT_FAILURE;
         }
     }
@@ -134,9 +133,12 @@ int main(int argc, char *argv[])
 
     /* Needs key */
     setseed(&rsa, 1);
-    if (args[3]){
+    if (args[3])
+    {
         rc4_init(&RC4_RNG, message, 8);
-    } else{
+    }
+    else
+    {
         rc4_init(&RC4_RNG, rsa.seed, 8);
     }
 
@@ -152,7 +154,9 @@ int main(int argc, char *argv[])
         printf("The public key file could not be opened, please make sure the program has write privileges\n");
         fclose(kufile);
         return EXIT_FAILURE;
-    } else {
+    }
+    else
+    {
         mpz_out_str(kufile, 10, rsa.n);
         fwrite(&temp, 1, 1, kufile);
         mpz_out_str(kufile, 10, rsa.e);
@@ -168,7 +172,9 @@ int main(int argc, char *argv[])
         printf("The private key file could not be opened, please make sure the program has write privileges\n");
         fclose(krfile);
         return EXIT_FAILURE;
-    } else {
+    }
+    else
+    {
         mpz_out_str(krfile, 10, rsa.n);
 //        gmp_printf("n= %Zd\n", rsa.n);
         fwrite(&temp, 1, 1, krfile);
@@ -185,9 +191,10 @@ int main(int argc, char *argv[])
 }
 
 
-
-void setseed(struct rsactx_t *rsa_k, int same_key){
-    if (same_key){
+void setseed(struct rsactx_t *rsa_k, int same_key)
+{
+    if (same_key)
+    {
         rsa_k->seed[0] = 0x01;
         rsa_k->seed[1] = 0x23;
         rsa_k->seed[2] = 0x45;
@@ -196,12 +203,16 @@ void setseed(struct rsactx_t *rsa_k, int same_key){
         rsa_k->seed[5] = 0xAB;
         rsa_k->seed[6] = 0xCD;
         rsa_k->seed[7] = 0xEF;
-    } else {
+    }
+    else
+    {
         // find random value
     }
 }
 
-void getprime(struct rsactx_t *rsa_k, mpz_t p, int num_bits){
+
+void getprime(struct rsactx_t *rsa_k, mpz_t p, int num_bits)
+{
     unsigned long result = 1;
     mpz_t not_prime;
 //    int num_rand_bytes = num_bits/10;
@@ -209,7 +220,8 @@ void getprime(struct rsactx_t *rsa_k, mpz_t p, int num_bits){
 //    int remain = num_bits%10;
 
     // Loop until right length
-    for (int i = 0; i < num_bits-1; ++i){
+    for (int i = 0; i < num_bits - 1; ++i)
+    {
         result = result << 1;
         result = result | (rc4_getbyte(&RC4_RNG) & 0b00000001);
     }
@@ -228,17 +240,19 @@ void getprime(struct rsactx_t *rsa_k, mpz_t p, int num_bits){
 //        result = result | temp;
 //    }
 
-    mpz_init_set_ui (not_prime, result);
+    mpz_init_set_ui(not_prime, result);
     mpz_nextprime(p, not_prime);
 }
 
-void getkeys(struct rsactx_t *rsa_k, int key_len, int e_selection){
+
+void getkeys(struct rsactx_t *rsa_k, int key_len, int e_selection)
+{
     mpz_t phi;
     mpz_t p_1, q_1, val_1;
     mpz_t phi_1;
     mpz_t remain;
     unsigned long i_1 = 1;
-    int p_q_bit_len = (key_len)/2;
+    int p_q_bit_len = (key_len) / 2;
     unsigned long e[3] = {3, 17, 65537};
 //    mpz_init(rsa_k->p);
 //    mpz_init(rsa_k->q);
@@ -252,7 +266,8 @@ void getkeys(struct rsactx_t *rsa_k, int key_len, int e_selection){
 //    mpz_init(rsa_k->d);
 //    mpz_init(remain);
 
-    do {
+    do
+    {
 //        mpz_clear(rsa_k->p);
 //        mpz_clear(rsa_k->q);
 //        mpz_clear(rsa_k->n);
@@ -265,7 +280,8 @@ void getkeys(struct rsactx_t *rsa_k, int key_len, int e_selection){
 //        mpz_clear(rsa_k->d);
 //        mpz_clear(remain);
 
-        do {
+        do
+        {
             mpz_init(rsa_k->p);
             getprime(rsa_k, rsa_k->p, p_q_bit_len);
 
@@ -276,9 +292,9 @@ void getkeys(struct rsactx_t *rsa_k, int key_len, int e_selection){
         mpz_init(rsa_k->n);
         mpz_mul(rsa_k->n, rsa_k->p, rsa_k->q); // Set n
 
-        mpz_init_set_ui (rsa_k->e, e[e_selection]); //set e from common e values
+        mpz_init_set_ui(rsa_k->e, e[e_selection]); //set e from common e values
 
-        mpz_init_set_ui (val_1, i_1); // Create a mpz struct with val 1 for subtraction.
+        mpz_init_set_ui(val_1, i_1); // Create a mpz struct with val 1 for subtraction.
         mpz_init(p_1);
         mpz_sub(p_1, rsa_k->p, val_1); // (p-1)
 
@@ -292,18 +308,19 @@ void getkeys(struct rsactx_t *rsa_k, int key_len, int e_selection){
 //    mpz_mod (mod_out, rsa_k->e, phi); // e mod phi
 
         mpz_init(phi_1);
-        mpz_add (phi_1, phi, val_1);
+        mpz_add(phi_1, phi, val_1);
 
         mpz_init(rsa_k->d);
         mpz_init(remain);
         mpz_t count;
         mpz_init_set_ui(count, 1);
-        do{
+        do
+        {
             mpz_tdiv_qr(rsa_k->d, remain, phi_1, rsa_k->e);
-            mpz_add (count, count, val_1);
+            mpz_add(count, count, val_1);
             mpz_mul(phi_1, phi, count);
-            mpz_add (phi_1, phi_1, val_1);
-        }while ((mpz_get_ui(remain) != 0) && (mpz_cmp(rsa_k->d, phi) < 0));
+            mpz_add(phi_1, phi_1, val_1);
+        } while ((mpz_get_ui(remain) != 0) && (mpz_cmp(rsa_k->d, phi) < 0));
 //        mpz_tdiv_qr(rsa_k->d, remain, phi_1, rsa_k->e);
 //        mpz_mod (remain, phi_1, rsa_k->d);
 
@@ -317,6 +334,7 @@ void getkeys(struct rsactx_t *rsa_k, int key_len, int e_selection){
     printf("d: %lu\n", mpz_get_ui(rsa_k->d));
 }
 
+
 // Print a c-string up to a certain length in hex
 void print_hex_string(unsigned char hex_string[], int message_len)
 {
@@ -324,6 +342,7 @@ void print_hex_string(unsigned char hex_string[], int message_len)
     for (i = 0; i < message_len; i++)
         printf("%02X", hex_string[i]);
 }
+
 
 // Convert hex to int, done because the system hex converter is unreliable
 int hex_convert(char hex_string[], int length)

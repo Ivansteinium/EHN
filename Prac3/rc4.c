@@ -1,10 +1,13 @@
 #include "rc4.h"
 
-/// The main function for the RC4 encryption/decryption utility. Uses the RC4 functions in prac3.h to ecrypt/decrypt
-/// an input file using a key file, or using a key entered into the terminal.
-/// \param argc The number of arguments passed to the utility
-/// \param argv A string array of the arguments passed to the utility
-/// \return Successful execution
+
+/**
+ * The main function for the RC4 encryption/decryption utility. Uses the RC4 functions in prac3.h to ecrypt/decrypt
+ * an input file using a key file, or using a key entered into the terminal.
+ * @param argc The number of arguments passed to the utility.
+ * @param argv A string array of the arguments passed to the utility.
+ * @return Successful execution.
+ */
 int main(int argc, char *argv[])
 {
     char *input_file_name = NULL;
@@ -96,7 +99,7 @@ int main(int argc, char *argv[])
     if (!args[2]) // read the key from the terminal if a key file is not specified
     {
         printf("Please enter the key that should be used to encrypt/decrypt the input file:");
-        fgets(buffer, RC4_MAX_KEY_LEN*2 + 1, stdin); // read only up to the max number of characters = 2*max key
+        fgets(buffer, RC4_MAX_KEY_LEN * 2 + 1, stdin); // read only up to the max number of characters = 2*max key
         // length in bytes
         printf("\n%s will be used as the key.\n", buffer);
         keylen = (int) strlen(buffer) / 2;

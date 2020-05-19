@@ -1,8 +1,6 @@
 #include "rsaencrypt.h"
 
 
-// Body
-
 int main(int argc, char *argv[])
 {
     mpz_t plain, e, n, cipher;
@@ -117,7 +115,8 @@ int main(int argc, char *argv[])
     mpz_init_set_ui(total, rightlen[0]);
     mpz_init_set_ui(byte, 256);
     mpz_init(temp_val);
-    for (int j = 1; j < 16; ++j) {
+    for (int j = 1; j < 16; ++j)
+    {
         mpz_mul(total, total, byte); // Shift byte
         mpz_set_ui(temp_val, rightlen[j]);
         mpz_add(total, total, temp_val);
@@ -212,6 +211,7 @@ int main(int argc, char *argv[])
     }
 
 }
+
 
 void encrypt_rsa(mpz_t plain, mpz_t e, mpz_t n, mpz_t cipher)
 {

@@ -1,8 +1,6 @@
 #include "rsadecrypt.h"
 
 
-// Body
-
 int main(int argc, char *argv[])
 {
 
@@ -59,12 +57,10 @@ int main(int argc, char *argv[])
     mpz_init(plain);
 
 
-
-
     char *private_file_name = NULL;
     char *output_file_name = NULL;
     char *input_file_name = NULL;
-    unsigned char key[16+1];
+    unsigned char key[16 + 1];
     int keylen;
     char *key_file_name = NULL;
     bool args[3] = {false, false, false};
@@ -138,13 +134,17 @@ int main(int argc, char *argv[])
         printf("The private key file could not be opened, please make sure the program has read privileges\n");
         fclose(krfile);
         return EXIT_FAILURE;
-    } else {
-        if( fgets (temp, 256, krfile)!=NULL ) {
+    }
+    else
+    {
+        if (fgets(temp, 256, krfile) != NULL)
+        {
             /* writing content to stdout */
             mpz_init(n);
             mpz_set_str(n, temp, 10);
         }
-        if( fgets (temp, 256, krfile)!=NULL ) {
+        if (fgets(temp, 256, krfile) != NULL)
+        {
             /* writing content to stdout */
             mpz_init(d);
             mpz_set_str(d, temp, 10);
@@ -165,7 +165,9 @@ int main(int argc, char *argv[])
         printf("The encrypted file could not be opened, please make sure the program has read privileges\n");
         fclose(infile);
         return EXIT_FAILURE;
-    } else { //open output file, decrypt input and write to output
+    }
+    else
+    { //open output file, decrypt input and write to output
         mpz_init(cipher);
 
         FILE *outfile;
@@ -175,15 +177,19 @@ int main(int argc, char *argv[])
             printf("The output file could not be opened, please make sure the program has write privileges\n");
             fclose(outfile);
             return EXIT_FAILURE;
-        } else { // read char, decipher a char, write to output, repeat
-            if( fgets (temp, 256, krfile)!=NULL ) {
+        }
+        else
+        { // read char, decipher a char, write to output, repeat
+            if (fgets(temp, 256, krfile) != NULL)
+            {
                 /* writing content to stdout */
                 mpz_init(cipher);
                 mpz_set_str(cipher, temp, 10);
             }
             decrypt_rsa(plain, d, n, cipher); //decipher
-            for (int i = 0; i < 16; ++i) {
-                mpz_pow_ui(shift, val_2, 8*(15-i));
+            for (int i = 0; i < 16; ++i)
+            {
+                mpz_pow_ui(shift, val_2, 8 * (15 - i));
                 mpz_tdiv_q(temp_val, plain, shift);
                 out_text[i] = mpz_get_ui(temp_val);
                 mpz_mul(temp_val, temp_val, shift);
@@ -201,7 +207,7 @@ int main(int argc, char *argv[])
 //                    break;
 //                fprintf(outfile,"%c",outchar);
 //            }
-            fprintf(outfile,"\n");
+            fprintf(outfile, "\n");
             fclose(infile);
             fclose(outfile);
         }
@@ -210,12 +216,6 @@ int main(int argc, char *argv[])
 
 
 //    mpz_set_str(plain, key, 255);
-
-
-
-
-
-
 
 
 //    char encoded_plain[49];
@@ -243,6 +243,8 @@ int main(int argc, char *argv[])
 
 }
 
-void decrypt_rsa(mpz_t plain, mpz_t d, mpz_t n, mpz_t cipher){
-    mpz_powm (plain, cipher, d, n);
+
+void decrypt_rsa(mpz_t plain, mpz_t d, mpz_t n, mpz_t cipher)
+{
+    mpz_powm(plain, cipher, d, n);
 }
