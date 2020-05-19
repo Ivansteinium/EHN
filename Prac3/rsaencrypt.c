@@ -155,7 +155,6 @@ int main(int argc, char *argv[])
     if (kufile == NULL) // key file could not be found
     {
         printf("The public key file could not be opened, please make sure the program has read privileges\n");
-        fclose(kufile);
         return EXIT_FAILURE;
     }
     else
@@ -189,7 +188,6 @@ int main(int argc, char *argv[])
     if (outfile == NULL) // output file could not be created
     {
         printf("The output file could not be opened, please make sure the program has write privileges\n");
-        fclose(outfile);
         return EXIT_FAILURE;
     }
     else

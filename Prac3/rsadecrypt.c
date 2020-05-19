@@ -132,7 +132,6 @@ int main(int argc, char *argv[])
     if (krfile == NULL) // key file could not be found
     {
         printf("The private key file could not be opened, please make sure the program has read privileges\n");
-        fclose(krfile);
         return EXIT_FAILURE;
     }
     else
@@ -163,7 +162,6 @@ int main(int argc, char *argv[])
     if (infile == NULL) // key file could not be found
     {
         printf("The encrypted file could not be opened, please make sure the program has read privileges\n");
-        fclose(infile);
         return EXIT_FAILURE;
     }
     else
@@ -175,7 +173,6 @@ int main(int argc, char *argv[])
         if (outfile == NULL) // output file could not be created
         {
             printf("The output file could not be opened, please make sure the program has write privileges\n");
-            fclose(outfile);
             return EXIT_FAILURE;
         }
         else

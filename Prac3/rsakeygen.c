@@ -152,7 +152,6 @@ int main(int argc, char *argv[])
     if (kufile == NULL) // output file could not be created
     {
         printf("The public key file could not be opened, please make sure the program has write privileges\n");
-        fclose(kufile);
         return EXIT_FAILURE;
     }
     else
@@ -170,7 +169,6 @@ int main(int argc, char *argv[])
     if (krfile == NULL) // output file could not be created
     {
         printf("The private key file could not be opened, please make sure the program has write privileges\n");
-        fclose(krfile);
         return EXIT_FAILURE;
     }
     else

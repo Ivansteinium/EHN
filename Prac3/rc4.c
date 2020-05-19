@@ -121,15 +121,14 @@ int main(int argc, char *argv[])
         }
         else
         {
-            fscanf(keyfile, "%d", &keylen); // read the key length from the first line in the file
+            fscanf(keyfile, "%s", buffer);
+            keylen = (int) strlen(buffer);
             if (keylen < 1 || keylen > RC4_MAX_KEY_LEN)
             {
-                printf("The input key file did not contain a valid key length");
+                printf("The key length is invalid");
                 return EXIT_FAILURE;
             }
-            char format[4];
-            sprintf(format, "%%%ds", keylen * 2);
-            fscanf(keyfile, format, buffer); // only read keylen*2 number of characters (equal to keylen bytes)
+
             for (i = 0; i < keylen; i++) // convert the key string into separate hex bytes
             {
                 currentVal[0] = buffer[2 * i];
@@ -149,8 +148,8 @@ int main(int argc, char *argv[])
     if (infile == NULL) // input file does not exist
     {
         printf("The input file could not be opened, please check that the name of the file is correct\n");
-        fclose(infile);
-        fclose(outfile);
+        if (outfile != NULL)
+            fclose(outfile);
         return EXIT_FAILURE;
     }
     else if (outfile == NULL) // output file could not be created
