@@ -66,7 +66,7 @@ int main(int argc, char *argv[])
     if (argc < 6)
     {
         printf("Too few arguments were supplied\n"
-               "Proper use of the program is as follows:\n\n %s\n", help_message);
+               "Proper use of the program is as follows:\n\n%s\n", help_message);
         return EXIT_FAILURE;
     }
 
@@ -101,7 +101,7 @@ int main(int argc, char *argv[])
     if (!args[0] || !args[1] || !args[2])
     {
         printf("Too few arguments were supplied\n"
-               "Proper use of the program is as follows:\n\n %s\n", help_message);
+               "Proper use of the program is as follows:\n\n%s\n", help_message);
         return EXIT_FAILURE;
     }
 

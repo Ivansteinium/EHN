@@ -92,8 +92,8 @@ int main(int argc, char *argv[])
                 key[i] = (unsigned char) hex_convert(current_number, 2); // Get the integer value from the byte
                 parameter += 2; // Move to the next byte
             }
-            
-            printf("%s will be used as the key.\n", parameter);
+
+            printf("%s will be used as the key.\n", argv[arg + 1]);
             arg++; // Skip over the value parameter that follows this parameter
         }
         else
@@ -103,7 +103,7 @@ int main(int argc, char *argv[])
     if (!args[0] || !args[1] || !args[2] || !args[3])
     {
         printf("Too few arguments were supplied\n"
-               "Proper use of the program is as follows:\n\n %s\n", help_message);
+               "Proper use of the program is as follows:\n\n%s\n", help_message);
         return EXIT_FAILURE;
     }
 
