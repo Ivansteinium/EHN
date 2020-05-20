@@ -15,4 +15,4 @@
 void encrypt_rsa(mpz_t plain, mpz_t e, mpz_t n, mpz_t cipher);
 
 
-#endif //EHN_PRAC3_RSAENCRYPT_H
+#endif // EHN_PRAC3_RSAENCRYPT_H

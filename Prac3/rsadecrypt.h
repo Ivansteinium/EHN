@@ -15,4 +15,4 @@
 void decrypt_rsa(mpz_t plain, mpz_t d, mpz_t n, mpz_t cipher);
 
 
-#endif //EHN_PRAC3_RSADECRYPT_H
+#endif // EHN_PRAC3_RSADECRYPT_H

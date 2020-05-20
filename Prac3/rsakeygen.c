@@ -1,6 +1,13 @@
 #include "rsakeygen.h"
 
 
+// TODO: complete
+/**
+ *
+ * @param argc
+ * @param argv
+ * @return
+ */
 int main(int argc, char *argv[])
 {
 //    struct rsactx_t rsa;
@@ -8,17 +15,16 @@ int main(int argc, char *argv[])
 //    rc4_init(&RC4_RNG, rsa.seed, 8);
 //    mpz_t large_prime;
 //    mpz_init(large_prime);
-    //getprime(&rsa, large_prime, 15);
+//    getprime(&rsa, large_prime, 15);
 
-
-    int x = 1;
+    int i;
     int num_bits = -1;
     char *private_key_file_name = NULL;
     char *public_key_file_name = NULL;
-    int key[16];
+    //                b     KU     KR     key
     bool args[4] = {false, false, false, false};
-    int message_len = 0;
-    unsigned char *message = NULL;
+    int keylen = 0;
+    unsigned char *key = NULL;
 
     char help_message[] = "rsakeygen -b bits -KU public_key_file -KR private_key_file -key key\n \n"
                           "The bits specify the number of bits that need to be generated for the given key. \n"
@@ -26,32 +32,26 @@ int main(int argc, char *argv[])
                           "hexadecimal numbers in the command-line parameters.\n"
                           "The public_key_file is the filename to which the public key should be written. \n"
                           "The private_key_file is the filename to which the private key should be written.\n";
-    // from guide, refine/change if necessary
+    // TODO: from guide, refine/change if necessary
 
     if (argc < 6)
     {
-        printf("Too few arguments were supplied\n");
-        printf("Proper use of the program is as follows:\n \n %s \n", help_message);
+        printf("Too few arguments were supplied\n"
+               "Proper use of the program is as follows:\n\n%s\n", help_message);
         return EXIT_FAILURE;
     }
+
     int arg;
     for (arg = 1; arg < argc; arg++)
     {
         if (strstr(argv[arg], "-b") != NULL) // Set the number of bits to generate
         {
             args[0] = true;
-            if (arg + 1 >= argc)
-            {
-                printf("Too few arguments were supplied\n");
-                return EXIT_FAILURE;
-            }
-
-            int i;
             for (i = 0; i < strlen(argv[arg + 1]); i++)
             {
                 if (!isdigit(argv[arg + 1][i]))
                 {
-                    printf("argument %s is not a valid number.\n", argv[arg + 1]);
+                    printf("Argument %s is not a valid number\n", argv[arg + 1]);
                     return EXIT_FAILURE;
                 }
             }
@@ -62,12 +62,6 @@ int main(int argc, char *argv[])
         else if (strstr(argv[arg], "-KU") != NULL) // Set the name of the output file
         {
             args[1] = true;
-            if (arg + 1 >= argc)
-            {
-                printf("Too few arguments were supplied\n");
-                return EXIT_FAILURE;
-            }
-
             public_key_file_name = argv[arg + 1];
             printf("Using %s as the public key file\n", public_key_file_name);
             arg++; // Skip over the value parameter that follows this parameter
@@ -75,83 +69,61 @@ int main(int argc, char *argv[])
         else if (strstr(argv[arg], "-KR") != NULL) // Set the name of the output file
         {
             args[2] = true;
-            if (arg + 1 >= argc)
-            {
-                printf("Too few arguments were supplied\n");
-                return EXIT_FAILURE;
-            }
-
             private_key_file_name = argv[arg + 1];
             printf("Using %s as the private key file\n", private_key_file_name);
             arg++; // Skip over the value parameter that follows this parameter
         }
-        else if (strstr(argv[arg], "-key") != NULL) // Set the input message
+        else if (strstr(argv[arg], "-key") != NULL) // Set the key
         {
             args[3] = true;
-            if (arg + 1 >= argc)
-            {
-                printf("Too few arguments were supplied\n");
-                return EXIT_FAILURE;
-            }
-
-            // Take message as hex input
             char *parameter = argv[arg + 1];
-            message_len = strlen(parameter) / 2; // 2 hex chars = 1 byte
+            keylen = (int) strlen(parameter) / 2; // 2 hex chars = 1 byte
 
-            message = (unsigned char *) malloc((message_len + 17) * sizeof(unsigned char)); // + 17 if incomplete block to pad with zeroes
+            key = (unsigned char *) malloc((keylen + 17) * sizeof(unsigned char)); // + 17 if incomplete length to pad with zeroes
 
-            for (int i = message_len; i < message_len + 17; i++) // Fill with zeroes to pad if needed + null terminator
-                message[i] = '\0';
+            for (i = keylen; i < keylen + 17; i++) // Fill with zeroes to pad if needed + null terminator
+                key[i] = '\0';
 
             // Convert from hex string to int array
             char current_number[2];
-            for (int i = 0; i < message_len; i++)
+            for (i = 0; i < keylen; i++)
             {
                 strncpy(current_number, parameter, 2); // Retrieve one byte (two hex chars)
-                message[i] = (unsigned char) hex_convert(current_number, 2); // Get the integer value from the byte
+                key[i] = (unsigned char) hex_convert(current_number, 2); // Get the integer value from the byte
                 parameter += 2; // Move to the next byte
             }
-
-            printf("Seed key value (HEX): ");
-            print_hex_string(message, message_len);
-            printf("\n");
+            
+            printf("%s will be used as the key.\n", parameter);
             arg++; // Skip over the value parameter that follows this parameter
         }
-
         else
-        {
             printf("Invalid parameter supplied: %s\n", argv[arg]);
-            printf("Proper use of the program is as follows:\n %s \n", help_message);
-            return EXIT_FAILURE;
-        }
     }
 
-    // set the RSA key
+    if (!args[0] || !args[1] || !args[2] || !args[3])
+    {
+        printf("Too few arguments were supplied\n"
+               "Proper use of the program is as follows:\n\n %s\n", help_message);
+        return EXIT_FAILURE;
+    }
+
+    // Set the RSA key
     struct rsactx_t rsa;
-    int e_val = 2;  // maybe change to 1/0 if the key is too small.
-
-
-    /* Needs key */
+    int e_val = 2;  // TODO: Maybe change to 1/0 if the key is too small.
     setseed(&rsa, 1);
-    if (args[3])
-    {
-        rc4_init(&RC4_RNG, message, 8);
-    }
-    else
-    {
+    if (args[3]) // Key supplied
+        rc4_init(&RC4_RNG, key, 8);
+    else // No key supplied
         rc4_init(&RC4_RNG, rsa.seed, 8);
-    }
-
     getkeys(&rsa, num_bits, e_val);
 
-    unsigned char temp = '\n';
-
-    // open the public key file to be written
+    // Open the public key file to be written
     FILE *kufile;
     kufile = fopen(public_key_file_name, "w");
-    if (kufile == NULL) // output file could not be created
+    unsigned char temp = '\n';
+    if (kufile == NULL) // Output file could not be created
     {
-        printf("The public key file could not be opened, please make sure the program has write privileges\n");
+        printf("The public key file could not be created, please make sure the program has write privileges\n");
         return EXIT_FAILURE;
     }
     else
@@ -163,12 +135,12 @@ int main(int argc, char *argv[])
         fclose(kufile);
     }
 
-    // open the private key file to be written
+    // Open the private key file to be written
     FILE *krfile;
     krfile = fopen(private_key_file_name, "w");
-    if (krfile == NULL) // output file could not be created
+    if (krfile == NULL) // Output file could not be created
     {
-        printf("The private key file could not be opened, please make sure the program has write privileges\n");
+        printf("The private key file could not be created, please make sure the program has write privileges\n");
         return EXIT_FAILURE;
     }
     else
@@ -181,7 +153,6 @@ int main(int argc, char *argv[])
         fclose(krfile);
     }
 
-
 //    FILE *abc;
 //    abc = fopen("abc.txt", "w");
 //    mpz_out_raw(abc, rsa.n);
@@ -189,6 +160,7 @@ int main(int argc, char *argv[])
 }
 
 
+// Sets the RNG seed parameter of rsa struct
 void setseed(struct rsactx_t *rsa_k, int same_key)
 {
     if (same_key)
@@ -204,18 +176,19 @@ void setseed(struct rsactx_t *rsa_k, int same_key)
     }
     else
     {
-        // find random value
+        // TODO: find random value
     }
 }
 
 
+// Gets the next prime from a randomly generated value from RC4 RNG
 void getprime(struct rsactx_t *rsa_k, mpz_t p, int num_bits)
 {
     unsigned long result = 1;
     mpz_t not_prime;
-//    int num_rand_bytes = num_bits/10;
+//    int num_rand_bytes = num_bits / 10;
 //    unsigned int temp;
-//    int remain = num_bits%10;
+//    int remain = num_bits % 10;
 
     // Loop until right length
     for (int i = 0; i < num_bits - 1; ++i)
@@ -224,7 +197,8 @@ void getprime(struct rsactx_t *rsa_k, mpz_t p, int num_bits)
         result = result | (rc4_getbyte(&RC4_RNG) & 0b00000001);
     }
 
-//    for (int i = 0; i < num_rand_bytes; ++i){
+//    for (int i = 0; i < num_rand_bytes; ++i)
+//    {
 //        result = result | 1;
 //        result = result << 8;
 //        result = result | rc4_getbyte(&RC4_RNG);
@@ -232,9 +206,10 @@ void getprime(struct rsactx_t *rsa_k, mpz_t p, int num_bits)
 //        result = result | 1;
 //    }
 //
-//    if (remain>0){
-//        temp = rc4_getbyte(&RC4_RNG)>>(8-remain);
-//        result = result<<remain;
+//    if (remain > 0)
+//    {
+//        temp = rc4_getbyte(&RC4_RNG) >> (8 - remain);
+//        result = result << remain;
 //        result = result | temp;
 //    }
 
@@ -243,6 +218,7 @@ void getprime(struct rsactx_t *rsa_k, mpz_t p, int num_bits)
 }
 
 
+// Create the RSA key pair
 void getkeys(struct rsactx_t *rsa_k, int key_len, int e_selection)
 {
     mpz_t phi;
@@ -257,8 +233,8 @@ void getkeys(struct rsactx_t *rsa_k, int key_len, int e_selection)
 //    mpz_init(rsa_k->n);
 //    mpz_init(p_1);
 //    mpz_init(q_1);
-//    mpz_init_set_ui (rsa_k->e, e[e_selection]);
-//    mpz_init_set_ui (val_1, i_1);
+//    mpz_init_set_ui(rsa_k->e, e[e_selection]);
+//    mpz_init_set_ui(val_1, i_1);
 //    mpz_init(phi);
 //    mpz_init(phi_1);
 //    mpz_init(rsa_k->d);
@@ -302,8 +278,8 @@ void getkeys(struct rsactx_t *rsa_k, int key_len, int e_selection)
         mpz_init(phi);
         mpz_mul(phi, p_1, q_1); // phi = (p-1)(q-1)
 
-//    mpz_init(mod_out);
-//    mpz_mod (mod_out, rsa_k->e, phi); // e mod phi
+//        mpz_init(mod_out);
+//        mpz_mod(mod_out, rsa_k->e, phi); // e mod phi
 
         mpz_init(phi_1);
         mpz_add(phi_1, phi, val_1);
@@ -319,8 +295,9 @@ void getkeys(struct rsactx_t *rsa_k, int key_len, int e_selection)
             mpz_mul(phi_1, phi, count);
             mpz_add(phi_1, phi_1, val_1);
         } while ((mpz_get_ui(remain) != 0) && (mpz_cmp(rsa_k->d, phi) < 0));
+
 //        mpz_tdiv_qr(rsa_k->d, remain, phi_1, rsa_k->e);
-//        mpz_mod (remain, phi_1, rsa_k->d);
+//        mpz_mod(remain, phi_1, rsa_k->d);
 
     } while ((mpz_get_ui(remain) != 0) || (mpz_cmp(rsa_k->d, phi) >= 0));
 
@@ -330,60 +307,4 @@ void getkeys(struct rsactx_t *rsa_k, int key_len, int e_selection)
     printf("\n");
     printf("phi: %lu\n", mpz_get_ui(phi_1));
     printf("d: %lu\n", mpz_get_ui(rsa_k->d));
-}
-
-
-// Print a c-string up to a certain length in hex
-void print_hex_string(unsigned char hex_string[], int message_len)
-{
-    int i;
-    for (i = 0; i < message_len; i++)
-        printf("%02X", hex_string[i]);
-}
-
-
-// Convert hex to int, done because the system hex converter is unreliable
-int hex_convert(char hex_string[], int length)
-{
-    int result = 0;
-    int base = 1;
-
-    int i;
-    for (i = length; i > 0; i--)
-    {
-        switch (hex_string[i - 1])
-        {
-            case '0': {break;}
-            case '1': {result += base * 1; break;}
-            case '2': {result += base * 2; break;}
-            case '3': {result += base * 3; break;}
-            case '4': {result += base * 4; break;}
-            case '5': {result += base * 5; break;}
-            case '6': {result += base * 6; break;}
-            case '7': {result += base * 7; break;}
-            case '8': {result += base * 8; break;}
-            case '9': {result += base * 9; break;}
-            case 'A': {result += base * 10; break;}
-            case 'B': {result += base * 11; break;}
-            case 'C': {result += base * 12; break;}
-            case 'D': {result += base * 13; break;}
-            case 'E': {result += base * 14; break;}
-            case 'F': {result += base * 15; break;}
-            case 'a': {result += base * 10; break;}
-            case 'b': {result += base * 11; break;}
-            case 'c': {result += base * 12; break;}
-            case 'd': {result += base * 13; break;}
-            case 'e': {result += base * 14; break;}
-            case 'f': {result += base * 15; break;}
-            default:
-            {
-                printf("The input given (\'%c\') is not a valid HEX character\nTerminating...\n", hex_string[i]);
-                exit(EXIT_FAILURE);
-            }
-        }
-
-        base *= 16;
-    }
-
-    return result;
 }

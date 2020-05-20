@@ -22,7 +22,7 @@ struct rsactx_t
  * @param rsa_k Pointer to the main RSA struct.
  * @param same_key Boolean check if the default provided key will be used.
  */
-void setseed(struct rsactx_t *rsa_k, int same_key); // The initial value of the RNG
+void setseed(struct rsactx_t *rsa_k, int same_key);
 
 
 /**
@@ -31,7 +31,7 @@ void setseed(struct rsactx_t *rsa_k, int same_key); // The initial value of the 
  * @param p The prime value output.
  * @param num_bits The length of the prime number in bits.
  */
-void getprime(struct rsactx_t *rsa_k, mpz_t p, int num_bits); // get a prime p of num_bits
+void getprime(struct rsactx_t *rsa_k, mpz_t p, int num_bits);
 
 
 /**
@@ -40,15 +40,7 @@ void getprime(struct rsactx_t *rsa_k, mpz_t p, int num_bits); // get a prime p o
  * @param key_len The length of the key that needs to be encrypted in bits.
  * @param e_selection Which common value for e will be chosen.
  */
-void getkeys(struct rsactx_t *rsa_k, int key_len, int e_selection); // fill the rsa struct with the key values.
+void getkeys(struct rsactx_t *rsa_k, int key_len, int e_selection);
 
 
-// Convert hex to int, done because the system hex converter is unreliable
-int hex_convert(char hex_string[], int length);
-
-
-// Print a c-string up to a certain length in hex
-void print_hex_string(unsigned char hex_string[], int message_len);
-
-
-#endif //EHN_PRAC3_RSAKEYGEN_H
+#endif // EHN_PRAC3_RSAKEYGEN_H

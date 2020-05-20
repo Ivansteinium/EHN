@@ -9,4 +9,4 @@
 
 // Uses the rc4info_t struct, swap function, rc4_init function and rc4_getbyte as defined in prac3.h and prac3.c
 
-#endif//EHN_PRAC3_RC4_H
+#endif // EHN_PRAC3_RC4_H

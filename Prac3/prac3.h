@@ -50,4 +50,12 @@ void rc4_init(struct rc4info_t *rc4i, unsigned char *key, int keylen);
 unsigned char rc4_getbyte(struct rc4info_t *rc4i);
 
 
-#endif //EHN_PRAC3_H
+// Convert hex to int, done because the system hex converter is unreliable
+int hex_convert(char hex_string[], int length);
+
+
+// Print a c-string up to a certain length in hex
+void print_hex_string(unsigned char hex_string[], int message_len);
+
+
+#endif // EHN_PRAC3_H
