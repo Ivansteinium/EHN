@@ -13,12 +13,21 @@ int main(int argc, char *argv[])
     int i;
     char *input_file_name = NULL;
     char *output_file_name = NULL;
-    unsigned char key[RC4_MAX_KEY_LEN + 1];
+    U8 key[RC4_MAX_KEY_LEN + 1];
     int keylen;
     char *key_file_name = NULL;
-    //               fi     fo     kf
+    //               fi     fo     key
     bool args[3] = {false, false, false};
-    char help_message[] = "rc4 -fi inputfile -fo outputfile -kf keyfile"; // TODO: from guide, refine/change if necessary
+    char help_message[] = "\t./rc4 -arg1 value1 -arg2 value2...\n"
+                          "\t\n"
+                          "\tThe following arguments should then be given in this order:\n\n"
+                          "\t-fi <input file>\n"
+                          "\t-fo <output file>\n"
+                          "\t-key <key file> (optional)\n\n"
+                          "\t\nRemember to add \"double quotes\" if spaces are present in an argument\n"
+                          "\t\nExample usage:\n"
+                          "\t1.\t./rc4 -fi \"plain text.txt\" -fo encrypted.enc -key key.txt\n"
+                          "\t2.\t./rc4 -fi encrypted.enc -fo decrypted.txt\n";
 
     if (argc < 4)
     {
@@ -30,28 +39,28 @@ int main(int argc, char *argv[])
     int arg;
     for (arg = 1; arg < argc; arg++)
     {
-        if (strstr(argv[arg], "-fi") != NULL) // Set the name of the input file
+        if (!strcmp(argv[arg], "-fi")) // Set the name of the input file
         {
             args[0] = true;
             input_file_name = argv[arg + 1];
             printf("Using %s as the input file\n", input_file_name);
             arg++; // Skip over the value parameter that follows this parameter
         }
-        else if (strstr(argv[arg], "-fo") != NULL) // Set the name of the output file
+        else if (!strcmp(argv[arg], "-fo")) // Set the name of the output file
         {
             args[1] = true;
             output_file_name = argv[arg + 1];
             printf("Using %s as the output file\n", output_file_name);
             arg++; // Skip over the value parameter that follows this parameter
         }
-        else if (strstr(argv[arg], "-kf") != NULL) // Set the name of the file containing the key
+        else if (!strcmp(argv[arg], "-key")) // Set the name of the file containing the key
         {
             args[2] = true;
             key_file_name = argv[arg + 1];
             printf("Using %s as the key file\n", key_file_name);
             arg++; // Skip over the value parameter that follows this parameter
         }
-        else if ((strstr(argv[arg], "-e") != NULL) || (strstr(argv[arg], "-d") != NULL))
+        else if ((!strcmp(argv[arg], "-e")) || (!strcmp(argv[arg], "-d")))
             continue; // Encryption and decryption follow exact same process
         else
             printf("Invalid parameter supplied: %s\n", argv[arg]);
@@ -74,17 +83,17 @@ int main(int argc, char *argv[])
 
     if (!args[2]) // Key file is not specified, read the key from the terminal
     {
-        printf("Please enter the key that should be used to encrypt/decrypt the input file:");
+        printf("Please enter the key that should be used to encrypt/decrypt the input file:  ");
         fgets(buffer, RC4_MAX_KEY_LEN * 2 + 1, stdin); // Read only up to the max number of characters = 2 * max key length in bytes
         printf("\n%s will be used as the key.\n", buffer);
         keylen = (int) strlen(buffer) / 2; // 2 hex chars = 1 byte
 
-        // Convert from hex string to int array
+        // Convert from hex string to U8 array
         hex_string = buffer;
         for (i = 0; i < keylen; i++)
         {
             strncpy(current_number, hex_string, 2); // Retrieve one byte (two hex chars)
-            key[i] = (unsigned char) hex_convert(current_number, 2); // Get the integer value from the byte
+            key[i] = (U8) hex_convert(current_number, 2); // Get the integer value from the byte
             hex_string += 2; // Move to the next byte
         }
     }
@@ -101,19 +110,19 @@ int main(int argc, char *argv[])
         {
             // Read from the file
             fscanf(keyfile, "%s", buffer);
-            keylen = (int) strlen(buffer);
+            keylen = (int) strlen(buffer) / 2;
             if (keylen < 1 || keylen > RC4_MAX_KEY_LEN)
             {
                 printf("The key length is invalid");
                 return EXIT_FAILURE;
             }
 
-            // Convert from hex string to int array
+            // Convert from hex string to U8 array
             hex_string = buffer;
             for (i = 0; i < keylen; i++)
             {
                 strncpy(current_number, hex_string, 2); // Retrieve one byte (two hex chars)
-                key[i] = (unsigned char) hex_convert(current_number, 2); // Get the integer value from the byte
+                key[i] = (U8) hex_convert(current_number, 2); // Get the integer value from the byte
                 hex_string += 2; // Move to the next byte
             }
             printf("%s will be used as the key.\n", buffer);
@@ -125,7 +134,7 @@ int main(int argc, char *argv[])
     infile = fopen(input_file_name, "r");
     FILE *outfile;
     outfile = fopen(output_file_name, "w");
-    struct rc4info_t rc4Info;
+    struct rc4ctx_t rc4ctx;
 
     if (infile == NULL) // Input file does not exist
     {
@@ -143,15 +152,15 @@ int main(int argc, char *argv[])
     }
     else // Read a byte, encrypt, and write to output. Repeat until entire input file is read
     {
-        rc4_init(&rc4Info, key, keylen); // Initialise the RC4 structure
+        rc4_init(&rc4ctx, key, keylen); // Initialise the RC4 structure
 
-        unsigned char character;
+        U8 character;
         struct timeb start_time, end_time;
         ftime(&start_time); // Get time before operation starts
 
         while (fread(&character, 1, 1, infile) > 0) // Read a byte and check if input file finished reading
         {
-            character ^= rc4_getbyte(&rc4Info); // XOR read byte to encrypt
+            character ^= rc4_getbyte(&rc4ctx); // XOR read byte to encrypt
             fwrite(&character, 1, 1, outfile); // Write encrypted byte
         }
 

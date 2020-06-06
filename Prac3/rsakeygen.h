@@ -2,19 +2,10 @@
 #define EHN_PRAC3_RSAKEYGEN_H
 
 #include "prac3.h"
-#include "rc4.h"
 #include <obstack.h>
 
 
-struct rc4info_t RC4_RNG;
-
-/// The RSA struct to store all the key values.
-struct rsactx_t
-{
-    mpz_t e, d, n;
-    mpz_t p, q;
-    unsigned char seed[16];
-};
+struct rc4ctx_t RC4_RNG;
 
 
 /**

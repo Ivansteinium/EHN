@@ -1,12 +1,12 @@
 #include "rsadecrypt.h"
 
 
-// TODO: complete
+// TODO: remove comments
 /**
- *
- * @param argc
- * @param argv
- * @return
+ * Decrypts a key using RSA.
+ * @param argc The number of arguments given.
+ * @param argv The values of the arguments.
+ * @return Successful execution.
  */
 int main(int argc, char *argv[])
 {
@@ -44,24 +44,32 @@ int main(int argc, char *argv[])
 //        decoded_plain[i] = (char) atoi(encoded_temp);
 //    }
 //    int x = 3;
+//
+//    unsigned long i_1 = 11;
+//    unsigned long i_2 = 23;
+//    unsigned long i_3 = 187;
+//    mpz_t plain, d, n, cipher;
+//    mpz_init(cipher);
+//    mpz_set_ui(cipher, i_1);
+//    mpz_init(n);
+//    mpz_set_ui(n, i_3);
+//    mpz_init(plain);
 
-    unsigned long i_1 = 11;
-    unsigned long i_2 = 23;
-    unsigned long i_3 = 187;
-    mpz_t plain, d, n, cipher;
-    mpz_init(cipher);
-    mpz_set_ui(cipher, i_1);
-    mpz_init(n);
-    mpz_set_ui(n, i_3);
-    mpz_init(plain);
-
-    char *key_file_name = NULL;
+    int i;
+    char *private_key_file_name = NULL;
     char *output_file_name = NULL;
     char *input_file_name = NULL;
-    //               fi     KR     fo
+    //               fi   fopriv   fo
     bool args[3] = {false, false, false};
-
-    char help_message[] = "rsadecrypt -fi inputfile -KR private_key_file -fo outputfile"; // TODO: from guide, refine/change if necessary
+    char help_message[] = "\t./rsadecrypt -arg1 value1 -arg2 value2...\n"
+                          "\t\n"
+                          "\tThe following arguments should then be given in this order:\n\n"
+                          "\t-fi <input file>\n"
+                          "\t-fo <output file>\n"
+                          "\t-fopriv <private key file>\n\n"
+                          "\t\nRemember to add \"double quotes\" if spaces are present in an argument\n"
+                          "\t\nExample usage:\n"
+                          "\t1.\t./rsadecrypt -fi cipher.key -fo plain.txt -fopriv \"private key.txt\"\n";
 
     if (argc < 6)
     {
@@ -73,21 +81,21 @@ int main(int argc, char *argv[])
     int arg;
     for (arg = 1; arg < argc; arg++)
     {
-        if (strstr(argv[arg], "-fi") != NULL) // Set the name of the input file
+        if (!strcmp(argv[arg], "-fi")) // Set the name of the input file
         {
             args[0] = true;
             input_file_name = argv[arg + 1];
             printf("Using %s as the input file\n", input_file_name);
             arg++; // Skip over the value parameter that follows this parameter
         }
-        else if (strstr(argv[arg], "-KR") != NULL) // Set the name of the private key file
+        else if (!strcmp(argv[arg], "-fopriv")) // Set the name of the private key file
         {
             args[1] = true;
-            key_file_name = argv[arg + 1];
-            printf("Using %s as the key file\n", key_file_name);
+            private_key_file_name = argv[arg + 1];
+            printf("Using %s as the private RSA key file\n", private_key_file_name);
             arg++; // Skip over the value parameter that follows this parameter
         }
-        else if (strstr(argv[arg], "-fo") != NULL) // Set the name of the output file
+        else if (!strcmp(argv[arg], "-fo")) // Set the name of the output file
         {
             args[2] = true;
             output_file_name = argv[arg + 1];
@@ -105,34 +113,45 @@ int main(int argc, char *argv[])
         return EXIT_FAILURE;
     }
 
-    // Open the public key file to be written
-    FILE *krfile;
-    krfile = fopen(key_file_name, "r");
-    char buffer[256];
-    if (krfile == NULL) // Key file could not be found
+    char buffer[257];
+    for (i = 0; i < 257; i++)
+        buffer[i] = '\0';
+
+    struct rsactx_t rsactx;
+    rsa_init(&rsactx);
+
+    // Open the private key file to be written
+    FILE *privkeyfile;
+    privkeyfile = fopen(private_key_file_name, "r");
+    if (privkeyfile == NULL) // Key file could not be found
     {
         printf("The private key file could not be opened, please check that the name of the file is correct\n");
         return EXIT_FAILURE;
     }
     else
     {
-        if (fgets(buffer, 256, krfile) != NULL)
+        if (fgets(buffer, 256, privkeyfile) != NULL) // Get n from public key file
+            mpz_set_str(rsactx.n, buffer, 10);
+        else
         {
-            // Writing content to stdout
-            mpz_init(n);
-            mpz_set_str(n, buffer, 10);
+            printf("Could not read n from the private key file\n");
+            return EXIT_FAILURE;
         }
-        if (fgets(buffer, 256, krfile) != NULL)
+
+        if (fgets(buffer, 256, privkeyfile) != NULL) // Get d from public key file
+            mpz_set_str(rsactx.d, buffer, 10);
+        else
         {
-            // Writing content to stdout
-            mpz_init(d);
-            mpz_set_str(d, buffer, 10);
+            printf("Could not read d from the private key file\n");
+            return EXIT_FAILURE;
         }
-        fclose(krfile);
+        fclose(privkeyfile);
     }
 
     char out_text[16];
-    mpz_t temp_val, shift, val_2;
+    mpz_t plain, cipher, temp_val, shift, val_2;
+    mpz_init(plain);
+    mpz_init(cipher);
     mpz_init_set_ui(val_2, 2);
     mpz_init(temp_val);
     mpz_init(shift);
@@ -140,15 +159,13 @@ int main(int argc, char *argv[])
     // Open the encrypted file
     FILE *infile;
     infile = fopen(input_file_name, "r");
-    if (infile == NULL) // Key file could not be found
+    if (infile == NULL) // Input file could not be found
     {
         printf("The encrypted file could not be opened, please check that the name of the file is correct\n");
         return EXIT_FAILURE;
     }
     else // Open output file, decrypt input and write to output
     {
-        mpz_init(cipher);
-
         FILE *outfile;
         outfile = fopen(output_file_name, "w");
         if (outfile == NULL) // Output file could not be created
@@ -158,14 +175,15 @@ int main(int argc, char *argv[])
         }
         else // Read char, decipher char, write to output, repeat
         {
-            if (fgets(buffer, 256, krfile) != NULL)
-            {
-                // Writing content to stdout
-                mpz_init(cipher);
+            if (fgets(buffer, 256, infile) != NULL) // Get cipher value from the input file
                 mpz_set_str(cipher, buffer, 10);
+            else
+            {
+                printf("Could not read the ciphertext from the input file\n");
+                return EXIT_FAILURE;
             }
 
-            decrypt_rsa(plain, d, n, cipher); // Decipher
+            decrypt_rsa(plain, rsactx.d, rsactx.n, cipher); // Decipher
             for (int i = 0; i < 16; i++)
             {
                 mpz_pow_ui(shift, val_2, 8 * (15 - i));
@@ -194,6 +212,9 @@ int main(int argc, char *argv[])
         }
     }
 
+    rsa_clean(&rsactx);
+    return EXIT_SUCCESS;
+
 //    mpz_set_str(plain, key, 255);
 //    char encoded_plain[49];
 //    mpz_get_str(encoded_plain, 10, plain);
@@ -219,6 +240,7 @@ int main(int argc, char *argv[])
 }
 
 
+// Uses the GMP power function to decrypt a mpz_t number
 void decrypt_rsa(mpz_t plain, mpz_t d, mpz_t n, mpz_t cipher)
 {
     mpz_powm(plain, cipher, d, n);

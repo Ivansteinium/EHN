@@ -4,13 +4,12 @@
 #include "prac3.h"
 
 
-// TODO: complete
 /**
- *
- * @param plain
- * @param e
- * @param n
- * @param cipher
+ * Uses the GMP power function to encrypt a mpz_t number.
+ * @param plain The value to be encrypted.
+ * @param e The public exponent.
+ * @param n The modulus.
+ * @param cipher The output of the encrypt operation.
  */
 void encrypt_rsa(mpz_t plain, mpz_t e, mpz_t n, mpz_t cipher);
 

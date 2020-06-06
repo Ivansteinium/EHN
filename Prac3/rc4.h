@@ -2,11 +2,10 @@
 #define EHN_PRAC3_RC4_H
 
 #include "prac3.h"
-#define U8 unsigned char
 
 /// The maximum length of the key (in bytes) used for the rc4 encryption utility.
 #define RC4_MAX_KEY_LEN 16 // This value can be no bigger than 255 for the RC4 algorithm to work correctly
 
-// Uses the rc4info_t struct, swap function, rc4_init function and rc4_getbyte as defined in prac3.h and prac3.c
+// Uses the functions defined in prac3.h
 
 #endif // EHN_PRAC3_RC4_H
