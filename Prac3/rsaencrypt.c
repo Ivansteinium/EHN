@@ -3,9 +3,9 @@
 
 // TODO: remove comments
 /**
- * Encrypts a key using RSA.
- * @param argc The number of arguments given.
- * @param argv The values of the arguments.
+ * This utility encrypts the key used in the RC4 algorithm.
+ * @param argc The number of arguments passed to the utility.
+ * @param argv A string array of the arguments passed to the utility.
  * @return Successful execution.
  */
 int main(int argc, char *argv[])

@@ -5,7 +5,7 @@
 
 
 /**
- * Uses the GMP power function to decrypt a mpz_t number.
+ * Uses the GMP power function to decrypt a mpz_t value.
  * @param plain The output of the decrypt operation.
  * @param d The secret exponent.
  * @param n The modulus.

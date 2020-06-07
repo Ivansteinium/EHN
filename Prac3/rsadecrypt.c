@@ -3,9 +3,9 @@
 
 // TODO: remove comments
 /**
- * Decrypts a key using RSA.
- * @param argc The number of arguments given.
- * @param argv The values of the arguments.
+ * This utility decrypts the key used in the RC4 algorithm.
+ * @param argc The number of arguments passed to the utility.
+ * @param argv A string array of the arguments passed to the utility.
  * @return Successful execution.
  */
 int main(int argc, char *argv[])
@@ -148,7 +148,7 @@ int main(int argc, char *argv[])
         fclose(privkeyfile);
     }
 
-    char out_text[16];
+    char out_text[17];
     mpz_t plain, cipher, temp_val, shift, val_2;
     mpz_init(plain);
     mpz_init(cipher);
@@ -184,7 +184,7 @@ int main(int argc, char *argv[])
             }
 
             decrypt_rsa(plain, rsactx.d, rsactx.n, cipher); // Decipher
-            for (int i = 0; i < 16; i++)
+            for (i = 0; i < 16; i++)
             {
                 mpz_pow_ui(shift, val_2, 8 * (15 - i));
                 mpz_tdiv_q(temp_val, plain, shift);

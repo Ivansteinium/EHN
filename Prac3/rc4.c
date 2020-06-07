@@ -74,28 +74,17 @@ int main(int argc, char *argv[])
     }
 
     // Create variables to read the key
-    char buffer[RC4_MAX_KEY_LEN + 2];
-    char current_number[2];
-    char *hex_string;
+    char buffer[RC4_MAX_KEY_LEN + 1];
+//    char current_number[2];
+//    char *hex_string;
 
-    for (i = 0; i < RC4_MAX_KEY_LEN + 3; i++)
+    for (i = 0; i < RC4_MAX_KEY_LEN + 1; i++)
         buffer[i] = '\0';
 
     if (!args[2]) // Key file is not specified, read the key from the terminal
     {
-        printf("Please enter the key that should be used to encrypt/decrypt the input file:  ");
-        fgets(buffer, RC4_MAX_KEY_LEN * 2 + 1, stdin); // Read only up to the max number of characters = 2 * max key length in bytes
-        printf("\n%s will be used as the key.\n", buffer);
-        keylen = (int) strlen(buffer) / 2; // 2 hex chars = 1 byte
-
-        // Convert from hex string to U8 array
-        hex_string = buffer;
-        for (i = 0; i < keylen; i++)
-        {
-            strncpy(current_number, hex_string, 2); // Retrieve one byte (two hex chars)
-            key[i] = (U8) hex_convert(current_number, 2); // Get the integer value from the byte
-            hex_string += 2; // Move to the next byte
-        }
+        printf("Please enter the key that should be used to encrypt/decrypt the input file (ASCII):  ");
+        fgets(buffer, RC4_MAX_KEY_LEN + 1, stdin); // Read only up to the max number of characters
     }
     else // Read the key from the key file
     {
@@ -109,25 +98,17 @@ int main(int argc, char *argv[])
         else
         {
             // Read from the file
-            fscanf(keyfile, "%s", buffer);
-            keylen = (int) strlen(buffer) / 2;
-            if (keylen < 1 || keylen > RC4_MAX_KEY_LEN)
-            {
-                printf("The key length is invalid");
-                return EXIT_FAILURE;
-            }
-
-            // Convert from hex string to U8 array
-            hex_string = buffer;
-            for (i = 0; i < keylen; i++)
-            {
-                strncpy(current_number, hex_string, 2); // Retrieve one byte (two hex chars)
-                key[i] = (U8) hex_convert(current_number, 2); // Get the integer value from the byte
-                hex_string += 2; // Move to the next byte
-            }
-            printf("%s will be used as the key.\n", buffer);
+            fgets(buffer, RC4_MAX_KEY_LEN + 1, keyfile); // Read only up to the max number of characters
         }
     }
+
+    keylen = (int) strlen(buffer);
+    for (i = 0; i < RC4_MAX_KEY_LEN + 1; i++) // Fill to pad with zeroes if needed
+        key[i] = '\0';
+    for (i = 0; i < keylen && i < (RC4_MAX_KEY_LEN + 1); i++) // Copy up to RC4_MAX_KEY_LEN characters
+        key[i] = buffer[i];
+
+    printf("%s will be used as the key.\n", key);
 
     // Open the files to be read and written
     FILE *infile;

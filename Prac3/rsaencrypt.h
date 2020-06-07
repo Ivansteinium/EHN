@@ -5,7 +5,7 @@
 
 
 /**
- * Uses the GMP power function to encrypt a mpz_t number.
+ * Uses the GMP power function to encrypt a mpz_t value.
  * @param plain The value to be encrypted.
  * @param e The public exponent.
  * @param n The modulus.

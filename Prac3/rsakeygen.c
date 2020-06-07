@@ -3,9 +3,10 @@
 
 // TODO: remove comments
 /**
- * Generates a public/private key pair.
- * @param argc The number of arguments given.
- * @param argv The values of the arguments.
+ * This utility generates a public/private key pair to be used to encrypt and decrypt
+ * the RC4 key.
+ * @param argc The number of arguments passed to the utility.
+ * @param argv A string array of the arguments passed to the utility.
  * @return Successful execution.
  */
 int main(int argc, char *argv[])
@@ -78,7 +79,7 @@ int main(int argc, char *argv[])
         {
             args[3] = true;
             key = argv[arg + 1];
-            printf("%s will be used as the key.\n", key);
+            printf("%s will be used as the RC4 RNG string.\n", key);
             arg++; // Skip over the value parameter that follows this parameter
         }
         else
@@ -96,7 +97,7 @@ int main(int argc, char *argv[])
     struct rsactx_t rsactx;
     rsa_init(&rsactx);
     int e_val = 2;  // TODO: Maybe change to 1/0 if the key is too small.
-    setseed(&rsactx, 1);
+    setseed(&rsactx, 1); // TODO: change hard coding? -8 marks
     if (args[3]) // Key supplied
         rc4_init(&RC4_RNG, (U8 *) key, 8);
     else // No key supplied
@@ -149,19 +150,19 @@ int main(int argc, char *argv[])
 }
 
 
-// Sets the RNG seed parameter of rsa struct
-void setseed(struct rsactx_t *rsa_k, int same_key)
+// Sets the RNG seed parameter of RSA struct
+void setseed(struct rsactx_t *rsactx, int same_key)
 {
-    if (same_key)
+    if (same_key) // TODO: change hard coding? -8 marks
     {
-        rsa_k->seed[0] = 0x01;
-        rsa_k->seed[1] = 0x23;
-        rsa_k->seed[2] = 0x45;
-        rsa_k->seed[3] = 0x67;
-        rsa_k->seed[4] = 0x89;
-        rsa_k->seed[5] = 0xAB;
-        rsa_k->seed[6] = 0xCD;
-        rsa_k->seed[7] = 0xEF;
+        rsactx->seed[0] = 0x01;
+        rsactx->seed[1] = 0x23;
+        rsactx->seed[2] = 0x45;
+        rsactx->seed[3] = 0x67;
+        rsactx->seed[4] = 0x89;
+        rsactx->seed[5] = 0xAB;
+        rsactx->seed[6] = 0xCD;
+        rsactx->seed[7] = 0xEF;
     }
     else
     {
@@ -171,7 +172,7 @@ void setseed(struct rsactx_t *rsa_k, int same_key)
 
 
 // Gets the next prime from a randomly generated value from RC4 RNG
-void getprime(struct rsactx_t *rsa_k, mpz_t p, int num_bits)
+void getprime(struct rsactx_t *rsactx, mpz_t p, int num_bits)
 {
     unsigned long result = 1;
     mpz_t not_prime;

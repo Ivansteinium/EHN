@@ -68,11 +68,7 @@ void rsa_clean(struct rsactx_t *rsactx);
 
 
 // Common functions
-/**
- * Swaps the value of the two integer pointers passed as arguments.
- * @param a A pointer to one of the integers to be swapped.
- * @param b A pointer to the other of the integers to be swapped.
- */
+// Simply swap two values by reference
 void swap(int *a, int *b);
 
 
