@@ -30,6 +30,8 @@ int main(int argc, char *argv[])
                           "\t\nExample usage:\n"
                           "\t1.\t./rsakeygen -bitLen 128 -fopub \"public key.txt\" -fopriv private_key.txt -init \"ASCII key\"\n";
 
+    printf("EHN Group 12 Practical 3\n\n");
+
     if (argc < 6)
     {
         printf("Too few arguments were supplied\n"
@@ -52,6 +54,7 @@ int main(int argc, char *argv[])
                 }
             }
             num_bits = (int) strtol(argv[arg + 1], NULL, 10);
+            // TODO: validation testing? which values for bitLen are valid
             printf("%i bits will be generated\n", num_bits);
             arg++; // Skip over the value parameter that follows this parameter
         }
@@ -135,6 +138,7 @@ int main(int argc, char *argv[])
     }
     
     rsa_clean(&rsactx);
+    printf("\nDone\n");
     return EXIT_SUCCESS;
 
 //    FILE *abc;
@@ -257,6 +261,8 @@ void getkeys(struct rsactx_t *rsactx, int key_len, int e_selection)
 
     } while ((mpz_get_ui(remain) != 0) || (mpz_cmp(rsactx->d, phi) >= 0));
 
+    // TODO: daar word nie gese wat geprint word nie, dit print net n nommer uit
+    // Kan ook net niks print nie imo
     mpz_out_str(stdout, 10, phi_1);
     printf("\n");
     mpz_out_str(stdout, 10, rsactx->d);

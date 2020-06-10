@@ -9,7 +9,7 @@ int main(int argc, char *argv[])
     int i;
     char *input_file_name = NULL;
     char *output_file_name = NULL;
-    U8 key[RC4_MAX_KEY_LEN + 1];
+    U8 key[RC4_MAX_KEY_LEN + 2];
     int keylen;
     char *key_file_name = NULL;
     //               fi     fo     key
@@ -25,6 +25,8 @@ int main(int argc, char *argv[])
                           "\t\nExample usage:\n"
                           "\t1.\t./rc4 -fi \"plain text.txt\" -fo encrypted.enc -key key.txt\n"
                           "\t2.\t./rc4 -fi encrypted.enc -fo decrypted.txt\n";
+
+    printf("EHN Group 12 Practical 3\n\n");
 
     if (argc < 4)
     {
@@ -100,12 +102,12 @@ int main(int argc, char *argv[])
     }
 
     keylen = (int) strlen(buffer);
-    for (i = 0; i < RC4_MAX_KEY_LEN + 1; i++) // Fill to pad with zeroes if needed
+    for (i = 0; i < RC4_MAX_KEY_LEN + 2; i++) // Fill to pad with zeroes if needed
         key[i] = '\0';
     for (i = 0; i < keylen && i < (RC4_MAX_KEY_LEN + 1); i++) // Copy up to RC4_MAX_KEY_LEN characters
         key[i] = buffer[i];
 
-    printf("%s will be used as the key.\n", key);
+    printf("%s will be used as the key.\n", key); // TODO: daar word n newline geprint na die key
 
     // Open the files to be read and written
     FILE *infile;

@@ -21,6 +21,8 @@ int main(int argc, char *argv[])
                           "\t\nExample usage:\n"
                           "\t1.\t./rsaencrypt -key \"ASCII key\" -fo cipher.key -fopub \"public key.txt\"\n";
 
+    printf("EHN Group 12 Practical 3\n\n");
+
     if (argc < 6)
     {
         printf("Too few arguments were supplied\n"
@@ -160,13 +162,14 @@ int main(int argc, char *argv[])
     mpz_init_set_ui(total, key[0]);
     mpz_init_set_ui(byte, 256);
     mpz_init(temp_val);
+    // TODO: doesn't seem to work for 1024-bit RSA
     for (int j = 1; j < 16; ++j)
     {
         mpz_mul(total, total, byte); // Shift byte
         mpz_set_ui(temp_val, key[j]);
         mpz_add(total, total, temp_val);
     }
-    mpz_out_str(stdout, 2, total);
+//    mpz_out_str(stdout, 2, total);
 
     // Open the public key file to be written
     FILE *outfile;
@@ -196,6 +199,7 @@ int main(int argc, char *argv[])
     }
 
     rsa_clean(&rsactx);
+    printf("\nDone\n");
     return EXIT_SUCCESS;
 }
 

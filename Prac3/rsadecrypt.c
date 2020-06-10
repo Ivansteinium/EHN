@@ -66,6 +66,8 @@ int main(int argc, char *argv[])
                           "\t\nExample usage:\n"
                           "\t1.\t./rsadecrypt -fi cipher.key -fo plain.txt -fopriv \"private key.txt\"\n";
 
+    printf("EHN Group 12 Practical 3\n\n");
+
     if (argc < 6)
     {
         printf("Too few arguments were supplied\n"
@@ -178,6 +180,7 @@ int main(int argc, char *argv[])
                 return EXIT_FAILURE;
             }
 
+            // TODO: doesn't seem to work for 1024-bit RSA
             decrypt_rsa(plain, rsactx.d, rsactx.n, cipher); // Decipher
             for (i = 0; i < 16; i++)
             {
@@ -208,6 +211,7 @@ int main(int argc, char *argv[])
     }
 
     rsa_clean(&rsactx);
+    printf("\nDone\n");
     return EXIT_SUCCESS;
 
 //    mpz_set_str(plain, key, 255);
