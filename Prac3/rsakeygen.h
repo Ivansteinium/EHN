@@ -11,9 +11,9 @@ struct rc4ctx_t RC4_RNG;
 /**
  * Sets the RNG seed parameter of RSA struct.
  * @param rsactx Pointer to the main RSA struct.
- * @param same_key Boolean check if the default provided key will be used.
+ * @param default_key Indicates whether the default provided key should be used.
  */
-void setseed(struct rsactx_t *rsactx, int same_key);
+void setseed(struct rsactx_t *rsactx, bool default_key);
 
 
 /**

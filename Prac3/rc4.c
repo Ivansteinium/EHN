@@ -1,13 +1,9 @@
 #include "rc4.h"
 
 
-/**
- * The main function for the RC4 encryption/decryption utility. Uses the RC4 functions in prac3.h to ecrypt/decrypt
- * an input file using a key file, or using a key entered into the terminal.
- * @param argc The number of arguments passed to the utility.
- * @param argv A string array of the arguments passed to the utility.
- * @return Successful execution.
- */
+
+/// The main function for the RC4 encryption/decryption utility. Uses the RC4 functions in prac3.h to encrypt/decrypt
+/// an input file using a key file, or using a key entered into the terminal.
 int main(int argc, char *argv[])
 {
     int i;
@@ -24,6 +20,7 @@ int main(int argc, char *argv[])
                           "\t-fi <input file>\n"
                           "\t-fo <output file>\n"
                           "\t-key <key file> (optional)\n\n"
+                          "\t\nThe use of the -e or -d arguments is optional and has no effect on the operation performed"
                           "\t\nRemember to add \"double quotes\" if spaces are present in an argument\n"
                           "\t\nExample usage:\n"
                           "\t1.\t./rc4 -fi \"plain text.txt\" -fo encrypted.enc -key key.txt\n"

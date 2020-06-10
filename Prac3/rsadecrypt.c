@@ -2,12 +2,7 @@
 
 
 // TODO: remove comments
-/**
- * This utility decrypts the key used in the RC4 algorithm.
- * @param argc The number of arguments passed to the utility.
- * @param argv A string array of the arguments passed to the utility.
- * @return Successful execution.
- */
+/// This utility decrypts the key used in the RC4 algorithm.
 int main(int argc, char *argv[])
 {
 //    int keylen = 5;

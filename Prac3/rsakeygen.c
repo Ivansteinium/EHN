@@ -2,13 +2,7 @@
 
 
 // TODO: remove comments
-/**
- * This utility generates a public/private key pair to be used to encrypt and decrypt
- * the RC4 key.
- * @param argc The number of arguments passed to the utility.
- * @param argv A string array of the arguments passed to the utility.
- * @return Successful execution.
- */
+/// This utility generates a public/private key pair to be used to encrypt and decrypt the RC4 key.
 int main(int argc, char *argv[])
 {
 //    struct rsactx_t rsa;
@@ -34,7 +28,7 @@ int main(int argc, char *argv[])
                           "\t-init <RC4 RNG string in ASCII>"
                           "\t\nRemember to add \"double quotes\" if spaces are present in an argument\n"
                           "\t\nExample usage:\n"
-                          "\t1.\t./rsakeygen -bitLen 1024 -fopub publickey.txt -fopriv privatekey.txt -init \"ASCII key\"\n";
+                          "\t1.\t./rsakeygen -bitLen 128 -fopub \"public key.txt\" -fopriv private_key.txt -init \"ASCII key\"\n";
 
     if (argc < 6)
     {
@@ -151,9 +145,9 @@ int main(int argc, char *argv[])
 
 
 // Sets the RNG seed parameter of RSA struct
-void setseed(struct rsactx_t *rsactx, int same_key)
+void setseed(struct rsactx_t *rsactx, bool default_key)
 {
-    if (same_key) // TODO: change hard coding? -8 marks
+    if (default_key)
     {
         rsactx->seed[0] = 0x01;
         rsactx->seed[1] = 0x23;
