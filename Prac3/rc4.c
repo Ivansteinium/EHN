@@ -1,7 +1,6 @@
 #include "rc4.h"
 
 
-
 /// The main function for the RC4 encryption/decryption utility. Uses the RC4 functions in prac3.h to encrypt/decrypt
 /// an input file using a key file, or using a key entered into the terminal.
 int main(int argc, char *argv[])
@@ -74,8 +73,6 @@ int main(int argc, char *argv[])
 
     // Create variables to read the key
     char buffer[RC4_MAX_KEY_LEN + 1];
-//    char current_number[2];
-//    char *hex_string;
 
     for (i = 0; i < RC4_MAX_KEY_LEN + 1; i++)
         buffer[i] = '\0';
@@ -101,13 +98,19 @@ int main(int argc, char *argv[])
         }
     }
 
+    // if a password is entered in the terminal, a newline is appended, so remove it if present
+    char *newlinepos;
+    newlinepos = strstr(buffer, "\n");
+    if (newlinepos != NULL)
+        *newlinepos = '\0';
+
     keylen = (int) strlen(buffer);
     for (i = 0; i < RC4_MAX_KEY_LEN + 2; i++) // Fill to pad with zeroes if needed
         key[i] = '\0';
     for (i = 0; i < keylen && i < (RC4_MAX_KEY_LEN + 1); i++) // Copy up to RC4_MAX_KEY_LEN characters
         key[i] = buffer[i];
 
-    printf("%s will be used as the key.\n", key); // TODO: daar word n newline geprint na die key
+    printf("\"%s\" will be used as the key.\n", key);
 
     // Open the files to be read and written
     FILE *infile;
