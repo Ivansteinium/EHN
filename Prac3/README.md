@@ -7,7 +7,7 @@ RC4 and RSA algorithms implemented from first principles.
 ## The main features are:
   - RC4 file encryption and decryption with a key of up to 128 bits.
   - RSA public/private key pair generation for up to 1024 bits.
-  - RSA text encryption and file decryption for up to 128 bits.
+  - RSA text encryption and file decryption for up to 1024 bits.
 
 These features allow for fast and secure public-key cryptography by using RSA in conjunction with RC4.
 This gives the user the advantages of having a very fast encryption process and public-key cryptography, 
@@ -74,7 +74,8 @@ Arguments:
 Arguments:
 
     -bitLen   Specifies the number of bits to be used in the generation of the RSA
-              public/private key pair (should be a power of 2, ex. 128 or 1024).
+              public/private key pair (should be a power of 2 between 128 and 1024
+              included).
     -fopub    Specifies the path to the file where the public key will be stored.
     -fopriv   Specifies the path to the file where the private key will be stored.
     -init     Specifies the seed to be used for the RC4 random number generator 
@@ -117,8 +118,6 @@ If this is **not** done, only the **first word** in the string will be processed
   (i.e. manual entry of the key).<br>
 If an ASCII string with **less** characters are given, the key will be **padded with zeroes** at the end.
 If an ASCII string with **more** characters are given, the **trailing characters** will be **discarded**.
-  - The **RSA key generator** is capable of generating very large key pairs, but only the **128-bit** key pair is supported for the 
-  encryption and decryption of the RC4 key.
 
 
 ## Makefile usage
@@ -173,11 +172,10 @@ The following output is expected:
 
     EHN Group 12 Practical 3
     
-    Using input.txt as the input file
-    Using encrypted.enc as the output file
+    Using "input.txt" as the input file
+    Using "encrypted.enc" as the output file
     Please enter the key that should be used to encrypt/decrypt the input file (ASCII):  EHN prac 3 demo
-    EHN prac 3 demo
-     will be used as the key.
+    Using "EHN prac 3 demo" as the key.
     Operation took 0 ms
     
     Encryption/Decryption complete 
@@ -197,9 +195,9 @@ The following output is expected:
     EHN Group 12 Practical 3
     
     128 bits will be generated
-    Using pubkey.txt as the public key file
-    Using privkey.txt as the private key file
-    RNG seed will be used as the RC4 RNG string.
+    Using "pubkey.txt" as the public key file
+    Using "privkey.txt" as the private key file
+    Using "RNG seed" as the RC4 RNG seed.
     9624435859827761653713296921767125260310001
     146850740984644234058622590547753261473
     phi: 16741326564989736433
@@ -220,9 +218,9 @@ The following output is expected:
 
     EHN Group 12 Practical 3
     
-    Using cipher.key as the output file
-    Using pubkey.txt as the public RSA key file
-    Using EHN prac 3 demo as the key
+    Using "cipher.key" as the output file
+    Using "pubkey.txt" as the public RSA key file
+    Using "EHN prac 3 demo" as the key
     
     Done
     
@@ -239,9 +237,9 @@ The following output is expected:
 
     EHN Group 12 Practical 3
     
-    Using cipher.key as the input file
-    Using privkey.txt as the private RSA key file
-    Using plain.txt as the output file
+    Using "cipher.key" as the input file
+    Using "privkey.txt" as the private RSA key file
+    Using "plain.txt" as the output file
     
     Done
     
@@ -254,15 +252,17 @@ the file <b>"output.txt"</b>:
 
     $ ./rc4 -fi "encrypted.enc" -fo "output.txt" -key "plain.txt"
 
+**Note: in this example the key "EHN prac 3 demo" is already in "plain.txt". This will differ if a different key was decrypted.**
+
+
 The following output is expected:
 
     EHN Group 12 Practical 3
     
-    Using encrypted.enc as the input file
-    Using output.txt as the output file
-    Using plain.txt as the key file
-    EHN prac 3 demo
-     will be used as the key.
+    Using "encrypted.enc" as the input file
+    Using "output.txt" as the output file
+    Using "plain.txt" as the key file
+    Using "EHN prac 3 demo" as the key.
     Operation took 0 ms
     
     Encryption/Decryption complete

@@ -82,25 +82,25 @@ int main(int argc, char *argv[])
         {
             args[0] = true;
             input_file_name = argv[arg + 1];
-            printf("Using %s as the input file\n", input_file_name);
+            printf("Using \"%s\" as the input file\n", input_file_name);
             arg++; // Skip over the value parameter that follows this parameter
         }
         else if (!strcmp(argv[arg], "-fopriv")) // Set the name of the private key file
         {
             args[1] = true;
             private_key_file_name = argv[arg + 1];
-            printf("Using %s as the private RSA key file\n", private_key_file_name);
+            printf("Using \"%s\" as the private RSA key file\n", private_key_file_name);
             arg++; // Skip over the value parameter that follows this parameter
         }
         else if (!strcmp(argv[arg], "-fo")) // Set the name of the output file
         {
             args[2] = true;
             output_file_name = argv[arg + 1];
-            printf("Using %s as the output file\n", output_file_name);
+            printf("Using \"%s\" as the output file\n", output_file_name);
             arg++; // Skip over the value parameter that follows this parameter
         }
         else
-            printf("Invalid parameter supplied: %s\n", argv[arg]);
+            printf("Invalid parameter supplied: \"%s\"\n", argv[arg]);
     }
 
     if (!args[0] || !args[1] || !args[2])

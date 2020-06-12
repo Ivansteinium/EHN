@@ -41,25 +41,25 @@ int main(int argc, char *argv[])
                 key[i] = '\0';
             for (i = 0; i < keylen && i < 16; i++) // Copy up to 16 characters
                 key[i] = argv[arg + 1][i];
-            printf("Using %s as the key\n", key);
+            printf("Using \"%s\" as the key\n", key);
             arg++; // Skip over the value parameter that follows this parameter
         }
         else if (!strcmp(argv[arg], "-fo")) // Set the name of the output file
         {
             args[1] = true;
             output_file_name = argv[arg + 1];
-            printf("Using %s as the output file\n", output_file_name);
+            printf("Using \"%s\" as the output file\n", output_file_name);
             arg++; // Skip over the value parameter that follows this parameter
         }
         else if (!strcmp(argv[arg], "-fopub")) // Set the name of the public key file
         {
             args[2] = true;
             public_key_file_name = argv[arg + 1];
-            printf("Using %s as the public RSA key file\n", public_key_file_name);
+            printf("Using \"%s\" as the public RSA key file\n", public_key_file_name);
             arg++; // Skip over the value parameter that follows this parameter
         }
         else
-            printf("Invalid parameter supplied: %s\n", argv[arg]);
+            printf("Invalid parameter supplied: \"%s\"\n", argv[arg]);
     }
 
     if (!args[0] || !args[1] || !args[2])

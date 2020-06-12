@@ -18,14 +18,15 @@ int main(int argc, char *argv[])
     char *public_key_file_name = NULL;
     //             binLen  fopub fopriv  init
     bool args[4] = {false, false, false, false};
-    char *key = NULL;
+    U8 seed[17];
+    int seedlen = 0;
     char help_message[] = "\t./rsakeygen -arg1 value1 -arg2 value2...\n"
                           "\t\n"
                           "\tThe following arguments should then be given in this order:\n\n"
                           "\t-bitLen <number of bits>\n"
                           "\t-fopub <public key file>\n"
                           "\t-fopriv <private key file>\n"
-                          "\t-init <RC4 RNG string in ASCII>"
+                          "\t-init <RC4 RNG string in ASCII> (optional)"
                           "\t\nRemember to add \"double quotes\" if spaces are present in an argument\n"
                           "\t\nExample usage:\n"
                           "\t1.\t./rsakeygen -bitLen 128 -fopub \"public key.txt\" -fopriv private_key.txt -init \"ASCII key\"\n";
@@ -49,12 +50,27 @@ int main(int argc, char *argv[])
             {
                 if (!isdigit(argv[arg + 1][i]))
                 {
-                    printf("Argument %s is not a valid number\n", argv[arg + 1]);
+                    printf("Argument \"%s\" is not a valid number\n", argv[arg + 1]);
                     return EXIT_FAILURE;
                 }
             }
             num_bits = (int) strtol(argv[arg + 1], NULL, 10);
-            // TODO: validation testing? which values for bitLen are valid
+
+            double test = (double) num_bits;
+            while (test > 2.0)
+                test /= 2.0;
+            if (test != 2.0)
+            {
+                printf("%i is not a power of 2\nterminating...\n", num_bits);
+                return EXIT_FAILURE;
+            }
+
+            if (num_bits > 1024 || num_bits < 128)
+            {
+                printf("%i is too large or too small\nterminating...\n", num_bits);
+                return EXIT_FAILURE;
+            }
+
             printf("%i bits will be generated\n", num_bits);
             arg++; // Skip over the value parameter that follows this parameter
         }
@@ -62,25 +78,33 @@ int main(int argc, char *argv[])
         {
             args[1] = true;
             public_key_file_name = argv[arg + 1];
-            printf("Using %s as the public key file\n", public_key_file_name);
+            printf("Using \"%s\" as the public key file\n", public_key_file_name);
             arg++; // Skip over the value parameter that follows this parameter
         }
         else if (!strcmp(argv[arg], "-fopriv")) // Set the name of the output file
         {
             args[2] = true;
             private_key_file_name = argv[arg + 1];
-            printf("Using %s as the private key file\n", private_key_file_name);
+            printf("Using \"%s\" as the private key file\n", private_key_file_name);
             arg++; // Skip over the value parameter that follows this parameter
         }
-        else if (!strcmp(argv[arg], "-init")) // Set the key
+        else if (!strcmp(argv[arg], "-init")) // Set RC4 init seed
         {
             args[3] = true;
-            key = argv[arg + 1];
-            printf("%s will be used as the RC4 RNG string.\n", key);
+            char *rc4_seed = argv[arg + 1];
+            seedlen = (int) strlen(rc4_seed);
+
+            for (i = 0; i < 17; i++) // Clear the seed to pad with zeroes if needed
+                seed[i] = 0;
+
+            for (i = 0; i < seedlen && i < 16; i++)
+                seed[i] = rc4_seed[i];
+
+            printf("Using \"%s\" as the RC4 RNG seed.\n", seed);
             arg++; // Skip over the value parameter that follows this parameter
         }
         else
-            printf("Invalid parameter supplied: %s\n", argv[arg]);
+            printf("Invalid parameter supplied: \"%s\"\n", argv[arg]);
     }
 
     if (!args[0] || !args[1] || !args[2])
@@ -90,15 +114,26 @@ int main(int argc, char *argv[])
         return EXIT_FAILURE;
     }
 
-    // Set the RSA key
+    if (!args[3])
+    {
+        seed[0] = 0x01;
+        seed[1] = 0x23;
+        seed[2] = 0x45;
+        seed[3] = 0x67;
+        seed[4] = 0x89;
+        seed[5] = 0xAB;
+        seed[6] = 0xCD;
+        seed[7] = 0xEF;
+        seedlen = 8;
+
+        printf("No RC4 RNG seed was specified, using the default value of 0123456789ABCDEF (HEX)\n");
+    }
+
     struct rsactx_t rsactx;
     rsa_init(&rsactx);
+    rc4_init(&rc4ctx, seed, seedlen);
+
     int e_val = 2;  // TODO: Maybe change to 1/0 if the key is too small.
-    setseed(&rsactx, 1); // TODO: change hard coding? -8 marks
-    if (args[3]) // Key supplied
-        rc4_init(&RC4_RNG, (U8 *) key, 8);
-    else // No key supplied
-        rc4_init(&RC4_RNG, rsactx.seed, 8);
     getkeys(&rsactx, num_bits, e_val);
 
     // Open the public key file to be written
@@ -148,30 +183,10 @@ int main(int argc, char *argv[])
 }
 
 
-// Sets the RNG seed parameter of RSA struct
-void setseed(struct rsactx_t *rsactx, bool default_key)
-{
-    if (default_key)
-    {
-        rsactx->seed[0] = 0x01;
-        rsactx->seed[1] = 0x23;
-        rsactx->seed[2] = 0x45;
-        rsactx->seed[3] = 0x67;
-        rsactx->seed[4] = 0x89;
-        rsactx->seed[5] = 0xAB;
-        rsactx->seed[6] = 0xCD;
-        rsactx->seed[7] = 0xEF;
-    }
-    else
-    {
-        // TODO: find random value
-    }
-}
-
-
 // Gets the next prime from a randomly generated value from RC4 RNG
-void getprime(struct rsactx_t *rsactx, mpz_t p, int num_bits)
+void getprime(mpz_t p, int num_bits)
 {
+    // TODO: ulong is net 64 bits, gaan overflow vir meer as 128 bits
     unsigned long result = 1;
     mpz_t not_prime;
 //    int num_rand_bytes = num_bits / 10;
@@ -182,21 +197,21 @@ void getprime(struct rsactx_t *rsactx, mpz_t p, int num_bits)
     for (int i = 0; i < num_bits - 1; i++)
     {
         result = result << 1;
-        result = result | (rc4_getbyte(&RC4_RNG) & 0b00000001);
+        result = result | (rc4_getbyte(&rc4ctx) & 0b00000001);
     }
 
 //    for (int i = 0; i < num_rand_bytes; ++i)
 //    {
 //        result = result | 1;
 //        result = result << 8;
-//        result = result | rc4_getbyte(&RC4_RNG);
+//        result = result | rc4_getbyte(&rc4ctx);
 //        result = result << 1;
 //        result = result | 1;
 //    }
 //
 //    if (remain > 0)
 //    {
-//        temp = rc4_getbyte(&RC4_RNG) >> (8 - remain);
+//        temp = rc4_getbyte(&rc4ctx) >> (8 - remain);
 //        result = result << remain;
 //        result = result | temp;
 //    }
@@ -221,8 +236,8 @@ void getkeys(struct rsactx_t *rsactx, int key_len, int e_selection)
     {
         do
         {
-            getprime(rsactx, rsactx->p, p_q_bit_len);
-            getprime(rsactx, rsactx->q, p_q_bit_len); // Random prime p and q
+            getprime(rsactx->p, p_q_bit_len);
+            getprime(rsactx->q, p_q_bit_len); // Random prime p and q
         } while (mpz_get_ui(rsactx->p) == mpz_get_ui(rsactx->q)); // p != q
 
         mpz_mul(rsactx->n, rsactx->p, rsactx->q); // Set n

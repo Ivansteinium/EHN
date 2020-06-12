@@ -49,7 +49,6 @@ struct rsactx_t
 {
     mpz_t e, d, n;
     mpz_t p, q;
-    U8 seed[16];
 };
 
 

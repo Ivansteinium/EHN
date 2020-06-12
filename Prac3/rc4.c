@@ -41,27 +41,27 @@ int main(int argc, char *argv[])
         {
             args[0] = true;
             input_file_name = argv[arg + 1];
-            printf("Using %s as the input file\n", input_file_name);
+            printf("Using \"%s\" as the input file\n", input_file_name);
             arg++; // Skip over the value parameter that follows this parameter
         }
         else if (!strcmp(argv[arg], "-fo")) // Set the name of the output file
         {
             args[1] = true;
             output_file_name = argv[arg + 1];
-            printf("Using %s as the output file\n", output_file_name);
+            printf("Using \"%s\" as the output file\n", output_file_name);
             arg++; // Skip over the value parameter that follows this parameter
         }
         else if (!strcmp(argv[arg], "-key")) // Set the name of the file containing the key
         {
             args[2] = true;
             key_file_name = argv[arg + 1];
-            printf("Using %s as the key file\n", key_file_name);
+            printf("Using \"%s\" as the key file\n", key_file_name);
             arg++; // Skip over the value parameter that follows this parameter
         }
         else if ((!strcmp(argv[arg], "-e")) || (!strcmp(argv[arg], "-d")))
             continue; // Encryption and decryption follow exact same process
         else
-            printf("Invalid parameter supplied: %s\n", argv[arg]);
+            printf("Invalid parameter supplied: \"%s\"\n", argv[arg]);
     }
 
     if (!args[0] || !args[1]) // -fi and -fo have to be specified
@@ -98,7 +98,7 @@ int main(int argc, char *argv[])
         }
     }
 
-    // if a password is entered in the terminal, a newline is appended, so remove it if present
+    // If a password is entered in the terminal, a newline is appended, so remove it if present
     char *newlinepos;
     newlinepos = strstr(buffer, "\n");
     if (newlinepos != NULL)
@@ -110,7 +110,7 @@ int main(int argc, char *argv[])
     for (i = 0; i < keylen && i < (RC4_MAX_KEY_LEN + 1); i++) // Copy up to RC4_MAX_KEY_LEN characters
         key[i] = buffer[i];
 
-    printf("\"%s\" will be used as the key.\n", key);
+    printf("Using \"%s\" as the key.\n", key);
 
     // Open the files to be read and written
     FILE *infile;

@@ -5,24 +5,15 @@
 #include <obstack.h>
 
 
-struct rc4ctx_t RC4_RNG;
-
-
-/**
- * Sets the RNG seed parameter of RSA struct.
- * @param rsactx Pointer to the main RSA struct.
- * @param default_key Indicates whether the default provided key should be used.
- */
-void setseed(struct rsactx_t *rsactx, bool default_key);
+struct rc4ctx_t rc4ctx;
 
 
 /**
  * Gets the next prime from a randomly generated value from RC4 RNG.
- * @param rsactx Pointer to the main RSA struct.
- * @param p The prime value output.
+ * @param prime The prime value output.
  * @param num_bits The length of the prime number in bits.
  */
-void getprime(struct rsactx_t *rsactx, mpz_t p, int num_bits);
+void getprime(mpz_t prime, int num_bits);
 
 
 /**
