@@ -130,19 +130,23 @@ int main(int argc, char *argv[])
     }
     else
     {
+        int result = -1;
         if (fgets(buffer, 256, pubkeyfile) != NULL) // Get n from public key file
-            mpz_set_str(rsactx.n, buffer, 10);
-        else
+            result = mpz_set_str(rsactx.n, buffer, 10);
+
+        if (result == -1) // Could not read or invalid
         {
             printf("Could not read n from the private key file\n");
             return EXIT_FAILURE;
         }
 
+        result = -1;
         if (fgets(buffer, 256, pubkeyfile) != NULL) // Get e from public key file
-            mpz_set_str(rsactx.e, buffer, 10);
-        else
+            result = mpz_set_str(rsactx.e, buffer, 10);
+
+        if (result == -1) // Could not read or invalid
         {
-            printf("Could not read d from the private key file\n");
+            printf("Could not read e from the private key file\n");
             return EXIT_FAILURE;
         }
         fclose(pubkeyfile);
@@ -162,7 +166,6 @@ int main(int argc, char *argv[])
     mpz_init_set_ui(total, key[0]);
     mpz_init_set_ui(byte, 256);
     mpz_init(temp_val);
-    // TODO: doesn't seem to work for 1024-bit RSA
     for (int j = 1; j < 16; ++j)
     {
         mpz_mul(total, total, byte); // Shift byte

@@ -127,17 +127,21 @@ int main(int argc, char *argv[])
     }
     else
     {
+        int result = -1;
         if (fgets(buffer, 256, privkeyfile) != NULL) // Get n from public key file
-            mpz_set_str(rsactx.n, buffer, 10);
-        else
+            result = mpz_set_str(rsactx.n, buffer, 10);
+
+        if (result == -1) // Could not read or invalid
         {
             printf("Could not read n from the private key file\n");
             return EXIT_FAILURE;
         }
 
+        result = -1;
         if (fgets(buffer, 256, privkeyfile) != NULL) // Get d from public key file
-            mpz_set_str(rsactx.d, buffer, 10);
-        else
+            result = mpz_set_str(rsactx.d, buffer, 10);
+
+        if (result == -1) // Could not read or invalid
         {
             printf("Could not read d from the private key file\n");
             return EXIT_FAILURE;
@@ -172,15 +176,16 @@ int main(int argc, char *argv[])
         }
         else // Read char, decipher char, write to output, repeat
         {
+            int result = -1;
             if (fgets(buffer, 256, infile) != NULL) // Get cipher value from the input file
-                mpz_set_str(cipher, buffer, 10);
-            else
+                result = mpz_set_str(cipher, buffer, 10);
+
+            if (result == -1) // Could not read or invalid
             {
                 printf("Could not read the ciphertext from the input file\n");
                 return EXIT_FAILURE;
             }
 
-            // TODO: doesn't seem to work for 1024-bit RSA
             decrypt_rsa(plain, rsactx.d, rsactx.n, cipher); // Decipher
             for (i = 0; i < 16; i++)
             {

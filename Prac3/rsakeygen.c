@@ -65,9 +65,14 @@ int main(int argc, char *argv[])
                 return EXIT_FAILURE;
             }
 
-            if (num_bits > 1024 || num_bits < 128)
+            if (num_bits < 128)
             {
-                printf("%i is too large or too small\nterminating...\n", num_bits);
+                printf("%i is too small\nterminating...\n", num_bits);
+                return EXIT_FAILURE;
+            }
+            else if (num_bits > 4096)
+            {
+                printf("%i is too large\nterminating...\n", num_bits);
                 return EXIT_FAILURE;
             }
 
@@ -124,6 +129,8 @@ int main(int argc, char *argv[])
         seed[5] = 0xAB;
         seed[6] = 0xCD;
         seed[7] = 0xEF;
+        for (i = 8; i < 17; i++)
+            seed[i] = 0;
         seedlen = 8;
 
         printf("No RC4 RNG seed was specified, using the default value of 0123456789ABCDEF (HEX)\n");
@@ -186,7 +193,7 @@ int main(int argc, char *argv[])
 // Gets the next prime from a randomly generated value from RC4 RNG
 void getprime(mpz_t p, int num_bits)
 {
-    // TODO: ulong is net 64 bits, gaan overflow vir meer as 128 bits
+    // TODO: unsigned long is net 64 bits, gaan overflow vir meer as 128 bits
     unsigned long result = 1;
     mpz_t not_prime;
 //    int num_rand_bytes = num_bits / 10;

@@ -198,10 +198,6 @@ The following output is expected:
     Using "pubkey.txt" as the public key file
     Using "privkey.txt" as the private key file
     Using "RNG seed" as the RC4 RNG seed.
-    9624435859827761653713296921767125260310001
-    146850740984644234058622590547753261473
-    phi: 16741326564989736433
-    d: 17487272539616008609
     
     Done
     

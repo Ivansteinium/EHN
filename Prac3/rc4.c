@@ -91,16 +91,12 @@ int main(int argc, char *argv[])
             printf("The key file could not be opened, please check that the name of the file is correct\n");
             return EXIT_FAILURE;
         }
-        else
-        {
-            // Read from the file
+        else // Read from the file
             fgets(buffer, RC4_MAX_KEY_LEN + 1, keyfile); // Read only up to the max number of characters
-        }
     }
 
     // If a password is entered in the terminal, a newline is appended, so remove it if present
-    char *newlinepos;
-    newlinepos = strstr(buffer, "\n");
+    char *newlinepos = strstr(buffer, "\n");
     if (newlinepos != NULL)
         *newlinepos = '\0';
 
