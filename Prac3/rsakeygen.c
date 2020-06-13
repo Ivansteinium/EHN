@@ -194,8 +194,13 @@ int main(int argc, char *argv[])
 void getprime(mpz_t p, int num_bits)
 {
     // TODO: unsigned long is net 64 bits, gaan overflow vir meer as 128 bits
-    unsigned long result = 1;
-    mpz_t not_prime;
+    unsigned int result;
+    mpz_t temp_result;
+    mpz_init(temp_result);
+    mpz_t val_2;
+    mpz_init_set_ui(val_2, 2);
+    mpz_t val_1;
+    mpz_init_set_ui(val_1, 1);
 //    int num_rand_bytes = num_bits / 10;
 //    unsigned int temp;
 //    int remain = num_bits % 10;
@@ -203,8 +208,11 @@ void getprime(mpz_t p, int num_bits)
     // Loop until right length
     for (int i = 0; i < num_bits - 1; i++)
     {
-        result = result << 1;
-        result = result | (rc4_getbyte(&rc4ctx) & 0b00000001);
+        mpz_mul(temp_result, temp_result, val_2);
+        result =  (rc4_getbyte(&rc4ctx) & 0b00000001);
+        if (result==1){
+            mpz_add(temp_result, temp_result, val_1);
+        }
     }
 
 //    for (int i = 0; i < num_rand_bytes; ++i)
@@ -223,8 +231,7 @@ void getprime(mpz_t p, int num_bits)
 //        result = result | temp;
 //    }
 
-    mpz_init_set_ui(not_prime, result);
-    mpz_nextprime(p, not_prime);
+    mpz_nextprime(p, temp_result);
 }
 
 
@@ -283,12 +290,12 @@ void getkeys(struct rsactx_t *rsactx, int key_len, int e_selection)
 
     } while ((mpz_get_ui(remain) != 0) || (mpz_cmp(rsactx->d, phi) >= 0));
 
-    // TODO: daar word nie gese wat geprint word nie, dit print net n nommer uit
-    // Kan ook net niks print nie imo
-    mpz_out_str(stdout, 10, phi_1);
-    printf("\n");
-    mpz_out_str(stdout, 10, rsactx->d);
-    printf("\n");
-    printf("phi: %lu\n", mpz_get_ui(phi_1));
-    printf("d: %lu\n", mpz_get_ui(rsactx->d));
+//    // TODO: daar word nie gese wat geprint word nie, dit print net n nommer uit
+//    // Kan ook net niks print nie imo
+//    mpz_out_str(stdout, 10, phi_1);
+//    printf("\n");
+//    mpz_out_str(stdout, 10, rsactx->d);
+//    printf("\n");
+//    printf("phi: %lu\n", mpz_get_ui(phi_1));
+//    printf("d: %lu\n", mpz_get_ui(rsactx->d));
 }
