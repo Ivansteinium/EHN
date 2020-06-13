@@ -1,22 +1,11 @@
 #include "rsakeygen.h"
 
-
-// TODO: remove comments
 /// This utility generates a public/private key pair to be used to encrypt and decrypt the RC4 key.
-int main(int argc, char *argv[])
-{
-//    struct rsactx_t rsa;
-//    setseed(&rsa, 1);
-//    rc4_init(&RC4_RNG, rsa.seed, 8);
-//    mpz_t large_prime;
-//    mpz_init(large_prime);
-//    getprime(&rsa, large_prime, 15);
-
+int main(int argc, char *argv[]) {
     int i;
     int num_bits = -1;
     char *private_key_file_name = NULL;
     char *public_key_file_name = NULL;
-    //             binLen  fopub fopriv  init
     bool args[4] = {false, false, false, false};
     U8 seed[17];
     int seedlen = 0;
@@ -33,67 +22,48 @@ int main(int argc, char *argv[])
 
     printf("EHN Group 12 Practical 3\n\n");
 
-    if (argc < 6)
-    {
+    if (argc < 6) {
         printf("Too few arguments were supplied\n"
                "Proper use of the program is as follows:\n\n%s\n", help_message);
         return EXIT_FAILURE;
     }
 
     int arg;
-    for (arg = 1; arg < argc; arg++)
-    {
+    int e_val = 2;
+    for (arg = 1; arg < argc; arg++) {
         if (!strcmp(argv[arg], "-bitLen")) // Set the number of bits to generate
         {
             args[0] = true;
-            for (i = 0; i < strlen(argv[arg + 1]); i++)
-            {
-                if (!isdigit(argv[arg + 1][i]))
-                {
+            for (i = 0; i < strlen(argv[arg + 1]); i++) {
+                if (!isdigit(argv[arg + 1][i])) {
                     printf("Argument \"%s\" is not a valid number\n", argv[arg + 1]);
                     return EXIT_FAILURE;
                 }
             }
             num_bits = (int) strtol(argv[arg + 1], NULL, 10);
-
-            double test = (double) num_bits;
-            while (test > 2.0)
-                test /= 2.0;
-            if (test != 2.0)
-            {
-                printf("%i is not a power of 2\nterminating...\n", num_bits);
-                return EXIT_FAILURE;
-            }
-
-            if (num_bits < 128)
-            {
-                printf("%i is too small\nterminating...\n", num_bits);
-                return EXIT_FAILURE;
-            }
-            else if (num_bits > 4096)
-            {
+            if (num_bits < 128) {
+                e_val = 0;  // Change to 0 if the key is too small.
+                printf("%i is too small\nChanging e val to 3\n", num_bits);
+            } else if (num_bits > 4096) {
                 printf("%i is too large\nterminating...\n", num_bits);
                 return EXIT_FAILURE;
             }
 
             printf("%i bits will be generated\n", num_bits);
             arg++; // Skip over the value parameter that follows this parameter
-        }
-        else if (!strcmp(argv[arg], "-fopub")) // Set the name of the output file
+        } else if (!strcmp(argv[arg], "-fopub")) // Set the name of the output file
         {
             args[1] = true;
             public_key_file_name = argv[arg + 1];
             printf("Using \"%s\" as the public key file\n", public_key_file_name);
             arg++; // Skip over the value parameter that follows this parameter
-        }
-        else if (!strcmp(argv[arg], "-fopriv")) // Set the name of the output file
+        } else if (!strcmp(argv[arg], "-fopriv")) // Set the name of the output file
         {
             args[2] = true;
             private_key_file_name = argv[arg + 1];
             printf("Using \"%s\" as the private key file\n", private_key_file_name);
             arg++; // Skip over the value parameter that follows this parameter
-        }
-        else if (!strcmp(argv[arg], "-init")) // Set RC4 init seed
+        } else if (!strcmp(argv[arg], "-init")) // Set RC4 init seed
         {
             args[3] = true;
             char *rc4_seed = argv[arg + 1];
@@ -107,20 +77,17 @@ int main(int argc, char *argv[])
 
             printf("Using \"%s\" as the RC4 RNG seed.\n", seed);
             arg++; // Skip over the value parameter that follows this parameter
-        }
-        else
+        } else
             printf("Invalid parameter supplied: \"%s\"\n", argv[arg]);
     }
 
-    if (!args[0] || !args[1] || !args[2])
-    {
+    if (!args[0] || !args[1] || !args[2]) {
         printf("Too few arguments were supplied\n"
                "Proper use of the program is as follows:\n\n%s\n", help_message);
         return EXIT_FAILURE;
     }
 
-    if (!args[3])
-    {
+    if (!args[3]) {
         seed[0] = 0x01;
         seed[1] = 0x23;
         seed[2] = 0x45;
@@ -140,7 +107,6 @@ int main(int argc, char *argv[])
     rsa_init(&rsactx);
     rc4_init(&rc4ctx, seed, seedlen);
 
-    int e_val = 2;  // TODO: Maybe change to 1/0 if the key is too small.
     getkeys(&rsactx, num_bits, e_val);
 
     // Open the public key file to be written
@@ -151,9 +117,7 @@ int main(int argc, char *argv[])
     {
         printf("The public key file could not be created, please make sure the program has write privileges\n");
         return EXIT_FAILURE;
-    }
-    else
-    {
+    } else {
         mpz_out_str(pubkeyfile, 10, rsactx.n);
         fwrite(&temp, 1, 1, pubkeyfile);
         mpz_out_str(pubkeyfile, 10, rsactx.e);
@@ -168,76 +132,45 @@ int main(int argc, char *argv[])
     {
         printf("The private key file could not be created, please make sure the program has write privileges\n");
         return EXIT_FAILURE;
-    }
-    else
-    {
+    } else {
         mpz_out_str(privkeyfile, 10, rsactx.n);
-//        gmp_printf("n= %Zd\n", rsa.n);
         fwrite(&temp, 1, 1, privkeyfile);
         mpz_out_str(privkeyfile, 10, rsactx.d);
         fwrite(&temp, 1, 1, privkeyfile);
         fclose(privkeyfile);
     }
-    
+
     rsa_clean(&rsactx);
     printf("\nDone\n");
     return EXIT_SUCCESS;
-
-//    FILE *abc;
-//    abc = fopen("abc.txt", "w");
-//    mpz_out_raw(abc, rsa.n);
-//    fclose(abc);
 }
 
 
 // Gets the next prime from a randomly generated value from RC4 RNG
-void getprime(mpz_t p, int num_bits)
-{
+void getprime(mpz_t p, int num_bits) {
     // TODO: unsigned long is net 64 bits, gaan overflow vir meer as 128 bits
     unsigned int result;
     mpz_t temp_result;
-    mpz_init(temp_result);
+    mpz_init_set_ui(temp_result, 1);
     mpz_t val_2;
     mpz_init_set_ui(val_2, 2);
     mpz_t val_1;
     mpz_init_set_ui(val_1, 1);
-//    int num_rand_bytes = num_bits / 10;
-//    unsigned int temp;
-//    int remain = num_bits % 10;
 
     // Loop until right length
-    for (int i = 0; i < num_bits - 1; i++)
-    {
+    for (int i = 0; i < num_bits - 1; i++) {
         mpz_mul(temp_result, temp_result, val_2);
-        result =  (rc4_getbyte(&rc4ctx) & 0b00000001);
-        if (result==1){
+        result = (rc4_getbyte(&rc4ctx) & 0b00000001);
+        if (result == 1) {
             mpz_add(temp_result, temp_result, val_1);
         }
     }
-
-//    for (int i = 0; i < num_rand_bytes; ++i)
-//    {
-//        result = result | 1;
-//        result = result << 8;
-//        result = result | rc4_getbyte(&rc4ctx);
-//        result = result << 1;
-//        result = result | 1;
-//    }
-//
-//    if (remain > 0)
-//    {
-//        temp = rc4_getbyte(&rc4ctx) >> (8 - remain);
-//        result = result << remain;
-//        result = result | temp;
-//    }
-
     mpz_nextprime(p, temp_result);
 }
 
 
 // Create the RSA key pair
-void getkeys(struct rsactx_t *rsactx, int key_len, int e_selection)
-{
+void getkeys(struct rsactx_t *rsactx, int key_len, int e_selection) {
     mpz_t phi;
     mpz_t p_1, q_1, val_1;
     mpz_t phi_1;
@@ -246,17 +179,14 @@ void getkeys(struct rsactx_t *rsactx, int key_len, int e_selection)
     int p_q_bit_len = (key_len) / 2;
     unsigned long e[3] = {3, 17, 65537};
 
-    do
-    {
-        do
-        {
+    do {
+        do {
             getprime(rsactx->p, p_q_bit_len);
             getprime(rsactx->q, p_q_bit_len); // Random prime p and q
         } while (mpz_get_ui(rsactx->p) == mpz_get_ui(rsactx->q)); // p != q
 
         mpz_mul(rsactx->n, rsactx->p, rsactx->q); // Set n
         mpz_set_ui(rsactx->e, e[e_selection]); //set e from common e values
-
         mpz_init_set_ui(val_1, i_1); // Create a mpz struct with val 1 for subtraction.
 
         mpz_init(p_1);
@@ -268,34 +198,18 @@ void getkeys(struct rsactx_t *rsactx, int key_len, int e_selection)
         mpz_init(phi);
         mpz_mul(phi, p_1, q_1); // phi = (p-1)(q-1)
 
-//        mpz_init(mod_out);
-//        mpz_mod(mod_out, rsactx->e, phi); // e mod phi
-
         mpz_init(phi_1);
         mpz_add(phi_1, phi, val_1);
 
         mpz_init(remain);
         mpz_t count;
         mpz_init_set_ui(count, 1);
-        do
-        {
+        do {
             mpz_tdiv_qr(rsactx->d, remain, phi_1, rsactx->e);
             mpz_add(count, count, val_1);
             mpz_mul(phi_1, phi, count);
             mpz_add(phi_1, phi_1, val_1);
         } while ((mpz_get_ui(remain) != 0) && (mpz_cmp(rsactx->d, phi) < 0));
 
-//        mpz_tdiv_qr(rsactx->d, remain, phi_1, rsactx->e);
-//        mpz_mod(remain, phi_1, rsactx->d);
-
     } while ((mpz_get_ui(remain) != 0) || (mpz_cmp(rsactx->d, phi) >= 0));
-
-//    // TODO: daar word nie gese wat geprint word nie, dit print net n nommer uit
-//    // Kan ook net niks print nie imo
-//    mpz_out_str(stdout, 10, phi_1);
-//    printf("\n");
-//    mpz_out_str(stdout, 10, rsactx->d);
-//    printf("\n");
-//    printf("phi: %lu\n", mpz_get_ui(phi_1));
-//    printf("d: %lu\n", mpz_get_ui(rsactx->d));
 }
