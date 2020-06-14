@@ -6,8 +6,8 @@ RC4 and RSA algorithms implemented from first principles.
 
 ## The main features are:
   - RC4 file encryption and decryption with a key of up to 128 bits.
-  - RSA public/private key pair generation for up to 1024 bits.
-  - RSA text encryption and file decryption for up to 1024 bits.
+  - RSA public/private key pair generation for up to 4096 bits.
+  - RSA text encryption and file decryption for up to 4096 bits.
 
 These features allow for fast and secure public-key cryptography by using RSA in conjunction with RC4.
 This gives the user the advantages of having a very fast encryption process and public-key cryptography, 
@@ -74,8 +74,7 @@ Arguments:
 Arguments:
 
     -bitLen   Specifies the number of bits to be used in the generation of the RSA
-              public/private key pair (should be a power of 2 between 128 and 1024
-              included).
+              public/private key pair (should be between 128 and 4096 inclusive).
     -fopub    Specifies the path to the file where the public key will be stored.
     -fopriv   Specifies the path to the file where the private key will be stored.
     -init     Specifies the seed to be used for the RC4 random number generator 

@@ -2,8 +2,6 @@
 #define EHN_PRAC3_RSAKEYGEN_H
 
 #include "prac3.h"
-#include <obstack.h>
-
 
 struct rc4ctx_t rc4ctx;
 

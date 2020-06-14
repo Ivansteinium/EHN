@@ -14,7 +14,7 @@ demo: rc4 rsakeygen rsaencrypt rsadecrypt
 	touch input.txt
 	echo "If you can see this in output.txt, the software is working correctly." > input.txt
 	./rc4 -fi "input.txt" -fo "encrypted.enc"
-	./rsakeygen -bitLen 128 -fopub pubkey.txt -fopriv privkey.txt -init "RNG seed"
+	./rsakeygen -bitLen 1024 -fopub pubkey.txt -fopriv privkey.txt -init "RNG seed"
 	./rsaencrypt -fo cipher.key -fopub pubkey.txt -key "EHN prac 3 demo"
 	./rsadecrypt -fi cipher.key -fopriv privkey.txt -fo plain.txt
 	./rc4 -fi "encrypted.enc" -fo "output.txt" -key "plain.txt"

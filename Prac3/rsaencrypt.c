@@ -1,11 +1,14 @@
 #include "rsaencrypt.h"
 
+
 /// This utility encrypts the key used in the RC4 algorithm.
-int main(int argc, char *argv[]) {
+int main(int argc, char *argv[])
+{
     int i;
     char *public_key_file_name = NULL;
     char *output_file_name = NULL;
     char key[17];
+    //               key    fo    fopub
     bool args[3] = {false, false, false};
     char help_message[] = "\t./rsaencrypt -arg1 value1 -arg2 value2...\n"
                           "\t\n"
@@ -19,14 +22,16 @@ int main(int argc, char *argv[]) {
 
     printf("EHN Group 12 Practical 3\n\n");
 
-    if (argc < 6) {
+    if (argc < 6)
+    {
         printf("Too few arguments were supplied\n"
                "Proper use of the program is as follows:\n\n%s\n", help_message);
         return EXIT_FAILURE;
     }
 
     int arg;
-    for (arg = 1; arg < argc; arg++) {
+    for (arg = 1; arg < argc; arg++)
+    {
         if (!strcmp(argv[arg], "-key")) // Set the name of the file containing the key
         {
             args[0] = true;
@@ -37,23 +42,27 @@ int main(int argc, char *argv[]) {
                 key[i] = argv[arg + 1][i];
             printf("Using \"%s\" as the key\n", key);
             arg++; // Skip over the value parameter that follows this parameter
-        } else if (!strcmp(argv[arg], "-fo")) // Set the name of the output file
+        }
+        else if (!strcmp(argv[arg], "-fo")) // Set the name of the output file
         {
             args[1] = true;
             output_file_name = argv[arg + 1];
             printf("Using \"%s\" as the output file\n", output_file_name);
             arg++; // Skip over the value parameter that follows this parameter
-        } else if (!strcmp(argv[arg], "-fopub")) // Set the name of the public key file
+        }
+        else if (!strcmp(argv[arg], "-fopub")) // Set the name of the public key file
         {
             args[2] = true;
             public_key_file_name = argv[arg + 1];
             printf("Using \"%s\" as the public RSA key file\n", public_key_file_name);
             arg++; // Skip over the value parameter that follows this parameter
-        } else
+        }
+        else
             printf("Invalid parameter supplied: \"%s\"\n", argv[arg]);
     }
 
-    if (!args[0] || !args[1] || !args[2]) {
+    if (!args[0] || !args[1] || !args[2])
+    {
         printf("Too few arguments were supplied\n"
                "Proper use of the program is as follows:\n\n%s\n", help_message);
         return EXIT_FAILURE;
@@ -73,7 +82,9 @@ int main(int argc, char *argv[]) {
     {
         printf("The encrypted file could not be opened, please check that the name of the file is correct\n");
         return EXIT_FAILURE;
-    } else {
+    }
+    else
+    {
         int result = -1;
         if (fgets(buffer, 2048, pubkeyfile) != NULL) // Get n from public key file
             result = mpz_set_str(rsactx.n, buffer, 10);
@@ -102,7 +113,8 @@ int main(int argc, char *argv[]) {
     mpz_init_set_ui(total, key[0]);
     mpz_init_set_ui(byte, 256);
     mpz_init(temp_val);
-    for (int j = 1; j < 16; ++j) {
+    for (int j = 1; j < 16; ++j)
+    {
         mpz_mul(total, total, byte); // Shift byte
         mpz_set_ui(temp_val, key[j]);
         mpz_add(total, total, temp_val);
@@ -115,8 +127,9 @@ int main(int argc, char *argv[]) {
     {
         printf("The output file could not be created, please make sure the program has write privileges\n");
         return EXIT_FAILURE;
-    } else {
-
+    }
+    else
+    {
         encrypt_rsa(total, rsactx.e, rsactx.n, cipher);
         mpz_out_str(outfile, 10, cipher);
 
@@ -132,6 +145,7 @@ int main(int argc, char *argv[]) {
 
 
 // Uses the GMP power function to encrypt a mpz_t number
-void encrypt_rsa(mpz_t plain, mpz_t e, mpz_t n, mpz_t cipher) {
+void encrypt_rsa(mpz_t plain, mpz_t e, mpz_t n, mpz_t cipher)
+{
     mpz_powm(cipher, plain, e, n);
 }
