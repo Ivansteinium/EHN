@@ -112,7 +112,8 @@ Arguments:
 #### Attention: please take special note of the following:
  
   - Remember to add <b>"double quotes"</b> to arguments if **spaces** are present in the string.<br>
-If this is **not** done, only the **first word** in the string will be processed.
+If this is **not** done, only the **first word** in the string will be processed. The user is reminded that this is 
+not the case for program input prompts, where any character entered will be treated as part of the password.
   - The expected input length for the **-key** argument is **16** characters for RSA encryption and RC4 if no file is specified 
   (i.e. manual entry of the key).<br>
 If an ASCII string with **less** characters are given, the key will be **padded with zeroes** at the end.
@@ -221,7 +222,7 @@ The following output is expected:
     
 The file "cipher.key" can be found in the same folder as the executable. 
 
-### Example 4: RC4 Decryption
+### Example 4: RSA Decryption
 
 The following command will **decrypt** the key in the file <b>"cipher.key"</b> using the previously generated private key and store the result in
 the file <b>"plain.txt"</b>:
