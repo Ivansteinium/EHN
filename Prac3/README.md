@@ -113,7 +113,7 @@ Arguments:
  
   - Remember to add <b>"double quotes"</b> to arguments if **spaces** are present in the string.<br>
 If this is **not** done, only the **first word** in the string will be processed. The user is reminded that this is 
-not the case for program input prompts, where any character entered will be treated as part of the password.
+not the case for the manual RC4 key input prompt where any character entered will be treated as part of the key.
   - The expected input length for the **-key** argument is **16** characters for RSA encryption and RC4 if no file is specified 
   (i.e. manual entry of the key).<br>
 If an ASCII string with **less** characters are given, the key will be **padded with zeroes** at the end.
